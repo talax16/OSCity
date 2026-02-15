@@ -1,0 +1,4 @@
+name: OSCity
+version: 1.0-SNAPSHOT
+main: com.oscity.OSCity
+api-version: '1.21'

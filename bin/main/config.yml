@@ -1,0 +1,49 @@
+debugClicks: true #to be deleted at the end of testing, set to true to get messages about what you clicked and where
+roomDisplay:
+  enabled: true
+  intervalTicks: 10   # 10 ticks = 0.5s
+  clearWhenOutside: true
+
+rooms:
+  permissionChamber:
+    title: "Permission Chamber"
+    world: "OSCityWorld"
+    min: { x: 82, y: -32, z: 20 }
+    max: { x: 90, y: -28, z: 30 }
+
+  pageDirectory:
+    title: "Page Table Library - Page Directory"
+    world: "OSCityWorld"
+    min: { x: 82, y: 18, z: 5 }
+    max: { x: 90, y: 21, z: 13 }
+
+  pageTable1:
+    title: "Page Table Library - Page Table 1"
+    world: "OSCityWorld"
+    min: { x: 82, y: 23, z: 5 }
+    max: { x: 90, y: 26, z: 13 }
+  
+  pageTable2:
+    title: "Page Table Library - Page Table 2"
+    world: "OSCityWorld"
+    min: { x: 82, y: 28, z: 5 }
+    max: { x: 90, y: 31, z: 13 }
+
+  pageTable3:
+    title: "Page Table Library - Page Table 3"
+    world: "OSCityWorld"
+    min: { x: 82, y: 33, z: 5 }
+    max: { x: 90, y: 36, z: 13 }
+
+locations:
+  tpPerChamber1:
+    world: "OSCityWorld"
+    x: 83
+    y: 24
+    z: 13
+
+  permissionChamber:
+    world: "OSCityWorld"
+    x: 86
+    y: -32
+    z: 27

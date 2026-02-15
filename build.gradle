@@ -1,0 +1,216 @@
+
+plugins {
+    id 'java'
+}
+
+group = 'com.oscity'
+version = '1.0-SNAPSHOT'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+repositories {
+    mavenCentral()
+    maven { url 'https://repo.papermc.io/repository/maven-public/' }
+}
+
+dependencies {
+    compileOnly 'io.papermc.paper:paper-api:1.21.1-R0.1-SNAPSHOT'
+}
+
+/**
+ * Auto-copy the built jar to your Paper server plugins folder.
+ */
+tasks.register("deployToPaper", Copy) {
+    dependsOn(tasks.named("jar"))
+
+    // Copy only YOUR plugin jar (prevents copying -sources/-javadoc if you add those later)
+    from(tasks.named("jar").get().outputs.files)
+
+    into("/Users/tala/Documents/Year3/Project/PaperServer/plugins")
+}
+
+tasks.named("build") {
+    finalizedBy("deployToPaper")
+}
+
+// plugins {
+//     id 'java'
+//     id 'java-library'
+//     id 'maven-publish'
+//     id 'com.github.johnrengelman.shadow' version '8.1.1'
+// }
+
+// group = 'com.osccity'
+// version = '1.0-SNAPSHOT'
+// description = 'OS City: A Minecraft Virtual Memory Simulation Game'
+
+// java {
+//     toolchain {
+//         languageVersion = JavaLanguageVersion.of(21)
+//     }
+//     withSourcesJar()
+//     withJavadocJar()
+// }
+
+// repositories {
+//     mavenCentral()
+    
+//     // PaperMC
+//     maven { url 'https://repo.papermc.io/repository/maven-public/' }
+    
+//     // Citizens2
+//     maven { url 'https://repo.codemc.io/repository/maven-public/' }
+    
+//     // WorldEdit/WorldGuard
+//     maven { url 'https://maven.enginehub.org/repo/' }
+    
+//     // PlaceholderAPI
+//     maven { url 'https://repo.extendedclip.com/content/repositories/placeholderapi/' }
+    
+//     // Vault
+//     maven { url 'https://jitpack.io' }
+    
+//     // Minecraft libraries
+//     maven { url 'https://libraries.minecraft.net/' }
+// }
+
+// dependencies {
+//     // ========== COMPILE-ONLY ==========
+    
+//     // Paper API
+//     compileOnly 'io.papermc.paper:paper-api:1.21.1-R0.1-SNAPSHOT'
+    
+//     // Citizens2
+//     compileOnly 'net.citizensnpcs:citizensapi:2.0.33-SNAPSHOT'
+    
+//     // WorldEdit
+//     compileOnly 'com.sk89q.worldedit:worldedit-bukkit:7.2.19'
+    
+//     // WorldGuard
+//     compileOnly 'com.sk89q.worldguard:worldguard-bukkit:7.0.9'
+    
+//     // PlaceholderAPI
+//     compileOnly 'me.clip:placeholderapi:2.11.5'
+    
+//     // Vault
+//     compileOnly 'com.github.MilkBowl:VaultAPI:1.7'
+    
+//     // ========== IMPLEMENTATION ==========
+    
+//     // SQLite
+//     implementation 'org.xerial:sqlite-jdbc:3.43.0.0'
+    
+//     // JSON processing
+//     implementation 'com.google.code.gson:gson:2.10.1'
+    
+//     // Connection pooling
+//     implementation 'com.zaxxer:HikariCP:5.0.1'
+    
+//     // Configuration library
+//     implementation 'org.spongepowered:configurate-yaml:4.1.2'
+    
+//     // ========== TESTING ==========
+    
+//     // JUnit 5
+//     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.0'
+    
+//     // Mockito
+//     testImplementation 'org.mockito:mockito-core:5.5.0'
+//     testImplementation 'org.mockito:mockito-junit-jupiter:5.5.0'
+    
+//     // AssertJ
+//     testImplementation 'org.assertj:assertj-core:3.24.2'
+    
+//     // Paper for testing
+//     testImplementation 'io.papermc.paper:paper-api:1.20.4-R0.1-SNAPSHOT'
+// }
+
+// // ========== TASKS CONFIGURATION ==========
+
+// compileJava {
+//     options.encoding = 'UTF-8'
+//     options.compilerArgs += ['-parameters']
+// }
+
+// processResources {
+//     filesMatching('**/*.yml') {
+//         expand('version': version, 'description': description)
+//     }
+//     filteringCharset = 'UTF-8'
+// }
+
+// shadowJar {
+//     archiveClassifier = ''
+//     archiveFileName = "OSCCity-${version}.jar"
+    
+//     // Relocate dependencies
+//     relocate 'org.sqlite', 'com.osccity.libs.sqlite'
+//     relocate 'com.zaxxer.hikari', 'com.osccity.libs.hikari'
+//     relocate 'com.google.gson', 'com.osccity.libs.gson'
+    
+//     minimize()
+// }
+
+// test {
+//     useJUnitPlatform()
+//     testLogging {
+//         events 'passed', 'skipped', 'failed'
+//     }
+// }
+
+// build {
+//     dependsOn shadowJar
+//     dependsOn test
+// }
+
+// javadoc {
+//     title = "OSCCity API Documentation v${version}"
+//     options.encoding = 'UTF-8'
+//     options.addStringOption('Xdoclint:none', '-quiet')
+//     options.links('https://papermc.io/javadocs/paper/1.20/')
+// }
+
+// // ========== CUSTOM TASKS ==========
+
+// task copyToServer(type: Copy) {
+//     dependsOn shadowJar
+//     from layout.buildDirectory.dir('libs')
+//     into file(System.getProperty('user.home') + '/Desktop/MinecraftTestServer/plugins/')
+//     include '*.jar'
+    
+//     doLast {
+//         println '✅ Copied OSCCity-' + version + '.jar to test server'
+//     }
+// }
+
+// task generateStructure {
+//     doLast {
+//         def structure = '''OSCCity Project Structure:
+// ├── src/main/java/com/osccity/
+// │   ├── OSCCity.java                    # Main plugin class
+// │   ├── core/                          # Core managers
+// │   ├── journey/                       # Journey scenarios
+// │   ├── simulation/                    # Memory simulation
+// │   ├── mechanics/                     # Game mechanics
+// │   ├── gamification/                  # Achievements, streaks
+// │   ├── quiz/                          # Questions system
+// │   ├── world/                         # World/build management
+// │   ├── kernel/                        # Kernel mode logic
+// │   ├── config/                        # Configuration
+// │   └── persistence/                   # Database
+// ├── src/main/resources/
+// │   ├── plugin.yml                     # Plugin metadata
+// │   ├── config.yml                     # Configuration
+// │   ├── messages.yml                   # Localization
+// │   ├── questions.yml                  # Quiz questions
+// │   └── achievements.yml               # Achievement definitions
+// └── schematics/                        # WorldEdit schematics'''
+        
+//         new File('PROJECT_STRUCTURE.md').text = structure
+//         println '📁 Project structure documentation generated'
+//     }
+// }
