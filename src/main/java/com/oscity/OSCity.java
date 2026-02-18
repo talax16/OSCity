@@ -6,15 +6,20 @@ import com.oscity.core.GuardianInteractionHandler;
 import com.oscity.core.KernelGuardian;
 import com.oscity.mechanics.RoomDisplayManager;
 import com.oscity.mechanics.TeleportManager;
+import com.oscity.persistence.SQLiteStudyDatabase;
 import com.oscity.world.LocationRegistry;
 import com.oscity.world.RoomRegistry;
+import com.oscity.world.WorldManager;
+import com.oscity.world.StructureManager;
 
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class OSCity extends JavaPlugin {
 
     private ConfigManager configManager;
+    private WorldManager worldManager;
     private RoomRegistry roomRegistry;
+    private StructureManager structureManager;
     private LocationRegistry locationRegistry;
     private RoomDisplayManager roomDisplayManager;
     private TeleportManager teleportManager;
@@ -33,11 +38,23 @@ public class OSCity extends JavaPlugin {
             getLogger().severe("Please install Citizens: https://ci.citizensnpcs.co/job/Citizens2/");
         }
 
+        // Initialize user study database
+        getLogger().info("Initializing user study database...");
+        SQLiteStudyDatabase.initializeDatabase();
+        SQLiteStudyDatabase.testConnection();
+        getLogger().info("✓ User study database ready");
+
         // Initialize managers
         configManager = new ConfigManager(this);
 
+        worldManager = new WorldManager(this);
+        worldManager.initialize();
+
         roomRegistry = new RoomRegistry(this);
         roomRegistry.loadFromConfig();
+
+        structureManager = new StructureManager(this, worldManager, roomRegistry);
+        structureManager.initialize();
 
         locationRegistry = new LocationRegistry(this);
         locationRegistry.loadFromConfig();

@@ -29,6 +29,8 @@ dependencies {
     compileOnly('net.citizensnpcs:citizens-main:2.0.35-SNAPSHOT') {
         transitive = false
     }
+    // SQLite database driver for user study tracking
+    implementation 'org.xerial:sqlite-jdbc:3.44.0.0'
 }
 
 /**
