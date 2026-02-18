@@ -5,45 +5,368 @@ roomDisplay:
   clearWhenOutside: true
 
 rooms:
+  terminal:
+    title: "Terminal"
+    world: "OSCityWorld"
+    min: { x: 169, y: 85, z: 296 }
+    max: { x: 194, y: 90, z: 321 }
+    npcPosition: { x: 184, y: 86, z: 309 }
+
+  learnerMode:
+    title: "Learner Mode"
+    world: "OSCityWorld"
+    min: { x: 195, y: 86, z: 296 }
+    max: { x: 204, y: 90, z: 307 }
+    npcPosition: { x: 199, y: 86, z: 304 }
+  
+  adventurerMode:
+    title: "Adventurer Mode"
+    world: "OSCityWorld"
+    min: { x: 195, y: 86, z: 311 }
+    max: { x: 204, y: 90, z: 321 }
+    npcPosition: { x: 199, y: 86, z: 318 }
+  
   permissionChamber:
     title: "Permission Chamber"
     world: "OSCityWorld"
     min: { x: 82, y: -32, z: 20 }
     max: { x: 90, y: -28, z: 30 }
+    npcPosition: { x: 83, y: -32, z: 21 }
 
   pageDirectory:
     title: "Page Table Library - Page Directory"
     world: "OSCityWorld"
     min: { x: 82, y: 18, z: 5 }
     max: { x: 90, y: 21, z: 13 }
+    npcPosition: { x: 83, y: 18, z: 7 }
 
   pageTable1:
     title: "Page Table Library - Page Table 1"
     world: "OSCityWorld"
     min: { x: 82, y: 23, z: 5 }
     max: { x: 90, y: 26, z: 13 }
-  
+    npcPosition: { x: 89, y: 23, z: 12 }
+    
   pageTable2:
     title: "Page Table Library - Page Table 2"
     world: "OSCityWorld"
     min: { x: 82, y: 28, z: 5 }
     max: { x: 90, y: 31, z: 13 }
+    npcPosition: { x: 89, y: 28, z: 12 }
 
   pageTable3:
     title: "Page Table Library - Page Table 3"
     world: "OSCityWorld"
     min: { x: 82, y: 33, z: 5 }
     max: { x: 90, y: 36, z: 13 }
-
-locations:
-  tpPerChamber1:
+    npcPosition: { x: 89, y: 33, z: 12 }
+  
+  swapDistrict:
+    title: "Swap District"
     world: "OSCityWorld"
+    min: { x: 0, y: -34, z: 36 }
+    max: { x: 43, y: -25, z: 79 }
+    npcPosition: { x: 27, y: -33, z: 58 }
+
+  ramRoom1:
+    title: "RAM Room"
+    world: "OSCityWorld"
+    min: { x: 22, y: -60, z: 115 }
+    max: { x: 34, y: -56, z: 128 }
+    npcPosition: { x: 24, y: -60, z: 125 }
+
+  ramRoom2:
+    title: "RAM Room"
+    world: "OSCityWorld"
+    min: { x: 23, y: -60, z: 139 }
+    max: { x: 36, y: -56, z: 152 }
+    npcPosition: { x: 25, y: -60, z: 150 }
+  
+  diskRoom:
+    title: "Disk Room"
+    world: "OSCityWorld"
+    min: { x: 23, y: -60, z: 173 }
+    max: { x: 36, y: -56, z: 186 }
+    npcPosition: { x: 25, y: -60, z: 184 }
+  
+  calculatorRoom:
+    title: "Calculator Room"
+    world: "OSCityWorld"
+    min: { x: 25, y: -60, z: 204 }
+    max: { x: 35, y: -56, z: 214 }
+    npcPosition: { x: 27, y: -60, z: 212 }
+
+  pageFaultCorridor:
+    title: "Page Fault Corridor"
+    world: "OSCityWorld"
+    min: { x: 84, y: -34, z: 32 }
+    max: { x: 93, y: -28, z: 77 }
+    npcPosition: { x: 86, y: -34, z: 42 }
+
+  lazyAllocationRoom:
+    title: "Lazy Allocation Room"
+    world: "OSCityWorld"
+    min: { x: 95, y: -34, z: 54 }
+    max: { x: 108, y: -30, z: 60 }
+    npcPosition: { x: 104, y: -34, z: 58 }
+  
+  lazyLoadingRoom:
+    title: "Lazy Loading Room"
+    world: "OSCityWorld"
+    min: { x: 95, y: -34, z: 70 }
+    max: { x: 108, y: -30, z: 76 }
+    npcPosition: { x: 104, y: -34, z: 74 }
+
+  cowRoom:
+    title: "COW Room"
+    world: "OSCityWorld"
+    min: { x: 95, y: -34, z: 38 }
+    max: { x: 108, y: -30, z: 44 }
+    npcPosition: { x: 104, y: -34, z: 42 }
+  
+  tlbRoom1:
+    title: "TLB Room"
+    world: "OSCityWorld"
+    min: { x: 65, y: 17, z: -11 }
+    max: { x: 81, y: 25, z: 29 }
+    npcPosition: { x: 86, y: 18, z: 25 }
+
+  tlbRoom2:
+    title: "TLB Room"
+    world: "OSCityWorld"
+    min: { x: 91, y: 17, z: -11 }
+    max: { x: 107, y: 25, z: 29 }
+
+  tlbRoom3:
+    title: "TLB Room"
+    world: "OSCityWorld"
+    min: { x: 81, y: 17, z: -11 }
+    max: { x: 91, y: 25, z: 4 }
+
+  tlbRoom4:
+    title: "TLB Room"
+    world: "OSCityWorld"
+    min: { x: 81, y: 17, z: 14 }
+    max: { x: 91, y: 25, z: 29 }
+
+choiceButtons:
+  # Permission chamber buttons
+  allowAccess:
+    world: "OSCityWorld"
+    x: 85
+    y: -31
+    z: 20
+  pageFault:
+    world: "OSCityWorld"
+    x: 86
+    y: -31
+    z: 20
+  segFaultPerChamber:
+    world: "OSCityWorld"
+    x: 87
+    y: -31
+    z: 20
+  perFault:
+    world: "OSCityWorld"
+    x: 88
+    y: -31
+    z: 20
+  lazyLoading:
+    world: "OSCityWorld"
+    x: 85
+    y: -31
+    z: 20
+  lazyAllocation:
+    world: "OSCityWorld"
+    x: 86
+    y: -31
+    z: 20
+  cowPerChamber:
+    world: "OSCityWorld"
+    x: 87
+    y: -31
+    z: 20
+  swap:
+    world: "OSCityWorld"
+    x: 88
+    y: -31
+    z: 20
+  
+  # COW room buttons
+  allocate:
+    world: "OSCityWorld"
+    x: 99
+    y: -34
+    z: 38
+  terminate:
+    world: "OSCityWorld"
+    x: 101
+    y: -34
+    z: 38
+  
+  # Lazy allocation room buttons
+  cowLazyAlloc:
+    world: "OSCityWorld"
+    x: 100
+    y: -34
+    z: 54
+  segFaultPerLazyAlloc:
+    world: "OSCityWorld"
+    x: 101
+    y: -34
+    z: 54
+  nothing:
+    world: "OSCityWorld"
+    x: 102
+    y: -34
+    z: 54
+  # Lazy loading room buttons
+  touch:
+    world: "OSCityWorld"
+    x: 100
+    y: -34
+    z: 73
+  
+tpButtons:
+  learnerStart: # button to start the learner's mode, teleports to TLB room
+    world: "OSCityWorld"
+    destination: tlbSpawn
+    message: "&aTeleported to TLB room!"
+    x: 203
+    y: 87
+    z: 301
+  
+  adventurerStart: # button to start the adventurer's mode, teleports to TLB room
+    world: "OSCityWorld"
+    destination: tlbSpawn
+    message: "&aTeleported to TLB room!"
+    x: 203
+    y: 87
+    z: 316
+  
+  pt1ToChamber: # teleport to permission chamber from Page table 1
+    world: "OSCityWorld"
+    destination: permissionChamber
+    message: "&aTeleported to Permission Chamber!"
     x: 83
     y: 24
     z: 13
+  
+  pt2ToChamber: # teleport to permission chamber from Page table 2
+    world: "OSCityWorld"
+    destination: permissionChamber
+    message: "&aTeleported to Permission Chamber!"
+    x: 83
+    y: 29
+    z: 13
 
-  permissionChamber:
+  pt3ToChamber: # teleport to permission chamber from Page table 3
+    world: "OSCityWorld"
+    destination: permissionChamber
+    message: "&aTeleported to Permission Chamber!"
+    x: 83
+    y: 43
+    z: 13
+
+  tlbToCalculator: # teleport to calculator room from TLB room
+    world: "OSCityWorld"
+    destination: calculatorRoom
+    message: "&aTeleported to Calculator Room!"
+    x: 107
+    y: 18
+    z: 9
+
+  tlbToRam1: # teleport to ram room 1 from TLB room
+    world: "OSCityWorld"
+    destination: ramRoom1
+    message: "&aTeleported to RAM Room!"
+    x: 65
+    y: 18
+    z: 11
+  
+  perToDisk: # teleport to disk room from permission chamber
+    world: "OSCityWorld"
+    destination: diskRoom
+    message: "&aTeleported to Disk Room!"
+    x: 81
+    y: -31
+    z: 25
+
+  loadingToCalc: # teleport to calculator room from lazy loading room
+    world: "OSCityWorld"
+    destination: calculatorRoom
+    message: "&aTeleported to Calculator Room!"
+    x: 100
+    y: -34
+    z: 70
+  
+  loadingToDisk: # teleport to disk room from lazy loading room
+    world: "OSCityWorld" 
+    destination: diskRoom
+    message: "&aTeleported to Disk Room!"
+    x: 102
+    y: -34
+    z: 70
+
+  swapToRam1: # teleport to ram room 1 from swap district
+    world: "OSCityWorld"
+    destination: ramRoom1
+    message: "&aTeleported to RAM Room!"
+    x: 22
+    y: -32
+    z: 58
+
+locations:
+  initialSpawn: # initial spawn point for players
+    world: "OSCityWorld"
+    x: 174
+    y: 86
+    z: 309
+  
+  tlbSpawn: # spawn point for TLB room
+    world: "OSCityWorld"
+    x: 86
+    y: 17
+    z: 28
+  
+  permissionChamber: # spawn point for permission chamber
     world: "OSCityWorld"
     x: 86
     y: -32
     z: 27
+
+  ramRoom1: # spawn point for ram room 1
+    world: "OSCityWorld"
+    x: 26
+    y: -60
+    z: 125
+
+  ramRoom2: # spawn point for ram room 2
+    world: "OSCityWorld"
+    x: 27
+    y: -60
+    z: 149
+
+  diskRoom: # spawn point for disk room
+    world: "OSCityWorld"
+    x: 27
+    y: -60
+    z: 182
+
+  calculatorRoom: # spawn point for calculator room
+    world: "OSCityWorld"
+    x: 33
+    y: -60
+    z: 212
+
+  npc:
+  name: "§6Kernel Guardian"
+  
+  welcomeMessage: |
+    You have been chosen to replace me, the Kernel Guardian.
+    Proceed with caution. Trust your gut, and everything will be questioned.
+  
+  roomGreetings:
+    tlbRoom: "Welcome to the TLB Room. Here we check if your page is already cached."
+    permissionChamber: "Time to check access permissions. Not all memory accesses are allowed."
+    calculatorRoom: "Convert your virtual address from hexadecimal to binary here."

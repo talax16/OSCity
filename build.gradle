@@ -1,4 +1,3 @@
-
 plugins {
     id 'java'
 }
@@ -15,10 +14,21 @@ java {
 repositories {
     mavenCentral()
     maven { url 'https://repo.papermc.io/repository/maven-public/' }
+    maven { 
+        name = 'citizens-repo'
+        url = 'https://maven.citizensnpcs.co/repo' 
+    }
+    maven {
+        name = 'jitpack'
+        url = 'https://jitpack.io'
+    }
 }
 
 dependencies {
     compileOnly 'io.papermc.paper:paper-api:1.21.1-R0.1-SNAPSHOT'
+    compileOnly('net.citizensnpcs:citizens-main:2.0.35-SNAPSHOT') {
+        transitive = false
+    }
 }
 
 /**
@@ -27,7 +37,6 @@ dependencies {
 tasks.register("deployToPaper", Copy) {
     dependsOn(tasks.named("jar"))
 
-    // Copy only YOUR plugin jar (prevents copying -sources/-javadoc if you add those later)
     from(tasks.named("jar").get().outputs.files)
 
     into("/Users/tala/Documents/Year3/Project/PaperServer/plugins")

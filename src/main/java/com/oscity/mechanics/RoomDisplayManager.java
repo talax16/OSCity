@@ -66,7 +66,7 @@ public class RoomDisplayManager {
             }
         }, 0L, intervalTicks);
 
-        // Clean up when players leave (optional but good)
+        // Clean up when players leave
         Bukkit.getPluginManager().registerEvents(new org.bukkit.event.Listener() {
             @org.bukkit.event.EventHandler
             public void onQuit(org.bukkit.event.player.PlayerQuitEvent e) {

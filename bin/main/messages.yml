@@ -1,1 +1,72 @@
-//All text messages
+# Terminal messages
+terminal:
+  welcome: "&6You have been chosen to replace me, the Kernel Guardian. Proceed with caution."
+  chooseModePrompt: "&eChoose your mode:"
+  learnerMode: "&aLearner Mode &7- More guidance, no TNT"
+  adventurerMode: "&cAdventurer Mode &7- Less help, TNT enabled"
+  needPaper: "&cYou need to take the paper first!"
+  
+# TLB Room messages
+tlb:
+  welcome: "&6Welcome to the TLB Room! Let's check if your page is cached."
+  hint: "&7Look for the VPN tag that matches your Virtual Page Number"
+  hit: "&aPage found in TLB! PFN: {pfn}"
+  miss: "&cTLB Miss - Need to walk the page table"
+
+# Page Table messages
+pageTable:
+  welcome: "&6Page Table Library - {floor}"
+  findPte: "&7Find the chest labeled '{index}'"
+  
+# Permission Chamber messages
+permission:
+  welcome: "&6Permission Chamber - Checking access rights"
+  allowed: "&aAccess granted!"
+  denied: "&cAccess denied!"
+  pageFault: "&eRaising page fault..."
+
+# Calculator Room messages
+calculator:
+  welcome: "&6Calculator Room - Convert your Virtual Address"
+  instruction: "&7Convert {va} from hexadecimal to binary"
+  vpnLabel: "&eVPN (first 4 bits):"
+  offsetLabel: "&eOffset (last 4 bits):"
+
+# RAM Room messages
+ram:
+  welcome: "&6RAM Room {number}"
+  frameLabel: "&7Frame {pfn}"
+  emptyFrame: "&7Empty frame"
+  
+# Disk Room messages
+disk:
+  welcome: "&6Disk Room - Persistent Storage"
+  findPage: "&7Locate page {index} in chest {chest}"
+
+# Swap District messages
+swap:
+  welcome: "&6Swap District - Frame Eviction"
+  clockAlgorithm: "&7Walk around the circle, checking use bits"
+  victimFound: "&aVictim frame found: {pfn}"
+
+# COW Room messages
+cow:
+  welcome: "&6Copy-on-Write Room"
+  explanation: "&7Process wants to write to a shared page"
+  
+# Lazy Allocation messages
+lazyAllocation:
+  welcome: "&6Lazy Allocation Room"
+  explanation: "&7Page wasn't allocated until now"
+
+# Lazy Loading messages
+lazyLoading:
+  welcome: "&6Lazy Loading Room"
+  explanation: "&7Page needs to be loaded from disk"
+
+# General messages
+general:
+  teleported: "&aTeleported to {location}"
+  correctChoice: "&aCorrect!"
+  wrongChoice: "&cIncorrect!"
+  journeyComplete: "&6&lCongratulations! Journey Complete!"

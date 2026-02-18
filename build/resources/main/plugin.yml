@@ -2,3 +2,8 @@ name: OSCity
 version: 1.0-SNAPSHOT
 main: com.oscity.OSCity
 api-version: '1.21'
+depend: 
+  - Citizens
+authors: 
+  - Tala Alqarzaee
+description: Educational Minecraft plugin about virtual memory and operating systems

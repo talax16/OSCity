@@ -1,6 +1,7 @@
 package com.oscity.world;
 
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -15,9 +16,11 @@ public class RoomRegistry {
         public final String title;
         public final World world;
         public final int minX, minY, minZ, maxX, maxY, maxZ;
+        public final Location npcPosition;  // ← NEW
 
         public Room(String key, String title, World world,
-                    int minX, int minY, int minZ, int maxX, int maxY, int maxZ) {
+                    int minX, int minY, int minZ, int maxX, int maxY, int maxZ,
+                    Location npcPosition) {  // ← NEW
             this.key = key;
             this.title = title;
             this.world = world;
@@ -27,9 +30,10 @@ public class RoomRegistry {
             this.maxX = Math.max(minX, maxX);
             this.maxY = Math.max(minY, maxY);
             this.maxZ = Math.max(minZ, maxZ);
+            this.npcPosition = npcPosition;  // ← NEW
         }
 
-        public boolean contains(org.bukkit.Location loc) {
+        public boolean contains(Location loc) {
             if (loc.getWorld() == null || !loc.getWorld().equals(world)) return false;
             int x = loc.getBlockX(), y = loc.getBlockY(), z = loc.getBlockZ();
             return x >= minX && x <= maxX
@@ -78,19 +82,48 @@ public class RoomRegistry {
                 continue;
             }
 
+            // Load NPC position (optional) ← NEW
+            Location npcPosition = null;
+            ConfigurationSection npcPos = r.getConfigurationSection("npcPosition");
+            if (npcPos != null) {
+                npcPosition = new Location(
+                    world,
+                    npcPos.getInt("x"),
+                    npcPos.getInt("y"),
+                    npcPos.getInt("z")
+                );
+            }
+
             rooms.add(new Room(
                     key, title, world,
                     min.getInt("x"), min.getInt("y"), min.getInt("z"),
-                    max.getInt("x"), max.getInt("y"), max.getInt("z")
+                    max.getInt("x"), max.getInt("y"), max.getInt("z"),
+                    npcPosition  // ← NEW
             ));
         }
 
         plugin.getLogger().info("Loaded " + rooms.size() + " rooms from config.yml");
     }
 
-    public String getRoomTitleAt(org.bukkit.Location loc) {
+    public String getRoomTitleAt(Location loc) {
         for (Room room : rooms) {
             if (room.contains(loc)) return room.title;
+        }
+        return null;
+    }
+
+    // ← NEW METHOD
+    public Room getRoomAt(Location loc) {
+        for (Room room : rooms) {
+            if (room.contains(loc)) return room;
+        }
+        return null;
+    }
+
+    // ← NEW METHOD
+    public Room getRoomByTitle(String title) {
+        for (Room room : rooms) {
+            if (room.title.equals(title)) return room;
         }
         return null;
     }
