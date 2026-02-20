@@ -1,32 +1,43 @@
 package com.oscity.quiz;
 
-import com.oscity.session.SessionManager;
+import com.oscity.content.QuestionBank;
 import com.oscity.persistence.SQLiteStudyDatabase;
+import com.oscity.session.SessionManager;
 import com.oscity.world.RoomRegistry;
 import org.bukkit.entity.Player;
 
+/**
+ * Validates quiz answers submitted by the player.
+ * Questions are loaded from questions.yml via QuestionBank.
+ * Wrong answers are logged to the SQLite study database.
+ */
 public class QuizManager {
 
-    private SessionManager sessionManager;
-    private RoomRegistry roomRegistry;
+    private final SessionManager sessionManager;
+    private final RoomRegistry roomRegistry;
+    private final QuestionBank questionBank;
 
-    public QuizManager(SessionManager sessionManager, RoomRegistry roomRegistry) {
+    public QuizManager(SessionManager sessionManager, RoomRegistry roomRegistry,
+                       QuestionBank questionBank) {
         this.sessionManager = sessionManager;
         this.roomRegistry = roomRegistry;
+        this.questionBank = questionBank;
     }
 
     /**
-     * Called when player submits an answer.
-     * Returns true if the answer is correct.
+     * Validate a player's answer for a given question path (e.g. "tlb_room.miss_door").
+     * Returns true if the answer is correct. Logs wrong answers to the database.
      */
-    public boolean validateAnswer(Player player, String question, String playerAnswer) {
-        String correctAnswer = getCorrectAnswer(question);
-        boolean isCorrect = playerAnswer.equalsIgnoreCase(correctAnswer);
+    public boolean validateAnswer(Player player, String questionPath, String playerAnswer) {
+        QuestionBank.Question question = questionBank.getQuestion(questionPath);
+        if (question == null) return false;
+
+        boolean isCorrect = question.checkAnswer(playerAnswer);
 
         if (isCorrect) {
-            player.sendMessage("Correct!");
+            player.sendMessage("§a§lCorrect!");
         } else {
-            player.sendMessage("Incorrect. Try again.");
+            player.sendMessage("§c" + question.wrongFeedback);
             sessionManager.recordWrongAnswer();
             SQLiteStudyDatabase.logWrongAnswer(
                 sessionManager.getSessionId(),
@@ -35,11 +46,6 @@ public class QuizManager {
         }
 
         return isCorrect;
-    }
-
-    private String getCorrectAnswer(String question) {
-        // Return correct answer for this question
-        return "answer";
     }
 
     private String getCurrentRoom(Player player) {

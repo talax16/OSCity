@@ -1,0 +1,568 @@
+# OSCity - Kernel Guardian Dialogue
+# Each entry is a list of lines spoken one after another.
+# Placeholders: {journey}, {pfn}, {vpn}, {result}, {did_not}, {floor}, {slot}, {button}, {file}
+
+rooms:
+  terminal:
+    initial_spawn:
+      - "Greetings, traveler. I am the Kernel Guardian, architect of this digital realm."
+      - "You have been chosen to replace me in maintaining the delicate balance of OSCity."
+      - "This is Terminal Plaza—the gateway between worlds. Before you lies a crucial choice."
+      - "To your left: The House of Learning—where exploration is guided and mistakes teach lessons."
+      - "To your right: The House of Adventure—where your instincts are tested and consequences are real."
+      - "Choose wisely. Your journey through OSCity begins with this decision."
+      - "Trust your gut, everything will be questioned."
+
+    enter_learner:
+      - "Excellent choice. The House of Learning rewards curiosity with hints."
+      - "When you're uncertain, call upon me and I shall guide you."
+      - "No explosions here—only opportunity to understand."
+
+    enter_adventurer:
+      - "A bold choice. The House of Adventure respects confidence and punishes carelessness."
+      - "The stakes are real."
+      - "Before you proceed, another choice awaits:"
+      - "Will you SELECT YOUR OWN CHALLENGE from the seven available journeys? Or will you let FATE DECIDE—a random scenario?"
+
+    inside_both:
+      - "Open the chest and you will find a map with an instruction."
+      - "Take the map—it is your guide through the journey."
+      - "When you're ready, press the button to proceed to OSCity."
+      - "Do not forget the map!"
+
+    journey_selected:
+      - "You have selected: {journey}. If you want to change it, type 1 in chat. Otherwise, the chest is now enabled."
+      - "Open the chest and you will find a map with an instruction."
+      - "Take the map—it is your guide through the journey."
+      - "When you're ready, press the button to proceed to OSCity."
+      - "Do not forget the map!"
+
+    journey_random:
+      - "Fate has spoken. I have chosen your challenge. It is {journey}."
+      - "You did not choose this path. It has chosen you."
+      - "Open the chest and you will find a map with an instruction."
+      - "Take the map—it is your guide through the journey."
+      - "When you're ready, press the button to proceed to OSCity."
+      - "Do not forget the map!"
+
+  end_terminal:
+    arrival:
+      - "Welcome to the Finishing Terminal. You just finished {journey} through OSCity."
+      - "You have successfully navigated the complexities of virtual memory and memory management."
+      - "Congratulations!"
+      - "You may return to the beginning and journey again through OSCity."
+      - "Perhaps you will choose a different path next time."
+      - "Perhaps you will understand deeper truths on a second visit."
+      - "Simply press this button and it will take you to the beginning."
+
+  tlb_room:
+    at_spawn:
+      - "Welcome to the TLB Tower—the Translation Lookaside Buffer Chamber."
+      - "This room is the CPU's fastest memory cache. Before you stands a magnificent tower—the Multi-Level Page Table Library. We will get to it later, don't worry."
+      - "Over these chests you can find a Virtual Page Number (VPN) tag."
+      - "These will help you find the matching Physical Frame Number (PFN) tag, if you are 'Lucky'."
+      - "Right now all you have is a Virtual Address (VA) in Hexadecimal, but the tags are in binary. What can you do to 'calculate' it?"
+
+    after_calculator:
+      - "Great! You have successfully converted your Virtual Address (VA) from hexadecimal to binary."
+      - "Now try to find the matching Virtual Page Number (VPN) tag presented over the chests."
+      - "Remember: the first 4 bits are the VPN and the last 4 bits are the offset."
+      - "If you found it, that is a TLB 'hit'."
+      - "If you couldn't find it, that is a TLB 'miss'."
+
+    after_hit_miss:
+      - "You have selected {result}—so you believe that the TLB {did_not} cache the PFN mapping to a VPN?"
+
+    after_hit_quiz_lucky:
+      - "Excellent! You found the TLB entry. The Physical Frame Number is {pfn}."
+      - "Now travel to RAM and locate this frame to confirm it's mapped to your process."
+      - "Press the button to teleport to RAM."
+
+    after_hit_quiz_non_lucky:
+      - "No, you don't see your VPN on any of the chests around you."
+      - "This means it's a TLB Miss."
+      - "Try again. Press the MISS button."
+
+    after_miss_quiz_non_lucky:
+      - "Excellent! This is a case of a TLB miss—the mapping was not cached."
+      - "Now you can enter the Multi-Level Page Table, but for the door to open, you must answer this question:"
+
+    after_miss_quiz_lucky:
+      - "No, in this Lucky case, the VPN IS displayed on one of the chests in this room."
+      - "Double check the VPN tag and try again."
+
+  calculator_room:
+    from_tlb_spawn:
+      - "Welcome to the Calculator Chamber. This is where numbers become clear."
+      - "Your task is to convert the hexadecimal virtual address into binary components:"
+      - "  VPN: Virtual Page Number (first 4 bits)"
+      - "  OFFSET: Offset within the page (last 4 bits)"
+      - "Use the conversion guide on the signs and calculate."
+
+    from_tlb_after_quiz:
+      - "Excellent! Now you may go back to the TLB to continue your journey."
+
+    from_tlb_skip:
+      - "The VPN and OFFSET have been added to your map."
+      - "Press the button to go back to the TLB room and continue your journey."
+
+    from_lazy_loading_spawn:
+      - "Welcome again to the Calculator Chamber."
+      - "This time your task is to calculate the page index. The formula and all you need is on your map."
+      - "If you want, you can convert the hexadecimal values to binary first, or simply use them directly."
+      - "Just make sure you use the same form of numbers throughout."
+
+    from_lazy_loading_after_quiz:
+      - "Let's go back to the Lazy Loading room—I will explain what we just did."
+    from_lazy_loading_skip:
+      - "The page index has been added to your map."
+      - "Press the button to go back to the Lazy Loading room and continue your journey."
+
+  page_table_library:
+    entrance:
+      - "You are now at the entrance to the Multi-Level Page Table Library."
+      - "Remember: The TLB is the CPU's fast cache. It doesn't always have the answer."
+      - "When the TLB missed, we must find the answer the hard way—the Page Table."
+      - "The Page Table is like a massive filing system. It knows the mapping of every virtual page to its physical frame."
+      - "But this library is organised in LEVELS to save space."
+      - "Instead of one giant table with millions of entries, we have a hierarchy:"
+      - "  - One Page Directory at the Ground Floor"
+      - "  - Three Page Table levels above it"
+      - "This way, unused memory regions don't waste space."
+
+    before_entering:
+      - "You are about to walk through the multi-level page table."
+      - "But wait—how will we know which page table is ours?"
+      - "The Page Table Base Register (PTBR) points to this process's page directory."
+      - "The PTBR contains the address of where YOUR page table starts."
+      - "It's like a bookmark that says: 'This process's memory mappings begin here.'"
+      - "Every process has its own PTBR, so every process has its own page table."
+      - "Enter when you're ready."
+
+    page_directory:
+      - "Welcome to the Ground Floor of the Multi-Level Page Table Library."
+      - "This is the Page Directory."
+      - "Your VPN has been split: DIR (first 2 bits) | TABLE (last 2 bits)"
+      - "Use the first 2 bits (DIR) from your VPN to know which floor to go to."
+      - "Look at the signs next to the stairs. They show: '01', '10', '11'"
+      - "The process only uses entries 01 through 11, but slot 00 still exists."
+
+    correct_floor:
+      - "Welcome to Page Table Floor {floor}."
+      - "Each one of these chests represents a Page Table Entry (PTE)."
+      - "Look at the signs above each chest. They show: '00', '01', '10', '11'"
+      - "Match your TABLE bits (the last 2 bits of your VPN) to find your PTE."
+      - "Once you find them, open the chest and retrieve the book inside—that is your PTE. The data will transfer to your map."
+
+    wrong_floor:
+      - "You are not on the correct floor. This is Page Table Floor {floor}."
+
+    map_updated:
+      - "I know these terms can be confusing. You can ask me about them in the next room."
+      - "For now, press the button to take you to the Permission Chamber. I will meet you there."
+
+  permission_chamber:
+    at_spawn:
+      - "Welcome to the Permission Chamber—the judgment hall of virtual memory."
+      - "The Page Table Walk is complete. Now we must decide: what does the PTE tell us?"
+      - "Before you stand four buttons, each representing a different outcome."
+      - "Your task is to examine the PTE and choose wisely."
+      - "If you want, you can ask me to explain the meaning of each option."
+
+    after_button_press:
+      - "You have selected {button}."
+
+    page_fault_subtype_prompt:
+      - "Before you proceed to the Page Fault Corridor, you must determine which type of page fault this is."
+      - "Look at your PTE again. Which type of page fault is this?"
+      - "If you are unsure, I can explain it to you."
+
+    proceed_to_corridor:
+      - "You may now proceed to the Page Fault Corridor. I will meet you there."
+
+    proceed_to_disk:
+      - "Fortunately RAM has a free frame this time—the PFN has been added to your map."
+      - "The page you are trying to access is swapped out to disk."
+      - "You must retrieve it from a special area called 'Swap Space'."
+      - "Press the button to go to the Disk Room. I will meet you there."
+
+  page_fault_corridor:
+    at_enter:
+      - "You stand in the Page Fault Corridor—the intersection of memory management outcomes."
+      - "You've determined that a page fault has occurred."
+      - "Before you stand three doors. Choose the one you selected in the Permission Chamber."
+
+  lazy_allocation_room:
+    at_enter:
+      - "Welcome to the Lazy Allocation room."
+      - "Here, pages are born from nothing."
+      - "A page was requested, but no memory was pre-allocated."
+      - "Now, we must act."
+      - "Before you stand two buttons. Which will you choose?"
+
+    after_button_press:
+      - "You have selected: {button}."
+
+    allocate_correct:
+      - "Excellent! You've allocated frame {pfn} and zeroed it."
+      - "The page is now mapped to your process."
+      - "The PTE is updated: PRESENT=1, PFN={pfn}"
+      - "The TLB is updated: VPN {vpn} → PFN {pfn}"
+      - "And your map is updated."
+      - "Now go to RAM and see your newly allocated frame."
+      - "Press the button to teleport to RAM."
+
+    allocate_incorrect:
+      - "No! This page never existed on disk."
+      - "This is LAZY ALLOCATION—we're creating it fresh, not loading it."
+      - "Try again."
+
+    second_visit:
+      - "The process wants to write on this page."
+      - "Check your map—you will see the instruction has changed to 'write' instead of 'read'."
+      - "This triggers a different scenario."
+      - "But wait—why is this NOT a normal write situation?"
+      - "The page is MARKED AS READ-ONLY because multiple processes might share the zero-filled template."
+      - "Even though this is YOUR allocated frame, the kernel marked it read-only as an optimisation."
+      - "When you try to write, the read-only flag prevents it."
+      - "Before the write can proceed, we must determine what happens."
+      - "The kernel has three choices. Which is correct?"
+
+    second_visit_correct:
+      - "Now press the button to teleport to the COW room."
+
+    second_visit_incorrect:
+      - "That is incorrect. Try again."
+
+  cow_room:
+    at_spawn:
+      - "Welcome to the Copy-on-Write room."
+      - "You've attempted to write to a page that was shared and read-only."
+      - "Before you stand two buttons. Which will you choose?"
+
+    after_button_press:
+      - "You have selected: {button}."
+
+    allocate_copy_correct:
+      - "Perfect! You understand COW."
+      - "A new frame {pfn} has been allocated and the data copied."
+      - "The PTE is updated: PRESENT=1, PFN={pfn}, COW=0, WRITE=1"
+      - "And your map is updated."
+      - "Now go to RAM to see your private copy. You can now write to this page freely."
+      - "Press the button to teleport to RAM."
+
+    terminate_incorrect:
+      - "No! Terminating the process is too harsh."
+      - "Copy-on-Write allows the write by creating a private copy. The process can continue."
+      - "Try again."
+
+  lazy_loading_room:
+    at_enter:
+      - "Welcome to the Lazy Loading room."
+      - "A page fault occurred on a file-backed page—one that exists on disk."
+      - "Now you must load it into RAM."
+      - "But first—you need to know WHICH part of the file to load."
+      - "The page is somewhere in a file on disk. But where?"
+      - "Look around and try to find clues, then head to the Calculator Room."
+
+    after_calculator:
+      - "Welcome back. Let me explain why we needed the page index."
+      - "You have a file on disk. That file is large and contains many pages."
+      - "PAGE_INDEX tells you which page of the file you need."
+      - "Now head to the Disk Room when you are ready."
+
+  disk_room:
+    at_spawn:
+      - "Welcome to the Disk Storage Chamber."
+      - "You stand before vast storage—where pages that can't fit in RAM are kept."
+      - "You see organised chests: File blocks labeled A through Z, and Swap space with numbered slots."
+
+    lazy_loading_prompt:
+      - "You're loading a FILE-BACKED page."
+      - "Find the file name that appears on your map in the FILE TABLE."
+      - "Go to the corresponding disk block (A, B, C, etc.) and retrieve the page you need."
+      - "PAGE_INDEX tells you which one."
+
+    swap_retrieval_prompt:
+      - "Go to the SWAP SPACE section."
+      - "Find slot number {slot} from your PTE."
+      - "Retrieve the page from that slot."
+
+    after_chest_opened:
+      - "Now you must bring it to RAM for the process to access it."
+      - "Press the button to teleport to RAM."
+
+  ram_room:
+    at_spawn:
+      - "Welcome to RAM—the high-speed memory where active data lives."
+      - "Each frame is labeled with its PFN (Physical Frame Number)."
+      - "Some frames are allocated to processes. Others are free."
+      - "Some frames contain special data like the ZERO FRAME."
+
+    tlb_hit_confirm:
+      - "You arrived expecting a TLB hit. You found the PFN: {pfn}"
+      - "Now verify that this frame is indeed mapped to your process."
+      - "Look at frame {pfn}—it should show your process ID."
+      - "If correct, press 'CONFIRM - PROCESS MAPPED'."
+
+    tlb_miss_no_fault:
+      - "The PTE tells you: PFN={pfn}"
+      - "The page is in RAM but was not in the TLB cache."
+      - "Find frame {pfn} and confirm it's mapped to your process."
+
+    found_frame:
+      - "You have found frame {pfn}."
+      - "The label shows: 'PFN {pfn}: mapped to your process'"
+      - "Now confirm that this frame is yours."
+      - "Press 'Confirm - Process Mapped' to verify."
+
+    after_confirm:
+      - "Excellent! Frame {pfn} is confirmed to be mapped to your process."
+      - "The TLB is now updated: VPN {vpn} → PFN {pfn}"
+      - "This entry will be cached in the TLB for future access."
+      - "The original instruction can now be retried and will succeed."
+      - "Press the button to retry the instruction."
+
+    after_retry_no_fault:
+      - "The instruction has been retried."
+      - "The page is in RAM and accessible. The operation succeeds!"
+      - "You have successfully handled a TLB miss with no page fault."
+      - "Press 'Finish' to complete this journey."
+
+    after_lazy_alloc_first:
+      - "Find the chest labeled 'ZERO FRAME'."
+      - "You will see that your process is mapped to it!"
+      - "Open the chest and look at the book—you will see it's filled with zeros."
+      - "Once you are finished, put it back. We don't want to cause chaos in the RAM."
+      - "Press the button next to it to retry the instruction."
+
+    after_lazy_alloc_book_back:
+      - "The TLB, PTE, and your map are updated."
+      - "The process is requesting another instruction."
+      - "Let's head back and see what the process wants to do."
+
+    ram_full_need_swap:
+      - "Let's try to find you an empty frame."
+      - "OH NO! The RAM is full. We need to evict one of the frames—but we can't do that randomly!"
+      - "Head to the Swap District and I will inform you on what to do."
+
+    after_cow_pure:
+      - "You've just created a private copy in frame {pfn}."
+      - "This frame is now exclusive to your process."
+      - "You can write to it freely."
+      - "The original data from the shared page is duplicated here."
+      - "Press 'CONTINUE' to proceed."
+
+    after_swap_for_lazy_alloc:
+      - "Frame {pfn} is now free. Press the button to retry the instruction."
+
+    after_retry_after_swap:
+      - "The PFN has been updated to {pfn}. The TLB has also been updated with the new mapping."
+      - "Look at frame {pfn}—it now says that your process is mapped to it."
+      - "You can grab the book inside. You will still find zeros, but since this is your private frame, you can write what the process wants."
+      - "Check your map and see what the process wants to write."
+      - "Once you're finished, put it back in the chest."
+
+    after_write_success:
+      - "Now press the button to retry the instruction."
+
+    after_retry_write:
+      - "The write instruction has succeeded!"
+      - "The operation is complete."
+      - "Press 'Finish' to complete this journey."
+
+    from_disk_swap_out:
+      - "Load your retrieved page into an empty frame."
+      - "The PTE is updated: PRESENT=1, PFN={pfn}, IN_SWAP=0"
+      - "The TLB is updated: VPN {vpn} → PFN {pfn}"
+      - "Your map has been updated with the new PFN."
+      - "Now press the button to retry the original instruction."
+
+    after_retry_swap_out:
+      - "The instruction has been retried."
+      - "The page is now in RAM and accessible. The operation succeeds!"
+      - "You have successfully retrieved a swapped-out page from disk."
+      - "Press 'Finish' to complete this journey."
+
+  swap_district:
+    at_spawn:
+      - "Welcome to the Swap District."
+      - "The RAM is full. One frame must be evicted to make room."
+      - "But which one?"
+      - "The kernel uses the CLOCK algorithm to find a victim:"
+      - "  1. Walk around the circle like clock hands."
+      - "  2. Each frame (house) has a USE BIT symbolised as a red torch."
+      - "  3. If USE BIT is ON: flip it OFF and move on."
+      - "  4. If USE BIT is OFF: this is your victim!"
+
+    victim_found:
+      - "You found it! Frame {pfn} has not been used recently."
+      - "USE BIT is already OFF."
+      - "This is the victim. Pull the lever to evict it to disk."
+
+    after_eviction:
+      - "Frame {pfn} has been swapped out to disk."
+      - "It is now stored in SWAP SLOT {slot}."
+      - "The PTE is updated: PRESENT=0, IN_SWAP=1, SWAP_SLOT={slot}"
+      - "RAM now has a free frame."
+      - "Return to RAM and place your new page there."
+      - "Press the button in the middle to teleport back to RAM."
+
+# ─── Hints ────────────────────────────────────────────────────────────────────
+hints:
+  terminal:
+    before_entering:
+      - "Look around you. There are two houses. Each house represents a different mode."
+      - "The House of Learning (left) provides more guidance."
+      - "The House of Adventure (right) offers no safety net."
+      - "Which will you choose?"
+
+  tlb_room:
+    before_calculator:
+      - "For now, your task is simple: take the virtual address I've given you and calculate its components in the Calculator Room."
+      - "There is a path to it somewhere in this hall."
+
+    after_calculator_lucky:
+      - "If you found your VPN on the signs over the chests, the TLB did cache it—it's a TLB hit."
+      - "In this room you can find something to tell the OS that this is a TLB hit case."
+
+    after_calculator_non_lucky:
+      - "If you haven't found your VPN on the signs over the chests, the TLB didn't cache it—it's a TLB miss."
+      - "In this room you can find something to tell the OS that this is a TLB miss case."
+
+  calculator_room:
+    from_tlb_hint1:
+      - "Open the chest and take a book. Write the VA you have, then drop it in the metal cone. The answer will be added to your map."
+
+    from_tlb_hint2:
+      - "You can press the button to skip, but it's recommended you do the calculations yourself."
+
+    from_tlb_after:
+      - "Press the button to go back to the TLB room and I will help you there."
+
+    from_lazy_loading:
+      - "The formulas and values are on the signs in the room—they have already been added to your map."
+
+  page_table_library:
+    page_directory:
+      - "Find the correct floor using your DIR bits (first 2 bits of VPN)."
+
+    correct_floor:
+      - "Find the correct chest on that floor using your TABLE bits (last 2 bits of VPN)."
+      - "Open that chest and retrieve your PTE (Page Table Entry)."
+
+    wrong_floor:
+      - "Check your TABLE bits again—they are the last 2 bits of your VPN."
+
+  permission_chamber:
+    decision:
+      - "Think of it like a decision tree:"
+      - "  - Is PRESENT = 1? If no, it's a PAGE FAULT."
+      - "  - If yes, are you accessing kernel memory? (USER=0, KERNEL=1)?"
+      - "  - If yes, it's a SEGMENTATION FAULT."
+      - "  - If no, do READ/WRITE bits allow access (READ=1 or WRITE=1)?"
+      - "  - If yes, it's ALLOW ACCESS."
+      - "  - If no, it's a PROTECTION FAULT."
+
+    page_fault_type:
+      - "LAZY ALLOCATION has (ANON=1)"
+      - "LAZY LOADING has (FILE_BACKED=1)"
+      - "SWAPPED-OUT PAGE has (IN_SWAP=1)"
+
+  page_fault_corridor:
+    lost:
+      - "Choose the room that matches what you selected in the Permission Chamber."
+
+  lazy_allocation_room:
+    first_visit:
+      - "The page never existed before—it's being created fresh."
+      - "Therefore, you need to ALLOCATE a new frame and ZERO it."
+      - "Swapping from disk doesn't make sense for a page that never existed."
+
+    second_visit:
+      - "The zero page is marked read-only. When you try to write, the read-only flag prevents it."
+      - "This is not a permission error. It's a protection mechanism called Copy-on-Write (COW)."
+
+  cow_room:
+    lost:
+      - "You wanted to write to a shared, read-only page."
+      - "The kernel has two choices:"
+      - "  1. Give you a private copy (COW)"
+      - "  2. Deny the write and terminate—too harsh."
+
+  lazy_loading_room:
+    clues:
+      - "Formulas and values are on the signs in the room—they have already been added to your map."
+
+  disk_room:
+    lazy_loading:
+      - "Your instruction told you: 'load {file} {address}'"
+      - "FILE name → Look up in FILE TABLE → Get starting disk block (A, B, C, etc.)"
+      - "ADDRESS → Already calculated PAGE_INDEX (from earlier)"
+
+    swap_out:
+      - "Your PTE contains: IN_SWAP=1, SWAP_SLOT={slot}"
+      - "Go directly to the SWAP SPACE section."
+      - "Find the numbered slot matching SWAP_SLOT: {slot}"
+      - "Open that slot and retrieve your page."
+
+  ram_room:
+    general:
+      - "Look at the frame numbers (PFN) on the walls."
+      - "Find frame {pfn}."
+      - "Read the label on that frame—it will tell you what process owns it."
+
+    write:
+      - "Check your map for what the process wants to write."
+      - "Open the chest and take out the book."
+      - "Write what the process requested."
+      - "Make sure to PUT THE BOOK BACK before pressing buttons."
+
+  swap_district:
+    lost:
+      - "Walk clockwise around the circle."
+      - "If the red torch is LIT (ON): press the button to turn it OFF, then move to the next frame."
+      - "If the red torch is DARK (OFF): this is your victim!"
+
+# ─── Concept explanations (player asks 'explain a concept') ────────────────
+explanations:
+  tlb:
+    hit: "VPN found in cache. Fastest scenario—one CPU cycle."
+    miss: "VPN not found in cache. Must walk page table. Slower but recoverable."
+    location: "TLB lives in the CPU/MMU (not RAM). Special hardware with limited space (64-1024 entries)."
+    importance: "Speeds up memory access. Most accesses hit cache (95-99%). Alternative to slow page table walks."
+
+  address:
+    vpn: "Virtual Page Number—the first 4 bits. Which page you're accessing. Used to find matching PFN."
+    offset: "Last 4 bits. Position within the page. Stays unchanged when translating VA to PA."
+    hex_to_bin: "TLB works in binary. VAs come in hex (human-readable). Must convert for TLB matching."
+
+  page_table:
+    why_multi_level: "Space efficiency—only allocate for used regions. Saves massive memory."
+    ptbr: "CPU register pointing to page directory. A process-specific bookmark."
+    isolation: "Each process has different virtual address spaces. Different mappings. Memory isolation and security."
+    vpn_split: "DIR (first 2 bits) = which floor. TABLE (last 2 bits) = which chest."
+    dir_range: "In this world, DIR uses entries 01-11. In the real world, 00 is also included!"
+    pte: "Metadata about ONE page. PRESENT, READ, WRITE, PFN, etc. Contains all page information."
+
+  permission_chamber:
+    allow_access: "The kernel allows the memory access to proceed."
+    page_fault: "The kernel cannot fulfill the memory access right now and must intervene. The page either doesn't exist in memory yet, or was evicted and needs to be brought back."
+    segfault: "The memory access violates the boundaries of what this process is allowed to access."
+    protection_fault: "The process is trying to access the page, but something about the access is not allowed—either permission bits deny it, or the page is marked with special protection."
+    lazy_allocation: "The page is anonymous and needs to be created fresh."
+    lazy_loading: "The page is file-backed and needs to be loaded from disk."
+    swapped_out: "The page was evicted to disk and needs to be retrieved."
+
+  memory:
+    lazy_allocation_what: "Strategy where kernel doesn't allocate memory until needed. Page is anonymous and created fresh. Saves space because only used memory is allocated."
+    lazy_allocation_why: "Massive waste if allocated upfront (4GB allocated, 10MB used). Limits concurrent processes. Lazy allocation is essential."
+    zero_page_readonly: "Optimisation for sharing. Multiple processes share zero page. Only copy on write (COW)."
+    lazy_loading_what: "Strategy where kernel defers loading file pages until needed. Only the accessed page is loaded from disk. Saves startup time and memory."
+    page_index: "Think of a book with chapters. PAGE_INDEX = which chapter do you need? The kernel reads only the chapter you need, not the entire book."
+    cow_what: "Copy-on-Write: multiple processes share a read-only page. When one writes, the kernel allocates a new frame, copies the data, maps the new frame, and marks it writable."
+    swap_what: "Disk storage used as overflow for RAM. Kernel moves less-used pages from RAM to disk to free up space for active pages."
+    swap_vs_file: "File storage is permanent and user-managed. Swap space is temporary and kernel-managed—organised by slot number."
+    ram_what: "Random Access Memory. Fast primary memory. Nanosecond access. Limited capacity. Volatile. Divided into frames (each = one page size)."
+    pfn_why: "Identification and retrieval: kernel uses PFN to find pages immediately. Mapping: PTE stores PFN for VPN→PFN translation. Management: tracking free/allocated frames."
+    clock_algo: "Frames in a circle. Each has a USE BIT (red torch). ON when you pass it = turn it OFF (second chance). OFF when you pass it = that's the victim!"

@@ -1,1 +1,60 @@
-//Quiz questions
+# OSCity - Quiz Questions
+# Structure: room_key.question_id
+#   question: the question text (supports {placeholders})
+#   options: A/B/C/D for multiple choice (omit for simple input)
+#   correct: the correct answer key or text
+#   wrong: feedback shown when the player answers incorrectly
+
+general:
+  confirm_choice:
+    question: "Is this your final answer? Type 1 for YES or 2 for NO."
+    correct: "1"
+    wrong: "Invalid input. Please type 1 for YES or 2 for NO."
+
+tlb_room:
+  hit_or_miss:
+    question: "Is this correct? Type 1 for YES or 2 for NO."
+    correct: "1"
+    wrong: "That's incorrect, try again."
+
+  miss_door:
+    question: "Under which condition does a memory access result in a TLB hit versus a TLB miss?"
+    options:
+      A: "TLB hit when the page is present in RAM; TLB miss when the page is stored on disk."
+      B: "TLB hit when the virtual page number (VPN) is found in the TLB; TLB miss when the VPN is not found in the TLB."
+      C: "TLB hit when the offset matches the physical address; TLB miss when the offset differs."
+      D: "TLB hit when the page table entry has present=1; TLB miss when present=0."
+    correct: "B"
+    wrong: "That's incorrect, try again."
+
+calculator_room:
+  hex_to_binary:
+    question: "Let's check your work. What is {hex} in binary?"
+    options:
+      A: "{optA}"
+      B: "{optB}"
+      C: "{optC}"
+      D: "Other"
+    correct: "A"
+    wrong: "That's incorrect. Do the calculation again."
+
+  page_index:
+    question: "Let's check your work. What is the value of the page index?"
+    options:
+      A: "{optA}"
+      B: "{optB}"
+      C: "{optC}"
+      D: "Other"
+    correct: "A"
+    wrong: "That's incorrect. Do the calculation again."
+
+swap_district:
+  clock_algorithm:
+    question: "The CLOCK algorithm turns off USE BITs because:"
+    options:
+      A: "To identify least recently used frames."
+      B: "To give each frame a second chance before eviction."
+      C: "To save energy."
+      D: "To prevent fragmentation."
+    correct: "B"
+    wrong: "That's incorrect, try again."

@@ -151,46 +151,26 @@ rooms:
 
 choiceButtons:
   # Permission chamber buttons
-  allowAccess:
+  btn1: # button for allowed access/lazy allocation
     world: "OSCityWorld"
-    x: 85
-    y: -31
-    z: 20
-  pageFault:
+    x: 90
+    y: -32
+    z: 22
+  btn2: # button for page fault/lazy loading
     world: "OSCityWorld"
-    x: 86
-    y: -31
-    z: 20
-  segFaultPerChamber:
+    x: 90
+    y: -32
+    z: 24
+  btn3: # button for segmentation fault/swapping
     world: "OSCityWorld"
-    x: 87
-    y: -31
-    z: 20
-  perFault:
+    x: 90
+    y: -32
+    z: 26
+  btn4: # button for premission fault
     world: "OSCityWorld"
-    x: 88
-    y: -31
-    z: 20
-  lazyLoading:
-    world: "OSCityWorld"
-    x: 85
-    y: -31
-    z: 20
-  lazyAllocation:
-    world: "OSCityWorld"
-    x: 86
-    y: -31
-    z: 20
-  cowPerChamber:
-    world: "OSCityWorld"
-    x: 87
-    y: -31
-    z: 20
-  swap:
-    world: "OSCityWorld"
-    x: 88
-    y: -31
-    z: 20
+    x: 90
+    y: -32
+    z: 28
   
   # COW room buttons
   allocate:
@@ -220,12 +200,18 @@ choiceButtons:
     x: 102
     y: -34
     z: 54
-  # Lazy loading room buttons
-  touch:
+  # TLB room buttons
+  hit:
     world: "OSCityWorld"
-    x: 100
-    y: -34
-    z: 73
+    x: 65
+    y: 17
+    z: 10
+  miss:
+    world: "OSCityWorld"
+    x: 65
+    y: 17
+    z: 8
+  
   
 tpButtons:
   learnerStart: # button to start the learner's mode, teleports to TLB room
@@ -249,7 +235,7 @@ tpButtons:
     destination: permissionChamber
     message: "&aTeleported to Permission Chamber!"
     x: 83
-    y: 24
+    y: 23
     z: 13
   
   pt2ToChamber: # teleport to permission chamber from Page table 2
@@ -257,7 +243,7 @@ tpButtons:
     destination: permissionChamber
     message: "&aTeleported to Permission Chamber!"
     x: 83
-    y: 29
+    y: 28
     z: 13
 
   pt3ToChamber: # teleport to permission chamber from Page table 3
@@ -265,7 +251,7 @@ tpButtons:
     destination: permissionChamber
     message: "&aTeleported to Permission Chamber!"
     x: 83
-    y: 43
+    y: 33
     z: 13
 
   tlbToCalculator: # teleport to calculator room from TLB room
@@ -273,7 +259,7 @@ tpButtons:
     destination: calculatorRoom
     message: "&aTeleported to Calculator Room!"
     x: 107
-    y: 18
+    y: 17
     z: 9
 
   tlbToRam1: # teleport to ram room 1 from TLB room
@@ -315,6 +301,98 @@ tpButtons:
     x: 22
     y: -32
     z: 58
+  
+  diskToRam: # teleport to ram room from disk room
+    world: "OSCityWorld"
+    destination: ramRoom1
+    message: "&aTeleported to RAM Room!"
+    x: 27
+    y: -60
+    z: 185
+
+signs:
+  pageTable:
+    vpn1: 
+      world: "OSCityWorld"
+      x: 92
+      y: 19
+      z: 7
+    vpn2: 
+      world: "OSCityWorld"
+      x: 92
+      y: 19
+      z: 9
+    vpn3: 
+      world: "OSCityWorld"
+      x: 92
+      y: 19
+      z: 11
+    vpn4: 
+      world: "OSCityWorld"
+      x: 88
+      y: 19
+      z: 3
+    vpn5: 
+      world: "OSCityWorld"
+      x: 86
+      y: 19
+      z: 3
+    vpn6: 
+      world: "OSCityWorld"
+      x: 84
+      y: 19
+      z: 3
+    vpn7: 
+      world: "OSCityWorld"
+      x: 80
+      y: 19
+      z: 7
+    vpn8: 
+      world: "OSCityWorld"
+      x: 80
+      y: 19      
+      z: 9
+    vpn9: 
+      world: "OSCityWorld"
+      x: 80
+      y: 19
+      z: 11
+  
+  perChamber:
+    sign1: # sign for allowed access/lazy allocation
+      world: "OSCityWorld"
+      x: 90
+      y: -31
+      z: 22
+    sign2: # sign for page fault/lazy loading
+      world: "OSCityWorld"
+      x: 90
+      y: -31
+      z: 24
+    sign3: # sign for segmentation fault/swapping
+      world: "OSCityWorld"
+      x: 90
+      y: -31
+      z: 26
+    sign4: # sign for permission fault
+      world: "OSCityWorld"
+      x: 90
+      y: -31
+      z: 28
+    sign5: # sign for "Make your decision"/"Which type of page fault is it?"
+      world: "OSCityWorld"
+      x: 90
+      y: -30
+      z: 25
+
+
+doors:
+  tlbToPt:
+    world: "OSCityWorld"
+    x: 86
+    y: 18
+    z: 14
+    
 
 locations:
   initialSpawn: # initial spawn point for players

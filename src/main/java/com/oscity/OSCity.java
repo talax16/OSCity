@@ -1,16 +1,23 @@
 package com.oscity;
 
 import com.oscity.config.ConfigManager;
-import com.oscity.core.RoomChangeListener;
+import com.oscity.content.DialogueManager;
+import com.oscity.content.QuestionBank;
 import com.oscity.core.GuardianInteractionHandler;
 import com.oscity.core.KernelGuardian;
+import com.oscity.core.RoomChangeListener;
+import com.oscity.mechanics.ChoiceButtonHandler;
+import com.oscity.mechanics.HintSystem;
 import com.oscity.mechanics.RoomDisplayManager;
 import com.oscity.mechanics.TeleportManager;
 import com.oscity.persistence.SQLiteStudyDatabase;
+import com.oscity.quiz.QuizManager;
+import com.oscity.session.JourneyTracker;
+import com.oscity.session.SessionManager;
 import com.oscity.world.LocationRegistry;
 import com.oscity.world.RoomRegistry;
-import com.oscity.world.WorldManager;
 import com.oscity.world.StructureManager;
+import com.oscity.world.WorldManager;
 
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -26,6 +33,19 @@ public class OSCity extends JavaPlugin {
     private KernelGuardian kernelGuardian;
     private GuardianInteractionHandler guardianHandler;
     private RoomChangeListener roomChangeListener;
+
+    // Content
+    private DialogueManager dialogueManager;
+    private QuestionBank questionBank;
+
+    // Session & journey
+    private SessionManager sessionManager;
+    private JourneyTracker journeyTracker;
+
+    // Game systems
+    private HintSystem hintSystem;
+    private QuizManager quizManager;
+    private ChoiceButtonHandler choiceButtonHandler;
 
     @Override
     public void onEnable() {
@@ -44,7 +64,7 @@ public class OSCity extends JavaPlugin {
         SQLiteStudyDatabase.testConnection();
         getLogger().info("✓ User study database ready");
 
-        // Initialize managers
+        // World & room infrastructure
         configManager = new ConfigManager(this);
 
         worldManager = new WorldManager(this);
@@ -59,6 +79,21 @@ public class OSCity extends JavaPlugin {
         locationRegistry = new LocationRegistry(this);
         locationRegistry.loadFromConfig();
 
+        // Content systems (load YAML files)
+        dialogueManager = new DialogueManager(this);
+        dialogueManager.load();
+
+        questionBank = new QuestionBank(this);
+        questionBank.load();
+
+        // Session & journey tracking
+        sessionManager = new SessionManager();
+        journeyTracker = new JourneyTracker();
+
+        // Game systems
+        hintSystem = new HintSystem(sessionManager, dialogueManager, journeyTracker);
+        quizManager = new QuizManager(sessionManager, roomRegistry, questionBank);
+
         // Room display
         if (configManager.isRoomDisplayEnabled()) {
             int interval = configManager.getRoomDisplayInterval();
@@ -67,20 +102,28 @@ public class OSCity extends JavaPlugin {
             roomDisplayManager.start();
         }
 
-        // Teleport manager
+        // Teleport buttons
         boolean debugClicks = configManager.isDebugMode();
         teleportManager = new TeleportManager(this, locationRegistry, debugClicks);
         teleportManager.register();
 
-        
-        // Not spawn guardian here, just initialize it
+        // Choice buttons
+        choiceButtonHandler = new ChoiceButtonHandler(this, journeyTracker, dialogueManager, questionBank);
+        choiceButtonHandler.register();
+
+        // NPC / Guardian
         kernelGuardian = new KernelGuardian(this);
 
-        // Register handlers immediately
-        guardianHandler = new GuardianInteractionHandler(this, configManager, kernelGuardian);
+        guardianHandler = new GuardianInteractionHandler(
+            this, configManager, kernelGuardian,
+            dialogueManager, hintSystem, journeyTracker
+        );
         getServer().getPluginManager().registerEvents(guardianHandler, this);
-        
-        roomChangeListener = new RoomChangeListener(this, kernelGuardian, roomRegistry, locationRegistry);
+
+        roomChangeListener = new RoomChangeListener(
+            this, kernelGuardian, roomRegistry, locationRegistry,
+            dialogueManager, journeyTracker
+        );
         getServer().getPluginManager().registerEvents(roomChangeListener, this);
 
         getLogger().info("OSCity enabled!");
@@ -95,19 +138,13 @@ public class OSCity extends JavaPlugin {
     }
 
     // Getters
-    public ConfigManager getConfigManager() {
-        return configManager;
-    }
-
-    public RoomRegistry getRoomRegistry() {
-        return roomRegistry;
-    }
-
-    public LocationRegistry getLocationRegistry() {
-        return locationRegistry;
-    }
-
-    public KernelGuardian getKernelGuardian() {
-        return kernelGuardian;
-    }
+    public ConfigManager getConfigManager()     { return configManager; }
+    public RoomRegistry getRoomRegistry()       { return roomRegistry; }
+    public LocationRegistry getLocationRegistry() { return locationRegistry; }
+    public KernelGuardian getKernelGuardian()   { return kernelGuardian; }
+    public DialogueManager getDialogueManager() { return dialogueManager; }
+    public QuestionBank getQuestionBank()       { return questionBank; }
+    public JourneyTracker getJourneyTracker()   { return journeyTracker; }
+    public SessionManager getSessionManager()   { return sessionManager; }
+    public QuizManager getQuizManager()         { return quizManager; }
 }
