@@ -135,6 +135,28 @@ public class CalculatorListener implements Listener {
         calculating.remove(player.getUniqueId());
     }
 
+    /**
+     * Skip button: use the journey's VA directly, show result immediately (no 5s wait).
+     * Called by ChoiceButtonHandler when the player presses the skipCalc button.
+     */
+    public void skipCalculation(Player player) {
+        if (calculating.getOrDefault(player.getUniqueId(), false)) return;
+        String va = tracker.getVar(player, "va");
+        if ("?".equals(va) || va.isEmpty()) {
+            player.sendMessage("§c[Calculator] No virtual address found for your journey.");
+            return;
+        }
+        try {
+            long value = parseInput(va);
+            showResult(va, value);
+            String summary = buildChatSummary(value);
+            player.sendMessage("§6[Calculator] §a(Skipped) Result: §f" + summary + "§a — added to your log.");
+        } catch (NumberFormatException e) {
+            setCalcError(va);
+            player.sendMessage("§c[Calculator] Could not parse VA '" + va + "'.");
+        }
+    }
+
     // ── Hopper detection ──────────────────────────────────────────────────────
 
     @EventHandler

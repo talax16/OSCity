@@ -1,5 +1,6 @@
 package com.oscity.session;
 
+import com.oscity.journey.Journey;
 import org.bukkit.entity.Player;
 
 import java.util.HashMap;

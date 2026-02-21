@@ -112,13 +112,13 @@ public class OSCity extends JavaPlugin {
         teleportManager = new TeleportManager(this, locationRegistry, debugClicks);
         teleportManager.register();
 
-        // Choice buttons
-        choiceButtonHandler = new ChoiceButtonHandler(this, journeyTracker, dialogueManager, questionBank, progressTracker, locationRegistry);
-        choiceButtonHandler.register();
-
-        // Calculator
+        // Calculator (must be before ChoiceButtonHandler)
         calculatorListener = new CalculatorListener(this, journeyTracker);
         calculatorListener.register();
+
+        // Choice buttons
+        choiceButtonHandler = new ChoiceButtonHandler(this, journeyTracker, dialogueManager, questionBank, progressTracker, locationRegistry, calculatorListener);
+        choiceButtonHandler.register();
 
         // NPC / Guardian
         kernelGuardian = new KernelGuardian(this);

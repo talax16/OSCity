@@ -4,7 +4,8 @@ import com.oscity.content.DialogueManager;
 import com.oscity.content.QuestionBank;
 import com.oscity.gamification.ProgressTracker;
 import com.oscity.persistence.SQLiteStudyDatabase;
-import com.oscity.session.Journey;
+import com.oscity.journey.Journey;
+import com.oscity.journey.JourneyManager;
 import com.oscity.session.JourneyTracker;
 import com.oscity.world.LocationRegistry;
 import io.papermc.paper.event.player.AsyncChatEvent;
@@ -57,6 +58,7 @@ public class ChoiceButtonHandler implements Listener {
     private final QuestionBank questionBank;
     private final ProgressTracker progress;
     private final LocationRegistry locationRegistry;
+    private final CalculatorListener calculatorListener;
 
     // Map: button location → config key name
     private final Map<Location, String> buttons = new HashMap<>();
@@ -88,13 +90,15 @@ public class ChoiceButtonHandler implements Listener {
 
     public ChoiceButtonHandler(JavaPlugin plugin, JourneyTracker tracker,
                                DialogueManager dialogue, QuestionBank questionBank,
-                               ProgressTracker progress, LocationRegistry locationRegistry) {
+                               ProgressTracker progress, LocationRegistry locationRegistry,
+                               CalculatorListener calculatorListener) {
         this.plugin = plugin;
         this.tracker = tracker;
         this.dialogue = dialogue;
         this.questionBank = questionBank;
         this.progress = progress;
         this.locationRegistry = locationRegistry;
+        this.calculatorListener = calculatorListener;
         loadButtons();
     }
 
@@ -186,6 +190,11 @@ public class ChoiceButtonHandler implements Listener {
 
         if ("loadingTp".equals(buttonKey)) {
             handleLoadingTpButton(player, phase);
+            return;
+        }
+
+        if ("skipCalc".equals(buttonKey)) {
+            calculatorListener.skipCalculation(player);
             return;
         }
 
@@ -286,15 +295,10 @@ public class ChoiceButtonHandler implements Listener {
     private void handleRamMixButton(Player player, String phase, Journey journey) {
         switch (phase) {
             case "ram_allow_access":
-                if (journey == Journey.LUCKY) {
-                    // CONFIRM - PROCESS MAPPED → FINISH (one click for Lucky)
-                    tracker.setPhase(player, "ram_finish");
-                    updateSign("ramRoom.mixSign", "FINISH", "", "", "");
-                } else if (journey == Journey.TLB_MISS_ALLOW) {
-                    // CONFIRM - PROCESS MAPPED → RETRY INSTRUCTION
-                    tracker.setPhase(player, "ram_retry_tlb_miss");
-                    updateSign("ramRoom.mixSign", "RETRY", "INSTRUCTION", "", "");
-                }
+                String nextPhase = JourneyManager.nextPhaseAfterRamConfirm(journey);
+                String[] sign = JourneyManager.ramSignAfterConfirm(journey);
+                tracker.setPhase(player, nextPhase);
+                updateSign("ramRoom.mixSign", sign[0], sign[1], sign[2], sign[3]);
                 break;
 
             case "ram_retry_tlb_miss":
@@ -315,10 +319,10 @@ public class ChoiceButtonHandler implements Listener {
                 break;
 
             case "ram_after_cow":
-                if (journey == Journey.LAZY_ALLOCATION) {
-                    // CONTINUE → TP to Swap District (no RETRY step for lazy alloc COW path)
+                if (JourneyManager.needsSwapAfterCow(journey)) {
+                    // CONTINUE → TP to Swap District (Lazy Allocation path)
                     teleportPlayer(player, "swapDistrict");
-                } else if (journey == Journey.PURE_COW) {
+                } else {
                     // RETRY INSTRUCTION → FINISH (Pure COW)
                     tracker.setPhase(player, "ram_finish");
                     updateSign("ramRoom.mixSign", "FINISH", "", "", "");

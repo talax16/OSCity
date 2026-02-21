@@ -1,7 +1,7 @@
 package com.oscity.gamification;
 
 import com.oscity.persistence.JourneyDAO;
-import com.oscity.session.Journey;
+import com.oscity.journey.Journey;
 import org.bukkit.entity.Player;
 
 import java.util.*;

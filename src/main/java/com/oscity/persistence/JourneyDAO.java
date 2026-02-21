@@ -1,6 +1,6 @@
 package com.oscity.persistence;
 
-import com.oscity.session.Journey;
+import com.oscity.journey.Journey;
 
 import java.sql.*;
 import java.util.EnumSet;
