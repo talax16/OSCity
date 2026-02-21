@@ -5,12 +5,19 @@ roomDisplay:
   clearWhenOutside: true
 
 rooms:
-  terminal:
-    title: "Terminal"
+  initialTerminal:
+    title: "Initial Terminal"
     world: "OSCityWorld"
     min: { x: 169, y: 85, z: 296 }
     max: { x: 194, y: 90, z: 321 }
     npcPosition: { x: 184, y: 86, z: 309 }
+  
+  endTerminal:
+    title: "End Terminal"
+    world: "OSCityWorld"
+    min: { x: 157, y: 85, z: 304 }
+    max: { x: 168, y: 90, z: 313 }
+    npcPosition: { x: 159, y: 86, z: 311 }
 
   learnerMode:
     title: "Learner Mode"
@@ -68,19 +75,12 @@ rooms:
     max: { x: 43, y: -25, z: 79 }
     npcPosition: { x: 27, y: -33, z: 58 }
 
-  ramRoom1:
+  ramRoom:
     title: "RAM Room"
     world: "OSCityWorld"
     min: { x: 22, y: -60, z: 115 }
     max: { x: 34, y: -56, z: 128 }
     npcPosition: { x: 24, y: -60, z: 125 }
-
-  ramRoom2:
-    title: "RAM Room"
-    world: "OSCityWorld"
-    min: { x: 23, y: -60, z: 139 }
-    max: { x: 36, y: -56, z: 152 }
-    npcPosition: { x: 25, y: -60, z: 150 }
   
   diskRoom:
     title: "Disk Room"
@@ -99,7 +99,7 @@ rooms:
   pageFaultCorridor:
     title: "Page Fault Corridor"
     world: "OSCityWorld"
-    min: { x: 84, y: -34, z: 32 }
+    min: { x: 79, y: -34, z: 32 }
     max: { x: 93, y: -28, z: 77 }
     npcPosition: { x: 86, y: -34, z: 42 }
 
@@ -171,9 +171,14 @@ choiceButtons:
     x: 90
     y: -32
     z: 28
+  perTerminate: # button for "Terminate process" in permission chamber
+    world: "OSCityWorld"
+    x: 82
+    y: -32
+    z: 25
   
   # COW room buttons
-  allocate:
+  allocateCow:
     world: "OSCityWorld"
     x: 99
     y: -34
@@ -185,12 +190,23 @@ choiceButtons:
     z: 38
   
   # Lazy allocation room buttons
+  allocateLazy:
+    world: "OSCityWorld"
+    x: 102
+    y: -34
+    z: 60
+  swapLazy:
+    world: "OSCityWorld"
+    x: 100
+    y: -34
+    z: 60
+
   cowLazyAlloc:
     world: "OSCityWorld"
     x: 100
     y: -34
     z: 54
-  segFaultPerLazyAlloc:
+  btnLazyAlloc: # button for "Go to RAM"/"Deny the write"
     world: "OSCityWorld"
     x: 101
     y: -34
@@ -200,6 +216,7 @@ choiceButtons:
     x: 102
     y: -34
     z: 54
+
   # TLB room buttons
   hit:
     world: "OSCityWorld"
@@ -211,7 +228,63 @@ choiceButtons:
     x: 65
     y: 17
     z: 8
+
+  # Calculator room buttons
+  skipCalc:
+    world: "OSCityWorld"
+    x: 34
+    y: -60
+    z: 209
   
+  continueCalc:
+    world: "OSCityWorld"
+    x: 30
+    y: -60
+    z: 213
+  
+  # RAM room buttons
+  ramMix: # button for "RETRY INSTRUCTION"/"CONFIRM - PROCESS MAPPED"
+    world: "OSCityWorld"
+    x: 26
+    y: -60
+    z: 127
+  
+  # Swap district buttons
+  swapLever:
+    world: "OSCityWorld"
+    x: 24
+    y: -33
+    z: 58
+  frame1btn:
+    world: "OSCityWorld"
+    x: 32
+    y: -32
+    z: 52
+  frame2btn:
+    world: "OSCityWorld"
+    x: 32
+    y: -32
+    z: 66
+  frame3btn:
+    world: "OSCityWorld"
+    x: 22
+    y: -32
+    z: 68
+  frame4btn:
+    world: "OSCityWorld"
+    x: 11
+    y: -32
+    z: 64
+  frame5btn:
+    world: "OSCityWorld"
+    x: 11
+    y: -32
+    z: 50
+  frame6btn:
+    world: "OSCityWorld"
+    x: 24
+    y: -32
+    z: 47
   
 tpButtons:
   learnerStart: # button to start the learner's mode, teleports to TLB room
@@ -264,7 +337,7 @@ tpButtons:
 
   tlbToRam1: # teleport to ram room 1 from TLB room
     world: "OSCityWorld"
-    destination: ramRoom1
+    destination: ramRoom
     message: "&aTeleported to RAM Room!"
     x: 65
     y: 18
@@ -274,15 +347,39 @@ tpButtons:
     world: "OSCityWorld"
     destination: diskRoom
     message: "&aTeleported to Disk Room!"
-    x: 81
-    y: -31
+    x: 82
+    y: -32
+    z: 25
+  
+  perToRam: # teleport to RAM room from permission chamber
+    world: "OSCityWorld"
+    destination: ramRoom
+    message: "&aTeleported to RAM Room!"
+    x: 82
+    y: -32
+    z: 25
+  
+  perToCow: # teleport to cow room from permission chamber
+    world: "OSCityWorld"
+    destination: cowRoom
+    message: "&aTeleported to COW Room!"
+    x: 82
+    y: -32
+    z: 25
+  
+  perToEnd:  # teleport to end terminal from permission chamber (Finish)
+    world: "OSCityWorld"
+    destination: endTerminal
+    message: "&aTeleported to End Terminal!"
+    x: 82
+    y: -32
     z: 25
 
   loadingToCalc: # teleport to calculator room from lazy loading room
     world: "OSCityWorld"
     destination: calculatorRoom
     message: "&aTeleported to Calculator Room!"
-    x: 100
+    x: 101
     y: -34
     z: 70
   
@@ -290,33 +387,90 @@ tpButtons:
     world: "OSCityWorld" 
     destination: diskRoom
     message: "&aTeleported to Disk Room!"
-    x: 102
+    x: 101
     y: -34
     z: 70
 
-  swapToRam1: # teleport to ram room 1 from swap district
+  swapToRam: # teleport to ram room from swap district
     world: "OSCityWorld"
-    destination: ramRoom1
+    destination: ramRoom
     message: "&aTeleported to RAM Room!"
     x: 22
     y: -32
     z: 58
+
+  ramToSwap: # teleport to swap district from ram room (Continue)
+    world: "OSCityWorld"
+    destination: swapDistrict
+    message: "&aTeleported to Swap District!"
+    x: 26
+    y: -60
+    z: 127
+  
+  ramToLazyAlloc: # teleport to lazy allocation room from ram room (Continue)
+    world: "OSCityWorld"
+    destination: lazyAllocationRoom
+    message: "&aTeleported to Lazy Allocation Room!"
+    x: 26
+    y: -60
+    z: 127
+  
+  ramToCow: # teleport to cow room from ram room (Continue)
+    world: "OSCityWorld"
+    destination: cowRoom
+    message: "&aTeleported to COW Room!"
+    x: 26
+    y: -60
+    z: 127
+  
+  ramToEnd: # teleport to end terminal from ram room (Finish)
+    world: "OSCityWorld"
+    destination: endTerminal
+    message: "&aTeleported to End Terminal!"
+    x: 26
+    y: -60
+    z: 127
   
   diskToRam: # teleport to ram room from disk room
     world: "OSCityWorld"
-    destination: ramRoom1
+    destination: ramRoom
     message: "&aTeleported to RAM Room!"
     x: 27
     y: -60
     z: 185
+  
+  cowToRam: # teleport to ram room from cow room
+    world: "OSCityWorld"
+    destination: ramRoom
+    message: "&aTeleported to RAM Room!"
+    x: 101
+    y: -34
+    z: 44
+  
+  lazyAllocToRam: # teleport to ram room from lazy allocation room
+    world: "OSCityWorld"
+    destination: ramRoom
+    message: "&aTeleported to RAM Room!"
+    x: 101
+    y: -34
+    z: 54
+  
+  lazyAllocToCow: # teleport to cow room from lazy allocation room
+    world: "OSCityWorld"
+    destination: cowRoom
+    message: "&aTeleported to COW Room!"
+    x: 101
+    y: -34
+    z: 54
 
+  
 signs:
-  pageTable:
+  tlb:
     vpn1: 
       world: "OSCityWorld"
       x: 92
       y: 19
-      z: 7
+      z: 11
     vpn2: 
       world: "OSCityWorld"
       x: 92
@@ -326,7 +480,7 @@ signs:
       world: "OSCityWorld"
       x: 92
       y: 19
-      z: 11
+      z: 7
     vpn4: 
       world: "OSCityWorld"
       x: 88
@@ -359,7 +513,7 @@ signs:
       z: 11
   
   perChamber:
-    sign1: # sign for allowed access/lazy allocation
+    sign1: # sign for allow access/lazy allocation
       world: "OSCityWorld"
       x: 90
       y: -31
@@ -384,6 +538,202 @@ signs:
       x: 90
       y: -30
       z: 25
+    sign6: # sign for "Terminate process"/tp in permission chamber
+      world: "OSCityWorld"
+      x: 82
+      y: -31
+      z: 25
+  
+  cow:
+    toRam: 
+      world: "OSCityWorld"
+      x: 101
+      y: -33
+      z: 44
+  
+  lazyAllocation:
+    mixSign: # sign for "Go to RAM"/"Deny the write"/"Go to COW room" in lazy allocation room
+      world: "OSCityWorld"
+      x: 101
+      y: -33
+      z: 54
+    cowSign:
+      world: "OSCityWorld"
+      x: 100
+      y: -33
+      z: 54
+    doNothingSign:
+      world: "OSCityWorld"
+      x: 102
+      y: -33
+      z: 54
+    writeSign:
+      world: "OSCityWorld"
+      x: 101
+      y: -32
+      z: 54
+    allocateSign:
+      world: "OSCityWorld"
+      x: 102
+      y: -33
+      z: 60
+    swapSign:
+      world: "OSCityWorld"
+      x: 100
+      y: -33
+      z: 60
+  
+  lazyLoading:
+    mixSign: # sign for "Go to Disk"/"Go to Calculator Room" in lazy loading room
+      world: "OSCityWorld"
+      x: 101
+      y: -33
+      z: 70
+  
+  ramRoom:
+    frame1: 
+      world: "OSCityWorld"
+      x: 26
+      y: -59
+      z: 116
+    frame2: 
+      world: "OSCityWorld"
+      x: 28
+      y: -59
+      z: 116
+    frame3: 
+      world: "OSCityWorld"
+      x: 30
+      y: -59
+      z: 116
+    frame4: 
+      world: "OSCityWorld"
+      x: 32
+      y: -59
+      z: 116
+    frame5: 
+      world: "OSCityWorld"
+      x: 34
+      y: -59
+      z: 118
+    frame6: 
+      world: "OSCityWorld"
+      x: 34
+      y: -59      
+      z: 120
+    frame7:
+      world: "OSCityWorld"
+      x: 34
+      y: -59
+      z: 122
+    frame8:
+      world: "OSCityWorld"
+      x: 34
+      y: -59
+      z: 124 
+    zeroFrame:
+      world: "OSCityWorld"
+      x: 32
+      y: -59
+      z: 127
+    mixSign:
+      world: "OSCityWorld"
+      x: 26
+      y: -59
+      z: 127
+
+  swapDistrict:
+    frame1: 
+      world: "OSCityWorld"
+      x: 32
+      y: -32
+      z: 51
+    frame2: 
+      world: "OSCityWorld"
+      x: 32
+      y: -32
+      z: 65
+    frame3: 
+      world: "OSCityWorld"
+      x: 23
+      y: -32
+      z: 68
+    frame4: 
+      world: "OSCityWorld"
+      x: 11
+      y: -32
+      z: 65
+    frame5: 
+      world: "OSCityWorld"
+      x: 11
+      y: -32
+      z: 51
+    frame6: 
+      world: "OSCityWorld"
+      x: 23
+      y: -32
+      z: 47
+  calculatorRoom:
+    instructionsFrame1:
+      world: "OSCityWorld"
+      x: 25
+      y: -58
+      z: 208
+    instructionsFrame2:
+      world: "OSCityWorld"
+      x: 25
+      y: -58
+      z: 207
+    instructionsFrame3:
+      world: "OSCityWorld"
+      x: 25
+      y: -58
+      z: 206
+    instructionsFrame4:
+      world: "OSCityWorld"
+      x: 25
+      y: -59
+      z: 208
+    instructionsFrame5:
+      world: "OSCityWorld"
+      x: 25
+      y: -59
+      z: 207
+    instructionsFrame6:
+      world: "OSCityWorld"
+      x: 25
+      y: -59
+      z: 206
+    calculationFrame1:
+      world: "OSCityWorld"
+      x: 29
+      y: -58
+      z: 204
+    calculationFrame2:
+      world: "OSCityWorld"
+      x: 30
+      y: -58
+      z: 204
+    calculationFrame3:
+      world: "OSCityWorld"
+      x: 31
+      y: -58
+      z: 204
+    calculationFrame4:
+      world: "OSCityWorld"
+      x: 29
+      y: -59
+      z: 204
+    calculationFrame5:
+      world: "OSCityWorld"
+      x: 30
+      y: -59
+      z: 204
+    calculationFrame6:
+      world: "OSCityWorld"
+      x: 31
+      y: -59
+      z: 204
 
 
 doors:
@@ -392,7 +742,301 @@ doors:
     x: 86
     y: 18
     z: 14
-    
+  
+  toLazyLoading:
+    world: "OSCityWorld"
+    x: 94
+    y: -34
+    z: 73
+
+  toLazyAllocation:
+    world: "OSCityWorld"
+    x: 94
+    y: -34
+    z: 57
+  
+  toSwap:
+    world: "OSCityWorld"
+    x: 78
+    y: -343
+    z: 57
+  toPageFaultCorridor:
+    world: "OSCityWorld"
+    x: 86
+    y: -32
+    z: 31
+
+redstone:
+  redstone1: # redstone for swap district puzzle
+    world: "OSCityWorld"
+    x: 32
+    y: -32
+    z: 50
+  redstone2:
+    world: "OSCityWorld"
+    x: 32
+    y: -32
+    z: 64
+  redstone3:
+    world: "OSCityWorld"
+    x: 24
+    y: -32
+    z: 68
+  redstone4:
+    world: "OSCityWorld"
+    x: 11
+    y: -32
+    z: 66
+  redstone5:
+    world: "OSCityWorld"
+    x: 11
+    y: -32
+    z: 52
+  redstone6:
+    world: "OSCityWorld"
+    x: 22
+    y: -32
+    z: 47
+
+calculator:
+  pageOffsetBits: 4   # 8-bit VA: 4 bits VPN + 4 bits offset
+
+hopper:
+  world: "OSCityWorld"
+  x: 30
+  y: -60
+  z: 205
+
+chests:
+  calculatorChest:
+    world: "OSCityWorld"
+    x: 26
+    y: -60
+    z: 210
+  learnerChest:
+    world: "OSCityWorld"
+    x: 203
+    y: 86
+    z: 300
+  adventurerChest:
+    world: "OSCityWorld"
+    x: 203
+    y: 86
+    z: 315
+  tlb:
+    chest1:
+      world: "OSCityWorld"
+      x: 92
+      y: 18
+      z: 11
+    chest2:
+      world: "OSCityWorld"
+      x: 92
+      y: 18      
+      z: 9
+    chest3:
+      world: "OSCityWorld"
+      x: 92
+      y: 18
+      z: 7
+    chest4:
+      world: "OSCityWorld"
+      x: 88
+      y: 18
+      z: 3
+    chest5:
+      world: "OSCityWorld"
+      x: 86
+      y: 18
+      z: 3
+    chest6:
+      world: "OSCityWorld"
+      x: 84
+      y: 18
+      z: 3
+    chest7:
+      world: "OSCityWorld"
+      x: 80
+      y: 18
+      z: 7
+    chest8:
+      world: "OSCityWorld"
+      x: 80
+      y: 18
+      z: 9
+    chest9:
+      world: "OSCityWorld"
+      x: 80
+      y: 18
+      z: 11
+  pageTable1:
+    chest0:
+      world: "OSCityWorld"
+      x: 90
+      y: 23
+      z: 10
+    chest1:
+      world: "OSCityWorld"
+      x: 86
+      y: 23
+      z: 13
+    chest2:
+      world: "OSCityWorld"
+      x: 82
+      y: 23
+      z: 9
+    chest3: 
+      world: "OSCityWorld"
+      x: 86
+      y: 23
+      z: 5
+
+  pageTable2:
+    chest0:
+      world: "OSCityWorld"
+      x: 90
+      y: 28
+      z: 9
+    chest1:
+      world: "OSCityWorld"
+      x: 86
+      y: 28
+      z: 13
+    chest2:
+      world: "OSCityWorld"
+      x: 82
+      y: 28
+      z: 9
+    chest3: 
+      world: "OSCityWorld"
+      x: 85
+      y: 28
+      z: 5
+  pageTable3:
+    chest0:
+      world: "OSCityWorld"
+      x: 90
+      y: 33
+      z: 9
+    chest1:
+      world: "OSCityWorld"
+      x: 86      
+      y: 33
+      z: 13
+    chest2:
+      world: "OSCityWorld"
+      x: 82
+      y: 33
+      z: 9 
+    chest3: 
+      world: "OSCityWorld"
+      x: 86
+      y: 33
+      z: 5
+  ramRoom:
+    chest1:
+      world: "OSCityWorld"
+      x: 26
+      y: -60
+      z: 116
+    chest2:
+      world: "OSCityWorld"
+      x: 28
+      y: -60
+      z: 116
+    chest3:
+      world: "OSCityWorld"
+      x: 30
+      y: -60
+      z: 116
+    chest4:
+      world: "OSCityWorld"
+      x: 32
+      y: -60
+      z: 116
+    chest5:
+      world: "OSCityWorld"
+      x: 34
+      y: -60
+      z: 118
+    chest6:
+      world: "OSCityWorld"
+      x: 34
+      y: -60      
+      z: 120
+    chest7:
+      world: "OSCityWorld"
+      x: 34
+      y: -60
+      z: 122
+    chest8:
+      world: "OSCityWorld"
+      x: 34
+      y: -60
+      z: 124 
+    zeroChest:
+      world: "OSCityWorld"
+      x: 32
+      y: -60
+      z: 127
+  diskRoom:
+    chestA:
+      world: "OSCityWorld"
+      x: 24
+      y: -60
+      z: 178
+    chestB:
+      world: "OSCityWorld"
+      x: 24
+      y: -60
+      z: 176
+    chestC:
+      world: "OSCityWorld"
+      x: 25
+      y: -60
+      z: 174
+    chestD:
+      world: "OSCityWorld"
+      x: 27
+      y: -60
+      z: 174
+    chestE:
+      world: "OSCityWorld"
+      x: 29
+      y: -60
+      z: 174
+    chestF:
+      world: "OSCityWorld"
+      x: 31
+      y: -60
+      z: 174
+    chestG:
+      world: "OSCityWorld"
+      x: 33
+      y: -60
+      z: 174
+    chestH:
+      world: "OSCityWorld"
+      x: 35
+      y: -60
+      z: 176
+    chestI:
+      world: "OSCityWorld"
+      x: 35
+      y: -60
+      z: 178
+    swapChest0:
+      world: "OSCityWorld"
+      x: 35
+      y: -60
+      z: 183
+    swapChest1:
+      world: "OSCityWorld"
+      x: 33      
+      y: -60
+      z: 185
+
+
 
 locations:
   initialSpawn: # initial spawn point for players
@@ -413,17 +1057,11 @@ locations:
     y: -32
     z: 27
 
-  ramRoom1: # spawn point for ram room 1
+  ramRoom: # spawn point for ram room 
     world: "OSCityWorld"
     x: 26
     y: -60
     z: 125
-
-  ramRoom2: # spawn point for ram room 2
-    world: "OSCityWorld"
-    x: 27
-    y: -60
-    z: 149
 
   diskRoom: # spawn point for disk room
     world: "OSCityWorld"

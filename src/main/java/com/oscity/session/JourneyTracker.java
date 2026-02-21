@@ -41,6 +41,7 @@ public class JourneyTracker {
         PlayerState state = getState(player);
         state.journey = journey;
         state.vars.put("journey", journey.displayName);
+        journey.initVars(state.vars);
     }
 
     public Journey getJourney(Player player) {

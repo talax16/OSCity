@@ -353,6 +353,13 @@ rooms:
       - "The original data from the shared page is duplicated here."
       - "Press 'CONTINUE' to proceed."
 
+    after_swap_for_lazy_loading:
+      - "Frame {pfn} is now free."
+      - "Load the page you retrieved from disk Block {diskBlock} into this frame."
+      - "The PTE is updated: PRESENT=1, PFN={pfn}, FILE_BACKED=1"
+      - "The TLB is updated: VPN {vpn} → PFN {pfn}"
+      - "Press the button to retry the instruction."
+
     after_swap_for_lazy_alloc:
       - "Frame {pfn} is now free. Press the button to retry the instruction."
 

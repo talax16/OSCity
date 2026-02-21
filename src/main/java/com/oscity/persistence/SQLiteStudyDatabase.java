@@ -64,6 +64,10 @@ public class SQLiteStudyDatabase {
                     "ON study_interactions(room)");
 
             stmt.close();
+
+            // Journey completion tracking (delegated to JourneyDAO)
+            JourneyDAO.ensureTable();
+
             System.out.println("[StudyDB] Database initialized successfully at: " + DB_FILE);
         } catch (SQLException e) {
             System.err.println("[StudyDB] Failed to initialize database: " + e.getMessage());

@@ -107,7 +107,7 @@ public class TeleportManager implements Listener {
                 && a.getBlockZ() == b.getBlockZ();
     }
 
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     public void onPress(PlayerInteractEvent e) {
         if (e.getClickedBlock() == null) return;
 

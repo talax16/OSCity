@@ -6,6 +6,8 @@ import com.oscity.content.QuestionBank;
 import com.oscity.core.GuardianInteractionHandler;
 import com.oscity.core.KernelGuardian;
 import com.oscity.core.RoomChangeListener;
+import com.oscity.gamification.ProgressTracker;
+import com.oscity.mechanics.CalculatorListener;
 import com.oscity.mechanics.ChoiceButtonHandler;
 import com.oscity.mechanics.HintSystem;
 import com.oscity.mechanics.RoomDisplayManager;
@@ -41,11 +43,13 @@ public class OSCity extends JavaPlugin {
     // Session & journey
     private SessionManager sessionManager;
     private JourneyTracker journeyTracker;
+    private ProgressTracker progressTracker;
 
     // Game systems
     private HintSystem hintSystem;
     private QuizManager quizManager;
     private ChoiceButtonHandler choiceButtonHandler;
+    private CalculatorListener calculatorListener;
 
     @Override
     public void onEnable() {
@@ -89,6 +93,7 @@ public class OSCity extends JavaPlugin {
         // Session & journey tracking
         sessionManager = new SessionManager();
         journeyTracker = new JourneyTracker();
+        progressTracker = new ProgressTracker();
 
         // Game systems
         hintSystem = new HintSystem(sessionManager, dialogueManager, journeyTracker);
@@ -108,8 +113,12 @@ public class OSCity extends JavaPlugin {
         teleportManager.register();
 
         // Choice buttons
-        choiceButtonHandler = new ChoiceButtonHandler(this, journeyTracker, dialogueManager, questionBank);
+        choiceButtonHandler = new ChoiceButtonHandler(this, journeyTracker, dialogueManager, questionBank, progressTracker, locationRegistry);
         choiceButtonHandler.register();
+
+        // Calculator
+        calculatorListener = new CalculatorListener(this, journeyTracker);
+        calculatorListener.register();
 
         // NPC / Guardian
         kernelGuardian = new KernelGuardian(this);
@@ -122,7 +131,8 @@ public class OSCity extends JavaPlugin {
 
         roomChangeListener = new RoomChangeListener(
             this, kernelGuardian, roomRegistry, locationRegistry,
-            dialogueManager, journeyTracker
+            dialogueManager, journeyTracker, calculatorListener,
+            progressTracker, choiceButtonHandler
         );
         getServer().getPluginManager().registerEvents(roomChangeListener, this);
 
