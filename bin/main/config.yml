@@ -230,17 +230,11 @@ choiceButtons:
     z: 8
 
   # Calculator room buttons
-  skipCalc:
+  skipCalc: # TODO: add functionality to skip the calculations
     world: "OSCityWorld"
     x: 34
     y: -60
     z: 209
-  
-  continueCalc:
-    world: "OSCityWorld"
-    x: 30
-    y: -60
-    z: 213
   
   # RAM room buttons
   ramMix: # button for "RETRY INSTRUCTION"/"CONFIRM - PROCESS MAPPED"
@@ -462,6 +456,22 @@ tpButtons:
     x: 101
     y: -34
     z: 54
+  
+  calcToTlb: # teleport to TLB room from calculator room
+    world: "OSCityWorld"
+    destination: tlbRoom1
+    message: "&aTeleported to TLB Room!"
+    x: 30
+    y: -60
+    z: 214
+  
+  calcToLazyLoading: # teleport to lazy loading room from calculator room
+    world: "OSCityWorld"
+    destination: lazyLoadingRoom
+    message: "&aTeleported to Lazy Loading Room!"
+    x: 30
+    y: -60
+    z: 214
 
   
 signs:
