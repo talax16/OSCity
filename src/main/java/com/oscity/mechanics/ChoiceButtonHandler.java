@@ -8,6 +8,7 @@ import com.oscity.journey.Journey;
 import com.oscity.journey.JourneyManager;
 import com.oscity.session.JourneyTracker;
 import com.oscity.world.LocationRegistry;
+import com.oscity.mechanics.JourneyMapManager;
 import io.papermc.paper.event.player.AsyncChatEvent;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -59,6 +60,8 @@ public class ChoiceButtonHandler implements Listener {
     private final ProgressTracker progress;
     private final LocationRegistry locationRegistry;
     private final CalculatorListener calculatorListener;
+    private final SwapClockManager swapClockManager;
+    private final JourneyMapManager journeyMapManager;
 
     // Map: button location → config key name
     private final Map<Location, String> buttons = new HashMap<>();
@@ -91,7 +94,9 @@ public class ChoiceButtonHandler implements Listener {
     public ChoiceButtonHandler(JavaPlugin plugin, JourneyTracker tracker,
                                DialogueManager dialogue, QuestionBank questionBank,
                                ProgressTracker progress, LocationRegistry locationRegistry,
-                               CalculatorListener calculatorListener) {
+                               CalculatorListener calculatorListener,
+                               SwapClockManager swapClockManager,
+                               JourneyMapManager journeyMapManager) {
         this.plugin = plugin;
         this.tracker = tracker;
         this.dialogue = dialogue;
@@ -99,6 +104,8 @@ public class ChoiceButtonHandler implements Listener {
         this.progress = progress;
         this.locationRegistry = locationRegistry;
         this.calculatorListener = calculatorListener;
+        this.swapClockManager = swapClockManager;
+        this.journeyMapManager = journeyMapManager;
         loadButtons();
     }
 
@@ -158,7 +165,8 @@ public class ChoiceButtonHandler implements Listener {
     @EventHandler(priority = EventPriority.LOW)
     public void onButtonPress(PlayerInteractEvent event) {
         if (event.getClickedBlock() == null) return;
-        if (!event.getClickedBlock().getType().name().endsWith("_BUTTON")) return;
+        String blockTypeName = event.getClickedBlock().getType().name();
+        if (!blockTypeName.endsWith("_BUTTON") && !blockTypeName.equals("LEVER")) return;
 
         Location clicked = event.getClickedBlock().getLocation();
         String buttonKey = findButton(clicked);
@@ -195,6 +203,23 @@ public class ChoiceButtonHandler implements Listener {
 
         if ("skipCalc".equals(buttonKey)) {
             calculatorListener.skipCalculation(player);
+            return;
+        }
+
+        // ── Swap District: clock algorithm frame buttons (frame1btn–frame6btn) ──
+        if (buttonKey.startsWith("frame") && buttonKey.endsWith("btn")) {
+            try {
+                int frameNum = Integer.parseInt(buttonKey.substring(5, buttonKey.length() - 3));
+                if (frameNum >= 1 && frameNum <= 6) {
+                    swapClockManager.handleFrameButton(player, frameNum);
+                    return;
+                }
+            } catch (NumberFormatException ignored) {}
+        }
+
+        // ── Swap District: eviction lever ─────────────────────────────────────
+        if ("swapLever".equals(buttonKey)) {
+            swapClockManager.handleLeverPull(player);
             return;
         }
 
@@ -766,6 +791,7 @@ public class ChoiceButtonHandler implements Listener {
             dialogue.speak(player, "rooms.terminal.journey_selected", tracker.getVars(player));
         }
         tracker.setPhase(player, "terminal_journey_chosen");
+        journeyMapManager.giveInitialMap(player, "adventurerChest");
     }
 
     // ── Public sign update methods (called by RoomChangeListener) ─────────────

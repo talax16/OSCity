@@ -4,6 +4,7 @@ import com.oscity.content.DialogueManager;
 import com.oscity.gamification.ProgressTracker;
 import com.oscity.mechanics.CalculatorListener;
 import com.oscity.mechanics.ChoiceButtonHandler;
+import com.oscity.mechanics.SwapClockManager;
 import com.oscity.journey.Journey;
 import com.oscity.journey.JourneyManager;
 import com.oscity.session.JourneyTracker;
@@ -32,6 +33,7 @@ public class RoomChangeListener implements Listener {
     private final CalculatorListener calculatorListener;
     private final ProgressTracker progressTracker;
     private final ChoiceButtonHandler choiceButtonHandler;
+    private final SwapClockManager swapClockManager;
 
     private String currentRoomTitle = null;
     private boolean guardianSpawned = false;
@@ -41,7 +43,8 @@ public class RoomChangeListener implements Listener {
                                DialogueManager dialogueManager, JourneyTracker journeyTracker,
                                CalculatorListener calculatorListener,
                                ProgressTracker progressTracker,
-                               ChoiceButtonHandler choiceButtonHandler) {
+                               ChoiceButtonHandler choiceButtonHandler,
+                               SwapClockManager swapClockManager) {
         this.plugin = plugin;
         this.guardian = guardian;
         this.roomRegistry = roomRegistry;
@@ -51,6 +54,7 @@ public class RoomChangeListener implements Listener {
         this.calculatorListener = calculatorListener;
         this.progressTracker = progressTracker;
         this.choiceButtonHandler = choiceButtonHandler;
+        this.swapClockManager = swapClockManager;
     }
 
     // ── Player join ───────────────────────────────────────────────────────────
@@ -228,6 +232,8 @@ public class RoomChangeListener implements Listener {
                 String pfnCow = journeyTracker.getVar(player, "pfnCow");
                 JourneyManager.swapEntryVarUpdates(swapEntry, pfnCow)
                     .forEach((k, v) -> journeyTracker.setVar(player, k, v));
+                // Start clock algorithm (lights torches, sets signs) after vars are applied
+                swapClockManager.startClock(player);
                 break;
         }
     }

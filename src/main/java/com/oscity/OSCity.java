@@ -11,6 +11,8 @@ import com.oscity.mechanics.CalculatorListener;
 import com.oscity.mechanics.ChoiceButtonHandler;
 import com.oscity.mechanics.HintSystem;
 import com.oscity.mechanics.RoomDisplayManager;
+import com.oscity.mechanics.JourneyMapManager;
+import com.oscity.mechanics.SwapClockManager;
 import com.oscity.mechanics.TeleportManager;
 import com.oscity.persistence.SQLiteStudyDatabase;
 import com.oscity.quiz.QuizManager;
@@ -48,6 +50,8 @@ public class OSCity extends JavaPlugin {
     // Game systems
     private HintSystem hintSystem;
     private QuizManager quizManager;
+    private SwapClockManager swapClockManager;
+    private JourneyMapManager journeyMapManager;
     private ChoiceButtonHandler choiceButtonHandler;
     private CalculatorListener calculatorListener;
 
@@ -116,8 +120,14 @@ public class OSCity extends JavaPlugin {
         calculatorListener = new CalculatorListener(this, journeyTracker);
         calculatorListener.register();
 
+        // Swap clock (must be before ChoiceButtonHandler and RoomChangeListener)
+        swapClockManager = new SwapClockManager(this, journeyTracker, dialogueManager);
+
+        // Journey map (must be before ChoiceButtonHandler)
+        journeyMapManager = new JourneyMapManager(this, journeyTracker);
+
         // Choice buttons
-        choiceButtonHandler = new ChoiceButtonHandler(this, journeyTracker, dialogueManager, questionBank, progressTracker, locationRegistry, calculatorListener);
+        choiceButtonHandler = new ChoiceButtonHandler(this, journeyTracker, dialogueManager, questionBank, progressTracker, locationRegistry, calculatorListener, swapClockManager, journeyMapManager);
         choiceButtonHandler.register();
 
         // NPC / Guardian
@@ -132,7 +142,7 @@ public class OSCity extends JavaPlugin {
         roomChangeListener = new RoomChangeListener(
             this, kernelGuardian, roomRegistry, locationRegistry,
             dialogueManager, journeyTracker, calculatorListener,
-            progressTracker, choiceButtonHandler
+            progressTracker, choiceButtonHandler, swapClockManager
         );
         getServer().getPluginManager().registerEvents(roomChangeListener, this);
 
