@@ -55,6 +55,7 @@ public class CalculatorListener implements Listener {
 
     private final JavaPlugin plugin;
     private final JourneyTracker tracker;
+    private final JourneyMapManager journeyMapManager;
 
     private Location hopperLocation;
     private final List<Location> instrFrames = new ArrayList<>();
@@ -64,14 +65,18 @@ public class CalculatorListener implements Listener {
     /** Players currently inside a 5-second calculation — suppress duplicate triggers. */
     private final Map<UUID, Boolean> calculating = new HashMap<>();
 
+    /** Players who have completed the calculator calculation (used hopper or skip). */
+    private final Map<UUID, Boolean> hasCalculated = new HashMap<>();
+
     /** Cached MapView per frame location so we reuse the same map ID across updates. */
     private final Map<Location, MapView> frameMapViews = new HashMap<>();
 
     // ── Constructor ───────────────────────────────────────────────────────────
 
-    public CalculatorListener(JavaPlugin plugin, JourneyTracker tracker) {
+    public CalculatorListener(JavaPlugin plugin, JourneyTracker tracker, JourneyMapManager journeyMapManager) {
         this.plugin  = plugin;
         this.tracker = tracker;
+        this.journeyMapManager = journeyMapManager;
         loadConfig();
     }
 
@@ -133,6 +138,14 @@ public class CalculatorListener implements Listener {
         updateInstructionFrames(phase);
         setCalcAwaiting();
         calculating.remove(player.getUniqueId());
+        hasCalculated.remove(player.getUniqueId()); // Reset calculation state
+    }
+
+    /**
+     * Check if player has completed the calculator calculation.
+     */
+    public boolean hasPlayerCalculated(Player player) {
+        return hasCalculated.getOrDefault(player.getUniqueId(), false);
     }
 
     /**
@@ -149,6 +162,8 @@ public class CalculatorListener implements Listener {
         try {
             long value = parseInput(va);
             showResult(va, value);
+            journeyMapManager.updateMapAfterCalculator(player);
+            hasCalculated.put(player.getUniqueId(), true);
             String summary = buildChatSummary(value);
             player.sendMessage("§6[Calculator] §a(Skipped) Result: §f" + summary + "§a — added to your log.");
         } catch (NumberFormatException e) {
@@ -230,6 +245,9 @@ public class CalculatorListener implements Listener {
             try {
                 long value   = parseInput(input);
                 showResult(input, value);
+                // Only update VPN and offset, NOT PFN (PFN comes from TLB or page table)
+                journeyMapManager.updateMapAfterCalculator(player);
+                hasCalculated.put(player.getUniqueId(), true);
                 String summary = buildChatSummary(value);
                 player.sendMessage("§6[Calculator] §aResult: §f" + summary
                     + "§a — added to your log.");

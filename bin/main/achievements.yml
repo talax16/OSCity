@@ -1,1 +1,20 @@
-//Achievement definitions
+# Achievement definitions
+# Format: achievement_name:
+#   display: Display name
+#   description: What the player did
+
+journey_complete:
+  display: "Journey Complete"
+  description: "Complete a full journey"
+
+tlb_master:
+  display: "TLB Master"
+  description: "Correctly identify a TLB hit"
+
+page_table_explorer:
+  display: "Page Table Explorer"
+  description: "Navigate the page table library"
+
+permission_expert:
+  display: "Permission Expert"
+  description: "Pass the Permission Chamber without errors"

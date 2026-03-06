@@ -5,7 +5,7 @@ import java.util.Map;
 
 public class TLBMissNoFault implements JourneyScenario {
 
-    @Override public String getDisplayName()      { return "TLB Miss - No Fault"; }
+    @Override public String getDisplayName()      { return "TLB Miss - No Fault Journey"; }
     @Override public int    getNumber()           { return 2; }
     @Override public boolean isTlbHit()           { return false; }
     @Override public String getPermissionAnswer() { return "allow_access"; }

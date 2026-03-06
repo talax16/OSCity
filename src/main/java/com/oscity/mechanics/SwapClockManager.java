@@ -109,20 +109,22 @@ public class SwapClockManager {
                 state.roundOnePressed.add(frameNum);
 
                 if (state.roundOnePressed.size() == 6) {
-                    // All 6 pressed → end of round 1
-                    // Re-light non-victim frames (they were accessed again)
-                    state.roundTwoStarted = true;
-                    for (int i = 1; i <= 6; i++) {
-                        if (i != state.victimFrameNum) {
-                            setTorchLit(i, true);
-                            String h = "0x" + Integer.toHexString(i).toUpperCase();
-                            updateFrameSign(i, h, "USE BIT: ON", "", "");
-                        }
-                    }
+                    // All 6 pressed → end of round 1.
+                    // Delay round 2 activation so the transition message appears before
+                    // the player can interact again (prevents skipping straight to victim).
                     Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                        state.roundTwoStarted = true;
+                        // Re-light non-victim frames (they were accessed again)
+                        for (int i = 1; i <= 6; i++) {
+                            if (i != state.victimFrameNum) {
+                                setTorchLit(i, true);
+                                String h = "0x" + Integer.toHexString(i).toUpperCase();
+                                updateFrameSign(i, h, "USE BIT: ON", "", "");
+                            }
+                        }
                         player.sendMessage("§6[Clock] §eYou have given every frame a second chance.");
                         player.sendMessage("§6[Clock] §eWalk the circle again. One frame did not get a second chance...");
-                    }, 5L);
+                    }, 40L); // 2-second delay before round 2 activates
                 }
             }
         } else {
@@ -160,12 +162,15 @@ public class SwapClockManager {
      * @return true if handled.
      */
     public boolean handleLeverPull(Player player) {
-        if (!"swap_victim_found".equals(tracker.getPhase(player))) return false;
+        if (!"swap_victim_found".equals(tracker.getPhase(player))) {
+            player.sendMessage("§6[Clock] §cNo victim found yet! Walk the circle and find the frame whose USE BIT is still OFF.");
+            return false;
+        }
 
         Map<String, String> vars = tracker.getVars(player);
         dialogue.speak(player, "rooms.swap_district.after_eviction", vars);
-        // Reset to swap_entered so handleRAMEntry processes the return correctly
-        tracker.setPhase(player, "swap_entered");
+        // Player now has the swap slot info - set phase to indicate they can take swap chest book
+        tracker.setPhase(player, "swap_after_eviction");
         return true;
     }
 
@@ -185,7 +190,7 @@ public class SwapClockManager {
         BlockData data = block.getBlockData();
         if (data instanceof Lightable lightable) {
             lightable.setLit(lit);
-            block.setBlockData(data);
+            block.setBlockData(lightable, false); // false = no physics, prevents vanilla override
         } else {
             plugin.getLogger().warning("[SwapClock] Block at redstone" + frameNum
                 + " is not Lightable: " + data.getMaterial());

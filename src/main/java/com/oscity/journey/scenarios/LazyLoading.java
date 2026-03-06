@@ -5,7 +5,7 @@ import java.util.Map;
 
 public class LazyLoading implements JourneyScenario {
 
-    @Override public String getDisplayName()      { return "Lazy Loading"; }
+    @Override public String getDisplayName()      { return "Lazy Loading Journey"; }
     @Override public int    getNumber()           { return 6; }
     @Override public boolean isTlbHit()           { return false; }
     @Override public String getPermissionAnswer() { return "page_fault"; }

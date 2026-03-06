@@ -5,7 +5,7 @@ import java.util.Map;
 
 public class PermissionViolation implements JourneyScenario {
 
-    @Override public String getDisplayName()      { return "Permission Violation"; }
+    @Override public String getDisplayName()      { return "Permission Violation Journey"; }
     @Override public int    getNumber()           { return 3; }
     @Override public boolean isTlbHit()           { return false; }
     @Override public String getPermissionAnswer() { return "segfault"; }

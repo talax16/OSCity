@@ -1,5 +1,6 @@
 package com.oscity.mechanics;
 
+import com.oscity.mode.PlayerMode;
 import com.oscity.session.JourneyTracker;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
@@ -59,8 +60,9 @@ public class JourneyMapManager {
      * that the map reflects the freshly initialised vars.
      */
     public void giveInitialMap(Player player, String chestConfigKey) {
+        boolean isLearner = tracker.getMode(player) == PlayerMode.LEARNER;
         MapView view = getOrCreateView(player);
-        rerender(view, buildLines(tracker.getVars(player)));
+        rerender(view, buildLines(tracker.getVars(player), false, !isLearner));
         placeInChest(buildMapItem(view), chestConfigKey);
     }
 
@@ -70,24 +72,47 @@ public class JourneyMapManager {
      * (e.g. after the calculator or page table walk).
      */
     public void updateMap(Player player) {
+        boolean isLearner = tracker.getMode(player) == PlayerMode.LEARNER;
         MapView view = playerMapViews.get(player.getUniqueId());
         if (view == null) return;
-        rerender(view, buildLines(tracker.getVars(player)));
+        rerender(view, buildLines(tracker.getVars(player), true, !isLearner));
+    }
+
+    /**
+     * Updates the map after calculator - shows VPN and offset only (no PFN yet).
+     * PFN is revealed later from TLB hit or page table walk.
+     */
+    public void updateMapAfterCalculator(Player player) {
+        boolean isLearner = tracker.getMode(player) == PlayerMode.LEARNER;
+        MapView view = playerMapViews.get(player.getUniqueId());
+        if (view == null) return;
+        rerender(view, buildLinesAfterCalculator(tracker.getVars(player), !isLearner));
+    }
+
+    /**
+     * Updates the map after retrieving PTE from page table library.
+     * Adds PFN and other PTE-discovered information.
+     */
+    public void updateMapAfterPTE(Player player) {
+        updateMap(player);
     }
 
     // ── Content builder ───────────────────────────────────────────────────────
 
     /**
      * Builds the text lines for the map.
-     * Only vars that are pedagogically appropriate to reveal at each stage
-     * are shown: instruction and VA are always shown; VPN, offset, PFN, etc.
-     * appear only once they are no longer "?" (i.e. have been discovered).
+     *
+     * @param vars the player's current journey vars
+     * @param showDiscoveries if true, show VPN/offset/PFN/file/slot (when not "?")
+     * @param showJourneyName if true, show the journey name on the map
      */
-    private List<String> buildLines(Map<String, String> vars) {
+    private List<String> buildLines(Map<String, String> vars, boolean showDiscoveries, boolean showJourneyName) {
         List<String> lines = new ArrayList<>();
 
         lines.add("= OSCity Journey Map =");
-        lines.add(safe(vars.getOrDefault("journey", "Journey")));
+        if (showJourneyName) {
+            lines.add(safe(vars.getOrDefault("journey", "Journey")));
+        }
         lines.add(safe(vars.getOrDefault("process", "")));
         lines.add("");
 
@@ -97,27 +122,75 @@ public class JourneyMapManager {
         }
         lines.add("");
 
-        lines.add("VA: " + safe(vars.getOrDefault("va", "?")));
+        // VA in hex only
+        String vaHex = vars.getOrDefault("va", "?");
+        lines.add("VA: " + safe(vaHex));
 
-        // VPN / offset — revealed after calculator room
-        String vpn    = vars.getOrDefault("vpn",    "?");
-        String offset = vars.getOrDefault("offset", "?");
-        if (!"?".equals(vpn))    lines.add("VPN:  " + safe(vpn));
-        if (!"?".equals(offset)) lines.add("OFF:  " + safe(offset));
+        // VPN / offset — revealed after calculator room (only if showDiscoveries)
+        if (showDiscoveries) {
+            String vpnBin = vars.getOrDefault("vpn", "?");
+            String vpnHex = vars.getOrDefault("vpnHex", "?");
+            String offsetBin = vars.getOrDefault("offset", "?");
+            String offsetHex = vars.getOrDefault("offsetHex", "?");
 
-        // PFN — revealed after TLB hit or page table walk
-        String pfn = vars.getOrDefault("pfn", "?");
-        if (!"?".equals(pfn))    lines.add("PFN:  " + safe(pfn));
+            if (!"?".equals(vpnBin)) {
+                lines.add("VPN: " + safe(vpnBin) + " = " + safe(vpnHex));
+            }
+            if (!"?".equals(offsetBin)) {
+                lines.add("OFFSET: " + safe(offsetBin) + " = " + safe(offsetHex));
+            }
 
-        // File-backed page: file name and page index
-        String file     = vars.getOrDefault("file",      "?");
-        String pageIdx  = vars.getOrDefault("pageIndex", "?");
-        if (!"?".equals(file) && !file.isEmpty())    lines.add(safe(cap("File: " + file, 20)));
-        if (!"?".equals(pageIdx) && !pageIdx.isEmpty()) lines.add("PgIdx: " + safe(pageIdx));
 
-        // Swap slot (revealed when the PTE is checked)
-        String slot = vars.getOrDefault("slot", "?");
-        if (!"?".equals(slot) && !slot.isEmpty()) lines.add("Slot: " + safe(slot));
+            // File-backed page: file name and page index
+            String file     = vars.getOrDefault("file",      "?");
+            String pageIdx  = vars.getOrDefault("pageIndex", "?");
+            if (!"?".equals(file) && !file.isEmpty())    lines.add(safe(cap("File: " + file, 20)));
+            if (!"?".equals(pageIdx) && !pageIdx.isEmpty()) lines.add("PgIdx: " + safe(pageIdx));
+
+            // Swap slot (revealed when the PTE is checked)
+            String slot = vars.getOrDefault("slot", "?");
+            if (!"?".equals(slot) && !slot.isEmpty()) lines.add("Slot: " + safe(slot));
+        }
+
+        return lines;
+    }
+
+    /**
+     * Builds map lines after calculator - shows VPN and offset only (no PFN).
+     * PFN is revealed later from TLB hit or page table walk.
+     */
+    private List<String> buildLinesAfterCalculator(Map<String, String> vars, boolean showJourneyName) {
+        List<String> lines = new ArrayList<>();
+
+        lines.add("= OSCity Journey Map =");
+        if (showJourneyName) {
+            lines.add(safe(vars.getOrDefault("journey", "Journey")));
+        }
+        lines.add(safe(vars.getOrDefault("process", "")));
+        lines.add("");
+
+        lines.add("Instruction:");
+        for (String l : wrap(vars.getOrDefault("instruction", "?"), 20)) {
+            lines.add(safe(l));
+        }
+        lines.add("");
+
+        // VA in hex only
+        String vaHex = vars.getOrDefault("va", "?");
+        lines.add("VA: " + safe(vaHex));
+
+        // VPN and offset only - NO PFN (comes from TLB or page table)
+        String vpnBin = vars.getOrDefault("vpn", "?");
+        String vpnHex = vars.getOrDefault("vpnHex", "?");
+        String offsetBin = vars.getOrDefault("offset", "?");
+        String offsetHex = vars.getOrDefault("offsetHex", "?");
+
+        if (!"?".equals(vpnBin)) {
+            lines.add("VPN: " + safe(vpnBin) + " = " + safe(vpnHex));
+        }
+        if (!"?".equals(offsetBin)) {
+            lines.add("OFFSET: " + safe(offsetBin) + " = " + safe(offsetHex));
+        }
 
         return lines;
     }
@@ -147,14 +220,14 @@ public class JourneyMapManager {
                     canvas.setPixel(x, 127, accent);
                 }
 
-                // Text lines
-                int y = 5;
+                // Text lines - reduced spacing to fit more content
+                int y = 3;
                 for (String line : lines) {
-                    if (y > 118) break;
+                    if (y > 122) break;
                     if (!line.isEmpty()) {
-                        canvas.drawText(3, y, MinecraftFont.Font, line);
+                        canvas.drawText(2, y, MinecraftFont.Font, line);
                     }
-                    y += 14;
+                    y += 11;  // Reduced from 14 to fit more lines
                 }
             }
         });

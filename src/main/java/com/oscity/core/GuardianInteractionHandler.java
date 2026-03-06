@@ -2,6 +2,7 @@ package com.oscity.core;
 
 import com.oscity.config.ConfigManager;
 import com.oscity.content.DialogueManager;
+import com.oscity.mode.PlayerMode;
 import com.oscity.session.JourneyTracker;
 import com.oscity.mechanics.HintSystem;
 import net.citizensnpcs.api.event.NPCRightClickEvent;
@@ -48,6 +49,9 @@ public class GuardianInteractionHandler implements Listener {
     }
 
     private void showMainMenu(Player player) {
+        PlayerMode mode = journeyTracker.getMode(player);
+        boolean isAdventurer = (mode == PlayerMode.ADVENTURER);
+        
         player.sendMessage(Component.text("════════════════════════════════", NamedTextColor.GOLD));
         player.sendMessage(Component.text("Kernel Guardian", NamedTextColor.AQUA, TextDecoration.BOLD));
         player.sendMessage(Component.text(""));
@@ -55,12 +59,24 @@ public class GuardianInteractionHandler implements Listener {
         player.sendMessage(Component.text(""));
         player.sendMessage(Component.text("1. Explain again", NamedTextColor.GREEN)
             .append(Component.text(" - Replay instructions", NamedTextColor.GRAY)));
-        player.sendMessage(Component.text("2. I'm lost", NamedTextColor.GOLD)
-            .append(Component.text(" - Get a hint", NamedTextColor.GRAY)));
+        
+        if (isAdventurer) {
+            player.sendMessage(Component.text("2. I'm lost", NamedTextColor.DARK_GRAY, TextDecoration.STRIKETHROUGH)
+                .append(Component.text(" - Not available in Adventurer mode", NamedTextColor.DARK_GRAY)));
+        } else {
+            player.sendMessage(Component.text("2. I'm lost", NamedTextColor.GOLD)
+                .append(Component.text(" - Get a hint", NamedTextColor.GRAY)));
+        }
+        
         player.sendMessage(Component.text("3. Explain a concept", NamedTextColor.LIGHT_PURPLE)
             .append(Component.text(" - Learn terminology", NamedTextColor.GRAY)));
         player.sendMessage(Component.text(""));
-        player.sendMessage(Component.text("Type a number in chat to choose", NamedTextColor.DARK_GRAY, TextDecoration.ITALIC));
+        
+        if (isAdventurer) {
+            player.sendMessage(Component.text("Type 1 or 3 in chat to choose", NamedTextColor.DARK_GRAY, TextDecoration.ITALIC));
+        } else {
+            player.sendMessage(Component.text("Type a number in chat to choose", NamedTextColor.DARK_GRAY, TextDecoration.ITALIC));
+        }
         player.sendMessage(Component.text("════════════════════════════════", NamedTextColor.GOLD));
 
         // Register pending menu selection — handled by MenuChatListener (below)
@@ -113,12 +129,19 @@ public class GuardianInteractionHandler implements Listener {
     }
 
     private void handleMenuChoice(Player player, String choice) {
+        PlayerMode mode = journeyTracker.getMode(player);
+        boolean isAdventurer = (mode == PlayerMode.ADVENTURER);
+        
         switch (choice) {
             case "1":
                 replayCurrentDialogue(player);
                 break;
             case "2":
-                hintSystem.showHint(player);
+                if (isAdventurer) {
+                    player.sendMessage(Component.text("§cAdventurer mode: Hints are not available. Use 'Explain again' or 'Explain a concept' instead.", NamedTextColor.RED));
+                } else {
+                    hintSystem.showHint(player);
+                }
                 break;
             case "3":
                 showConceptList(player);

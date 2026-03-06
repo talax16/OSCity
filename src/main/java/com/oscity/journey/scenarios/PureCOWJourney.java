@@ -5,7 +5,7 @@ import java.util.Map;
 
 public class PureCOWJourney implements JourneyScenario {
 
-    @Override public String getDisplayName()      { return "Pure COW"; }
+    @Override public String getDisplayName()      { return "Pure COW Journey"; }
     @Override public int    getNumber()           { return 5; }
     @Override public boolean isTlbHit()           { return false; }
     @Override public String getPermissionAnswer() { return "protection_fault"; }

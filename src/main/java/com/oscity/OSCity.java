@@ -12,8 +12,14 @@ import com.oscity.mechanics.ChoiceButtonHandler;
 import com.oscity.mechanics.HintSystem;
 import com.oscity.mechanics.RoomDisplayManager;
 import com.oscity.mechanics.JourneyMapManager;
+import com.oscity.mechanics.PageTableManager;
+import com.oscity.mechanics.DiskRoomManager;
+import com.oscity.mechanics.RAMRoomManager;
 import com.oscity.mechanics.SwapClockManager;
 import com.oscity.mechanics.TeleportManager;
+import com.oscity.mechanics.TLBRoomManager;
+import com.oscity.mode.AdventurerModeHandler;
+import com.oscity.mode.LearnerModeHandler;
 import com.oscity.persistence.SQLiteStudyDatabase;
 import com.oscity.quiz.QuizManager;
 import com.oscity.session.JourneyTracker;
@@ -52,6 +58,12 @@ public class OSCity extends JavaPlugin {
     private QuizManager quizManager;
     private SwapClockManager swapClockManager;
     private JourneyMapManager journeyMapManager;
+    private TLBRoomManager tlbRoomManager;
+    private PageTableManager pageTableManager;
+    private RAMRoomManager ramRoomManager;
+    private DiskRoomManager diskRoomManager;
+    private LearnerModeHandler learnerModeHandler;
+    private AdventurerModeHandler adventurerModeHandler;
     private ChoiceButtonHandler choiceButtonHandler;
     private CalculatorListener calculatorListener;
 
@@ -116,18 +128,34 @@ public class OSCity extends JavaPlugin {
         teleportManager = new TeleportManager(this, locationRegistry, debugClicks);
         teleportManager.register();
 
-        // Calculator (must be before ChoiceButtonHandler)
-        calculatorListener = new CalculatorListener(this, journeyTracker);
-        calculatorListener.register();
-
         // Swap clock (must be before ChoiceButtonHandler and RoomChangeListener)
         swapClockManager = new SwapClockManager(this, journeyTracker, dialogueManager);
 
-        // Journey map (must be before ChoiceButtonHandler)
+        // Journey map (must be before ChoiceButtonHandler, CalculatorListener, and mode handlers)
         journeyMapManager = new JourneyMapManager(this, journeyTracker);
 
+        // Calculator (must be before ChoiceButtonHandler; needs journeyMapManager)
+        calculatorListener = new CalculatorListener(this, journeyTracker, journeyMapManager);
+        calculatorListener.register();
+
+        // Mode handlers
+        learnerModeHandler    = new LearnerModeHandler(journeyTracker, dialogueManager, journeyMapManager);
+        adventurerModeHandler = new AdventurerModeHandler(journeyTracker, dialogueManager);
+
+        // TLB room
+        tlbRoomManager = new TLBRoomManager(this, journeyTracker);
+
+        // Page Table manager
+        pageTableManager = new PageTableManager(this, journeyTracker);
+
+        // RAM room
+        ramRoomManager = new RAMRoomManager(this, journeyTracker);
+
+        // Disk room
+        diskRoomManager = new DiskRoomManager(this, journeyTracker);
+
         // Choice buttons
-        choiceButtonHandler = new ChoiceButtonHandler(this, journeyTracker, dialogueManager, questionBank, progressTracker, locationRegistry, calculatorListener, swapClockManager, journeyMapManager);
+        choiceButtonHandler = new ChoiceButtonHandler(this, journeyTracker, dialogueManager, questionBank, progressTracker, locationRegistry, calculatorListener, swapClockManager, journeyMapManager, pageTableManager);
         choiceButtonHandler.register();
 
         // NPC / Guardian
@@ -142,7 +170,9 @@ public class OSCity extends JavaPlugin {
         roomChangeListener = new RoomChangeListener(
             this, kernelGuardian, roomRegistry, locationRegistry,
             dialogueManager, journeyTracker, calculatorListener,
-            progressTracker, choiceButtonHandler, swapClockManager
+            progressTracker, choiceButtonHandler, swapClockManager,
+            tlbRoomManager, pageTableManager, ramRoomManager, diskRoomManager,
+            journeyMapManager, learnerModeHandler, adventurerModeHandler
         );
         getServer().getPluginManager().registerEvents(roomChangeListener, this);
 

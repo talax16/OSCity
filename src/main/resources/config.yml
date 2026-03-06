@@ -459,11 +459,11 @@ tpButtons:
   
   calcToTlb: # teleport to TLB room from calculator room
     world: "OSCityWorld"
-    destination: tlbRoom1
+    destination: tlbSpawn
     message: "&aTeleported to TLB Room!"
     x: 30
     y: -60
-    z: 214
+    z: 213
   
   calcToLazyLoading: # teleport to lazy loading room from calculator room
     world: "OSCityWorld"
@@ -471,7 +471,15 @@ tpButtons:
     message: "&aTeleported to Lazy Loading Room!"
     x: 30
     y: -60
-    z: 214
+    z: 213
+
+  endToStart: # teleport from end terminal back to initial terminal
+    world: "OSCityWorld"
+    destination: initialSpawn
+    message: "&aTeleported to Initial Spawn!"
+    x: 161
+    y: 87
+    z: 311
 
   
 signs:
@@ -641,7 +649,12 @@ signs:
       x: 34
       y: -59
       z: 124 
-    zeroFrame:
+    zeroFrame1:
+      world: "OSCityWorld"
+      x: 32
+      y: -58
+      z: 127
+    zeroFrame2:
       world: "OSCityWorld"
       x: 32
       y: -59
@@ -770,11 +783,44 @@ doors:
     x: 78
     y: -343
     z: 57
+
   toPageFaultCorridor:
     world: "OSCityWorld"
     x: 86
     y: -32
     z: 31
+
+doorOpen:
+  toPageTable: # button to open the door to the page table library from the TLB room
+    world: "OSCityWorld"
+    x: 87
+    y: 19
+    z: 15
+
+  toPageFaultCorridor: # button to open the door to the page fault corridor from the permission chamber
+    world: "OSCityWorld"
+    x: 85
+    y: -31
+    z: 30
+  
+  toLazyAllocation:  # button to open the door to the lazy allocation room from the page fault corridor
+    world: "OSCityWorld"
+    x: 93
+    y: -33
+    z: 58
+
+  toLazyLoading: # button to open the door to the lazy loading room from the page fault corridor
+    world: "OSCityWorld"
+    x: 93
+    y: -33
+    z: 74
+
+  toSwap: # MIGHT REMOVE THIS pressure plate to open the door to the swap district from the page fault corridor
+    world: "OSCityWorld"
+    x: 79
+    y: -34
+    z: 57
+
 
 redstone:
   redstone1: # redstone for swap district puzzle
@@ -1047,7 +1093,6 @@ chests:
       z: 185
 
 
-
 locations:
   initialSpawn: # initial spawn point for players
     world: "OSCityWorld"
@@ -1084,6 +1129,31 @@ locations:
     x: 33
     y: -60
     z: 212
+  
+  lazyLoadingRoom: # spawn point for lazy loading room
+    world: "OSCityWorld"
+    x: 97
+    y: -34
+    z: 73
+  
+  lazyAllocationRoom: # spawn point for lazy allocation room
+    world: "OSCityWorld"
+    x: 97
+    y: -34
+    z: 57
+
+  cowRoom: # spawn point for cow room
+    world: "OSCityWorld"
+    x: 96
+    y: -34
+    z: 42
+  
+  endTerminal: # spawn point for end terminal
+    world: "OSCityWorld"
+    x: 159
+    y: 86
+    z: 308
+
 
   npc:
   name: "§6Kernel Guardian"

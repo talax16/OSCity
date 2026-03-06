@@ -18,11 +18,13 @@ import java.util.UUID;
  */
 public class JourneyDAO {
 
-    private static final String DB_PATH = "jdbc:sqlite:study_data.db";
+    // Use same database as SQLiteStudyDatabase
+    private static final String DB_PATH = "jdbc:sqlite:plugins/OSCity/study_data.db";
 
     // ── Called once at startup (from SQLiteStudyDatabase.initializeDatabase) ─
 
     public static void ensureTable() {
+        System.out.println("[JourneyDAO] Creating journey_completions table...");
         String sql = "CREATE TABLE IF NOT EXISTS journey_completions (" +
                 "player_uuid TEXT NOT NULL," +
                 "journey_number INTEGER NOT NULL," +
@@ -31,9 +33,12 @@ public class JourneyDAO {
                 ")";
         try (Connection conn = DriverManager.getConnection(DB_PATH);
              Statement stmt = conn.createStatement()) {
+            System.out.println("[JourneyDAO] Connection established");
             stmt.execute(sql);
+            System.out.println("[JourneyDAO] Table created successfully");
         } catch (SQLException e) {
             System.err.println("[JourneyDAO] Failed to create table: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 

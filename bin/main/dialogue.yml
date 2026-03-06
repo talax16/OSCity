@@ -87,6 +87,10 @@ rooms:
       - "Excellent! This is a case of a TLB miss—the mapping was not cached."
       - "Now you can enter the Multi-Level Page Table, but for the door to open, you must answer this question:"
 
+    after_miss_correct:
+      - "Correct! The page table door is now open."
+      - "Proceed to the Page Table Library to find your page's frame number."
+
     after_miss_quiz_lucky:
       - "No, in this Lucky case, the VPN IS displayed on one of the chests in this room."
       - "Double check the VPN tag and try again."
@@ -152,7 +156,8 @@ rooms:
       - "Each one of these chests represents a Page Table Entry (PTE)."
       - "Look at the signs above each chest. They show: '00', '01', '10', '11'"
       - "Match your TABLE bits (the last 2 bits of your VPN) to find your PTE."
-      - "Once you find them, open the chest and retrieve the book inside—that is your PTE. The data will transfer to your map."
+      - "Once you find them, open the chest and retrieve the map inside—that is your PTE."
+      - "Keep the PTE with you. It contains crucial information for the next steps of your journey."
 
     wrong_floor:
       - "You are not on the correct floor. This is Page Table Floor {floor}."
@@ -349,9 +354,17 @@ rooms:
     after_cow_pure:
       - "You've just created a private copy in frame {pfn}."
       - "This frame is now exclusive to your process."
-      - "You can write to it freely."
-      - "The original data from the shared page is duplicated here."
-      - "Press 'CONTINUE' to proceed."
+      - "The original data from the shared Zero Frame has been duplicated here."
+      - "Take the book from frame {pfn} chest."
+      - "Write 'hello' in it as the process requested."
+      - "Place the book back in the chest when done."
+      - "Then press 'RETRY INSTRUCTION' to complete the write operation."
+
+    after_cow_pure_success:
+      - "The write operation completed successfully!"
+      - "Your process now has its own private copy of the data."
+      - "The Zero Frame remains shared with other processes."
+      - "Press 'Finish' to complete this journey."
 
     after_swap_for_lazy_loading:
       - "Frame {pfn} is now free."
@@ -379,15 +392,15 @@ rooms:
       - "Press 'Finish' to complete this journey."
 
     from_disk_swap_out:
-      - "Load your retrieved page into an empty frame."
-      - "The PTE is updated: PRESENT=1, PFN={pfn}, IN_SWAP=0"
-      - "The TLB is updated: VPN {vpn} → PFN {pfn}"
-      - "Your map has been updated with the new PFN."
-      - "Now press the button to retry the original instruction."
+      - "You have retrieved the page from swap slot 0."
+      - "Place the book in any free RAM chest to load the page into memory."
+      - "Once the page is placed, press 'RETRY INSTRUCTION'"
+      - "The PTE will be updated: PRESENT=1, PFN={pfn}, IN_SWAP=0"
+      - "The TLB will be updated: VPN {vpn} → PFN {pfn}"
 
     after_retry_swap_out:
-      - "The instruction has been retried."
-      - "The page is now in RAM and accessible. The operation succeeds!"
+      - "The page has been loaded into RAM."
+      - "The memory access can now complete successfully!"
       - "You have successfully retrieved a swapped-out page from disk."
       - "Press 'Finish' to complete this journey."
 
@@ -530,6 +543,31 @@ hints:
       - "Walk clockwise around the circle."
       - "If the red torch is LIT (ON): press the button to turn it OFF, then move to the next frame."
       - "If the red torch is DARK (OFF): this is your victim!"
+
+# ─── Feedback for correct answers ────────────────────────────────────────────
+feedback:
+  allow_access_correct:
+    - "Correct! The kernel allows this memory access to proceed."
+    - "The permission bits allow this operation."
+  page_fault_correct:
+    - "Correct! This is a page fault."
+    - "The page is not currently in RAM, but it exists on disk."
+  segfault_correct:
+    - "Correct! This is a segmentation fault."
+    - "The process is trying to access memory outside its allowed boundaries."
+    - "This is a fatal error—the process must be terminated."
+  protection_fault_correct:
+    - "Correct! This is a protection fault."
+    - "The page exists, but the requested operation is not allowed."
+  lazy_allocation_correct:
+    - "Correct! This is lazy allocation."
+    - "The page is anonymous and needs to be created fresh."
+  lazy_loading_correct:
+    - "Correct! This is lazy loading."
+    - "The page is file-backed and needs to be loaded from disk."
+  swapped_out_correct:
+    - "Correct! This page was swapped out to disk."
+    - "It needs to be retrieved from swap space."
 
 # ─── Concept explanations (player asks 'explain a concept') ────────────────
 explanations:

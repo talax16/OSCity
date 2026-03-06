@@ -12,7 +12,7 @@ import java.util.*;
  * Database location: study_data.db (created automatically in project root)
  */
 public class SQLiteStudyDatabase {
-    private static final String DB_PATH = "jdbc:sqlite:study_data.db";
+    private static final String DB_PATH = "jdbc:sqlite:plugins/OSCity/study_data.db";
     private static final String DB_FILE = "study_data.db";
     private static final DateTimeFormatter TIMESTAMP_FORMAT = 
         DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
@@ -21,10 +21,14 @@ public class SQLiteStudyDatabase {
      * Initialize SQLite database with all necessary tables
      */
     public static void initializeDatabase() {
+        System.out.println("[StudyDB] Starting database initialization...");
+        System.out.println("[StudyDB] DB_PATH: " + DB_PATH);
         try (Connection conn = DriverManager.getConnection(DB_PATH)) {
+            System.out.println("[StudyDB] Connection established");
             Statement stmt = conn.createStatement();
 
             // Sessions table - track basic session info
+            System.out.println("[StudyDB] Creating sessions table...");
             stmt.execute("CREATE TABLE IF NOT EXISTS sessions (" +
                     "session_id TEXT PRIMARY KEY," +
                     "mode TEXT NOT NULL," +
@@ -35,6 +39,7 @@ public class SQLiteStudyDatabase {
                     ")");
 
             // Achievements table
+            System.out.println("[StudyDB] Creating study_achievements table...");
             stmt.execute("CREATE TABLE IF NOT EXISTS study_achievements (" +
                     "id INTEGER PRIMARY KEY AUTOINCREMENT," +
                     "session_id TEXT NOT NULL," +
@@ -44,6 +49,7 @@ public class SQLiteStudyDatabase {
                     ")");
 
             // Interactions table (hints and wrong answers)
+            System.out.println("[StudyDB] Creating study_interactions table...");
             stmt.execute("CREATE TABLE IF NOT EXISTS study_interactions (" +
                     "id INTEGER PRIMARY KEY AUTOINCREMENT," +
                     "session_id TEXT NOT NULL," +
@@ -54,6 +60,7 @@ public class SQLiteStudyDatabase {
                     ")");
 
             // Create indexes for faster queries
+            System.out.println("[StudyDB] Creating indexes...");
             stmt.execute("CREATE INDEX IF NOT EXISTS idx_achievements_session " +
                     "ON study_achievements(session_id)");
             stmt.execute("CREATE INDEX IF NOT EXISTS idx_interactions_session " +
@@ -64,13 +71,16 @@ public class SQLiteStudyDatabase {
                     "ON study_interactions(room)");
 
             stmt.close();
+            System.out.println("[StudyDB] Statement closed");
 
             // Journey completion tracking (delegated to JourneyDAO)
+            System.out.println("[StudyDB] Creating journey_completions table...");
             JourneyDAO.ensureTable();
 
             System.out.println("[StudyDB] Database initialized successfully at: " + DB_FILE);
         } catch (SQLException e) {
             System.err.println("[StudyDB] Failed to initialize database: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 

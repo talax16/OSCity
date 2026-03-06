@@ -5,7 +5,7 @@ import java.util.Map;
 
 public class LazyAllocation implements JourneyScenario {
 
-    @Override public String getDisplayName()      { return "Lazy Allocation"; }
+    @Override public String getDisplayName()      { return "Lazy Allocation Journey"; }
     @Override public int    getNumber()           { return 7; }
     @Override public boolean isTlbHit()           { return false; }
     @Override public String getPermissionAnswer() { return "page_fault"; }

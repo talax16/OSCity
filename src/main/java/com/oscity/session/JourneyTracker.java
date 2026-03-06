@@ -1,6 +1,7 @@
 package com.oscity.session;
 
 import com.oscity.journey.Journey;
+import com.oscity.mode.PlayerMode;
 import org.bukkit.entity.Player;
 
 import java.util.HashMap;
@@ -21,6 +22,7 @@ public class JourneyTracker {
     public static class PlayerState {
         public Journey journey;
         public String phase = "terminal_spawn";
+        public PlayerMode mode = null;
         public final Map<String, String> vars = new HashMap<>();
 
         /** Convenience: set a var and return self for chaining. */
@@ -41,8 +43,12 @@ public class JourneyTracker {
     public void setJourney(Player player, Journey journey) {
         PlayerState state = getState(player);
         state.journey = journey;
-        state.vars.put("journey", journey.displayName);
-        journey.initVars(state.vars);
+        if (journey != null) {
+            state.vars.put("journey", journey.displayName);
+            journey.initVars(state.vars);
+        } else {
+            state.vars.remove("journey");
+        }
     }
 
     public Journey getJourney(Player player) {
@@ -67,6 +73,23 @@ public class JourneyTracker {
 
     public Map<String, String> getVars(Player player) {
         return getState(player).vars;
+    }
+
+    public void setMode(Player player, PlayerMode mode) {
+        getState(player).mode = mode;
+    }
+
+    public PlayerMode getMode(Player player) {
+        return getState(player).mode;
+    }
+
+    /**
+     * Clear all journey vars (called when restarting journey).
+     * Preserves session ID if it exists.
+     */
+    public void clearVars(Player player) {
+        PlayerState state = getState(player);
+        state.vars.clear();
     }
 
     /** Clear all state for this player (e.g. on journey restart). */

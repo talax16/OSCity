@@ -10,3 +10,8 @@ build/
 
 # Logs
 *.log
+
+# Database files
+*.db
+study_data.db
+plugins/OSCity/study_data.db

@@ -5,13 +5,13 @@ import java.util.Map;
 
 public class SwappedOutPage implements JourneyScenario {
 
-    @Override public String getDisplayName()      { return "Swapped-Out Page"; }
+    @Override public String getDisplayName()      { return "Swapped-Out Page Journey"; }
     @Override public int    getNumber()           { return 4; }
     @Override public boolean isTlbHit()           { return false; }
     @Override public String getPermissionAnswer() { return "page_fault"; }
     @Override public String getPageFaultType()    { return "swapped_out"; }
     @Override public boolean involvesCow()        { return false; }
-    @Override public boolean involvesSwap()       { return false; }
+    @Override public boolean involvesSwap()       { return true; }
 
     @Override
     public void initVars(Map<String, String> vars) {
