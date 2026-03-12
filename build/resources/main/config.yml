@@ -1148,6 +1148,12 @@ locations:
     y: -34
     z: 42
   
+  swapDistrict: # spawn point for swap district
+    world: "OSCityWorld"
+    x: 42
+    y: -34
+    z: 58
+  
   endTerminal: # spawn point for end terminal
     world: "OSCityWorld"
     x: 159

@@ -116,9 +116,22 @@ public class JourneyMapManager {
         lines.add(safe(vars.getOrDefault("process", "")));
         lines.add("");
 
-        lines.add("Instruction:");
-        for (String l : wrap(vars.getOrDefault("instruction", "?"), 20)) {
-            lines.add(safe(l));
+        // Instruction: split into operation and file+address
+        // Format: "load treasure_map.bin 0x8E" → "Instruction: load" + "treasure_map.bin 0x8E"
+        String instruction = vars.getOrDefault("instruction", "?");
+        if (!"?".equals(instruction) && instruction != null && !instruction.isEmpty()) {
+            // Split on first space to separate operation from file+address
+            int firstSpace = instruction.indexOf(' ');
+            if (firstSpace > 0) {
+                String operation = instruction.substring(0, firstSpace);
+                String fileAndAddr = instruction.substring(firstSpace + 1);
+                lines.add("Instruction: " + safe(operation));
+                lines.add(safe(fileAndAddr));
+            } else {
+                lines.add("Instruction: " + safe(instruction));
+            }
+        } else {
+            lines.add("Instruction: ?");
         }
         lines.add("");
 
@@ -140,12 +153,17 @@ public class JourneyMapManager {
                 lines.add("OFFSET: " + safe(offsetBin) + " = " + safe(offsetHex));
             }
 
+            // Page size for Lazy Loading (revealed after entering Lazy Loading room)
+            String pageSize = vars.getOrDefault("pageSize", "?");
+            if (!"?".equals(pageSize) && !pageSize.isEmpty()) {
+                lines.add("Page Size: " + safe(pageSize));
+            }
 
-            // File-backed page: file name and page index
-            String file     = vars.getOrDefault("file",      "?");
+            // Page index for Lazy Loading (revealed after second calculator visit)
             String pageIdx  = vars.getOrDefault("pageIndex", "?");
-            if (!"?".equals(file) && !file.isEmpty())    lines.add(safe(cap("File: " + file, 20)));
-            if (!"?".equals(pageIdx) && !pageIdx.isEmpty()) lines.add("PgIdx: " + safe(pageIdx));
+            if (!"?".equals(pageIdx) && !pageIdx.isEmpty()) {
+                lines.add("Page_index: " + safe(pageIdx));
+            }
 
             // Swap slot (revealed when the PTE is checked)
             String slot = vars.getOrDefault("slot", "?");
@@ -169,9 +187,22 @@ public class JourneyMapManager {
         lines.add(safe(vars.getOrDefault("process", "")));
         lines.add("");
 
-        lines.add("Instruction:");
-        for (String l : wrap(vars.getOrDefault("instruction", "?"), 20)) {
-            lines.add(safe(l));
+        // Instruction: split into operation and file+address
+        // Format: "load treasure_map.bin 0x8E" → "Instruction: load" + "treasure_map.bin 0x8E"
+        String instruction = vars.getOrDefault("instruction", "?");
+        if (!"?".equals(instruction) && instruction != null && !instruction.isEmpty()) {
+            // Split on first space to separate operation from file+address
+            int firstSpace = instruction.indexOf(' ');
+            if (firstSpace > 0) {
+                String operation = instruction.substring(0, firstSpace);
+                String fileAndAddr = instruction.substring(firstSpace + 1);
+                lines.add("Instruction: " + safe(operation));
+                lines.add(safe(fileAndAddr));
+            } else {
+                lines.add("Instruction: " + safe(instruction));
+            }
+        } else {
+            lines.add("Instruction: ?");
         }
         lines.add("");
 
@@ -190,6 +221,18 @@ public class JourneyMapManager {
         }
         if (!"?".equals(offsetBin)) {
             lines.add("OFFSET: " + safe(offsetBin) + " = " + safe(offsetHex));
+        }
+
+        // Page size for Lazy Loading (revealed after entering Lazy Loading room)
+        String pageSize = vars.getOrDefault("pageSize", "?");
+        if (!"?".equals(pageSize) && !pageSize.isEmpty()) {
+            lines.add("Page Size: " + safe(pageSize));
+        }
+
+        // Page index for Lazy Loading (revealed after second calculator visit)
+        String pageIdx  = vars.getOrDefault("pageIndex", "?");
+        if (!"?".equals(pageIdx) && !pageIdx.isEmpty()) {
+            lines.add("Page_index: " + safe(pageIdx));
         }
 
         return lines;
@@ -220,14 +263,14 @@ public class JourneyMapManager {
                     canvas.setPixel(x, 127, accent);
                 }
 
-                // Text lines - reduced spacing to fit more content
-                int y = 3;
+                // Text lines - optimized spacing to fit more content
+                int y = 2;
                 for (String line : lines) {
-                    if (y > 122) break;
+                    if (y > 124) break;  // Extended to use full height
                     if (!line.isEmpty()) {
                         canvas.drawText(2, y, MinecraftFont.Font, line);
                     }
-                    y += 11;  // Reduced from 14 to fit more lines
+                    y += 10;  // Reduced from 11 to fit more lines
                 }
             }
         });

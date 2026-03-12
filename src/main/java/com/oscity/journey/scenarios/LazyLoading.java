@@ -26,7 +26,7 @@ public class LazyLoading implements JourneyScenario {
         vars.put("offsetHex",   "0xE");
         vars.put("pfn",         "0x5");   // Final PFN after swap + disk load
         vars.put("file",        "treasure_map.bin");
-        vars.put("pageIndex",   "0");
+        vars.put("pageIndex",   "?");  // Revealed after second calculator visit
         vars.put("diskBlock",   "C");
         vars.put("expectedFloor", "2");
         vars.put("hex",  "0x8E");
@@ -37,5 +37,7 @@ public class LazyLoading implements JourneyScenario {
         vars.put("optA_pg", "0");
         vars.put("optB_pg", "1");
         vars.put("optC_pg", "14");
+        // Page size (revealed after entering Lazy Loading room)
+        vars.put("pageSize", "?");
     }
 }

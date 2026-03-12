@@ -248,13 +248,24 @@ public class CalculatorListener implements Listener {
                 // Only update VPN and offset, NOT PFN (PFN comes from TLB or page table)
                 journeyMapManager.updateMapAfterCalculator(player);
                 hasCalculated.put(player.getUniqueId(), true);
-                String summary = buildChatSummary(value);
+
+                // Use appropriate summary based on phase
+                String summary;
+                if ("calculator_from_lazy_loading".equals(phase)) {
+                    // Second visit: calculated page index - set it and update map
+                    summary = buildPageIndexSummary(value);
+                    tracker.setVar(player, "pageIndex", String.valueOf(value));
+                    journeyMapManager.updateMap(player);
+                } else {
+                    summary = buildChatSummary(value);
+                }
+
                 player.sendMessage("§6[Calculator] §aResult: §f" + summary
                     + "§a — added to your log.");
             } catch (NumberFormatException e) {
                 setCalcError(input);
                 player.sendMessage("§c[Calculator] Could not parse '" + input
-                    + "'. Use hex (0xFF), binary (0b1010), or decimal.");
+                    + "'. Use hex (0xFF), binary (0b1010), or decimal. For page index, use format: 0xE/0x10");
             }
         }, 100L); // 5 seconds = 100 ticks
     }
@@ -263,6 +274,24 @@ public class CalculatorListener implements Listener {
 
     private long parseInput(String raw) throws NumberFormatException {
         String s = raw.trim();
+        
+        // Handle division expressions (e.g., "0xE/0x10" for page index)
+        if (s.contains("/")) {
+            String[] parts = s.split("/");
+            if (parts.length == 2) {
+                long numerator = parseSingleValue(parts[0].trim());
+                long denominator = parseSingleValue(parts[1].trim());
+                if (denominator == 0) {
+                    throw new NumberFormatException("Division by zero");
+                }
+                return numerator / denominator;  // Integer division
+            }
+        }
+        
+        return parseSingleValue(s);
+    }
+
+    private long parseSingleValue(String s) throws NumberFormatException {
         if (s.startsWith("0x") || s.startsWith("0X")) return Long.parseLong(s.substring(2), 16);
         if (s.startsWith("0b") || s.startsWith("0B")) return Long.parseLong(s.substring(2), 2);
         if (s.matches("[01]+") && s.length() >= 4)    return Long.parseLong(s, 2);
@@ -278,6 +307,11 @@ public class CalculatorListener implements Listener {
         return "Binary=" + binary
             + ", VPN=" + vpn + " (0x" + Long.toHexString(vpn).toUpperCase() + ")"
             + ", Offset=" + off + " (0x" + Long.toHexString(off).toUpperCase() + ")";
+    }
+
+    /** Build summary for page index calculation (visit 2). */
+    private String buildPageIndexSummary(long value) {
+        return "Page Index=" + value + " (0x" + Long.toHexString(value).toUpperCase() + ")";
     }
 
     // ── Instruction signs ─────────────────────────────────────────────────────

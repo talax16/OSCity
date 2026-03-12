@@ -92,7 +92,16 @@ public class PageTableManager {
      */
     public void updatePteMapAfterCow(Player player) {
         plugin.getLogger().info("[PageTable] updatePteMapAfterCow called for " + player.getName());
-        
+        updatePteMap(player);
+    }
+
+    /**
+     * Updates ONLY the PFN value on the player's PTE map.
+     * All other PTE values remain unchanged.
+     */
+    public void updatePteMapPFNOnly(Player player, String newPfn) {
+        plugin.getLogger().info("[PageTable] updatePteMapPFNOnly called for " + player.getName() + ", newPfn=" + newPfn);
+
         // Find the PTE map in player's inventory
         for (int i = 0; i < player.getInventory().getSize(); i++) {
             ItemStack item = player.getInventory().getItem(i);
@@ -100,25 +109,54 @@ public class PageTableManager {
                 String displayName = item.getItemMeta().getDisplayName();
                 if (displayName != null && displayName.contains("PTE Map")) {
                     plugin.getLogger().info("[PageTable] Found PTE map in slot " + i);
-                    
+
+                    // Get current PTE data and only update PFN line
+                    Journey journey = tracker.getJourney(player);
+                    String vpnHex = tracker.getVar(player, "vpnHex");
+                    int vpnValue = parseVpnHex(vpnHex);
+                    int correctChestIndex = vpnValue & 0x3;
+                    int floorNum = 1;
+
+                    // Get full PTE data but we'll only change PFN
+                    String pteData = buildPteDataWithPFN(player, journey, floorNum, correctChestIndex, true, newPfn);
+                    plugin.getLogger().info("[PageTable] New PTE data (PFN only update): " + pteData);
+
+                    ItemStack newPteMap = buildPteMapItem(floorNum, correctChestIndex, pteData, true);
+                    player.getInventory().setItem(i, newPteMap);
+                    plugin.getLogger().info("[PageTable] PTE map PFN updated to " + newPfn);
+                    break;
+                }
+            }
+        }
+    }
+
+    /**
+     * Updates the player's PTE map with current variable values.
+     */
+    public void updatePteMap(Player player) {
+        plugin.getLogger().info("[PageTable] updatePteMap called for " + player.getName());
+
+        // Find the PTE map in player's inventory
+        for (int i = 0; i < player.getInventory().getSize(); i++) {
+            ItemStack item = player.getInventory().getItem(i);
+            if (item != null && item.getType() == Material.FILLED_MAP && item.hasItemMeta()) {
+                String displayName = item.getItemMeta().getDisplayName();
+                if (displayName != null && displayName.contains("PTE Map")) {
+                    plugin.getLogger().info("[PageTable] Found PTE map in slot " + i);
+
                     // Recreate the PTE map with updated data
                     Journey journey = tracker.getJourney(player);
-                    if (journey == Journey.PURE_COW) {
-                        // Get the correct chest index from VPN
-                        String vpnHex = tracker.getVar(player, "vpnHex");
-                        int vpnValue = parseVpnHex(vpnHex);
-                        int correctChestIndex = vpnValue & 0x3;
-                        
-                        // Determine floor from VPN (simplified - assume floor 1 for now)
-                        int floorNum = 1;
-                        
-                        String pteData = buildPteData(player, journey, floorNum, correctChestIndex, true);
-                        plugin.getLogger().info("[PageTable] New PTE data: " + pteData);
-                        
-                        ItemStack newPteMap = buildPteMapItem(floorNum, correctChestIndex, pteData, true);
-                        player.getInventory().setItem(i, newPteMap);
-                        plugin.getLogger().info("[PageTable] PTE map updated!");
-                    }
+                    String vpnHex = tracker.getVar(player, "vpnHex");
+                    int vpnValue = parseVpnHex(vpnHex);
+                    int correctChestIndex = vpnValue & 0x3;
+                    int floorNum = 1;
+
+                    String pteData = buildPteData(player, journey, floorNum, correctChestIndex, true);
+                    plugin.getLogger().info("[PageTable] New PTE data: " + pteData);
+
+                    ItemStack newPteMap = buildPteMapItem(floorNum, correctChestIndex, pteData, true);
+                    player.getInventory().setItem(i, newPteMap);
+                    plugin.getLogger().info("[PageTable] PTE map updated!");
                     break;
                 }
             }
@@ -154,13 +192,14 @@ public class PageTableManager {
 
             case TLB_MISS_ALLOW:
                 // TLB Miss No Fault
+                String pfnTLB = tracker.getVar(player, "pfn");
                 sb.append("PRESENT: 1\n");
                 sb.append("READ: 1\n");
                 sb.append("WRITE: 1\n");
                 sb.append("READ_ONLY: 0\n");
                 sb.append("USER: 1\n");
                 sb.append("FILE_BACKED: 0\n");
-                sb.append("PFN: 0x1\n");
+                sb.append("PFN: ").append(pfnTLB != null ? pfnTLB : "0x3").append("\n");
                 sb.append("IN_SWAP: 0\n");
                 break;
 
@@ -221,17 +260,28 @@ public class PageTableManager {
                 break;
 
             case LAZY_ALLOCATION:
-                // Lazy Allocation - anonymous, not yet allocated
-                sb.append("PRESENT: 0\n");
-                sb.append("READ: 0\n");
-                sb.append("WRITE: 0\n");
-                sb.append("READ_ONLY: 0\n");
-                sb.append("USER: 1\n");
-                sb.append("KERNEL: 0\n");
-                sb.append("FILE_BACKED: 0\n");
-                sb.append("ANON: 1\n");
-                sb.append("PFN: N/A\n");
-                sb.append("IN_SWAP: 0\n");
+                // Lazy Allocation - use current variable values from tracker
+                String ptePresent = tracker.getVar(player, "ptePresent");
+                String pteRead = tracker.getVar(player, "pteRead");
+                String pteWrite = tracker.getVar(player, "pteWrite");
+                String pteReadOnly = tracker.getVar(player, "pteReadOnly");
+                String pteUser = tracker.getVar(player, "pteUser");
+                String pteKernel = tracker.getVar(player, "pteKernel");
+                String pteFileBacked = tracker.getVar(player, "pteFileBacked");
+                String pteAnon = tracker.getVar(player, "pteAnon");
+                String pfnLazy = tracker.getVar(player, "pfn");
+                String pteInSwap = tracker.getVar(player, "pteInSwap");
+                
+                sb.append("PRESENT: ").append(ptePresent != null ? ptePresent : "0").append("\n");
+                sb.append("READ: ").append(pteRead != null ? pteRead : "0").append("\n");
+                sb.append("WRITE: ").append(pteWrite != null ? pteWrite : "0").append("\n");
+                sb.append("READ_ONLY: ").append(pteReadOnly != null ? pteReadOnly : "0").append("\n");
+                sb.append("USER: ").append(pteUser != null ? pteUser : "1").append("\n");
+                if (pteKernel != null) sb.append("KERNEL: ").append(pteKernel).append("\n");
+                if (pteFileBacked != null) sb.append("FILE_BACKED: ").append(pteFileBacked).append("\n");
+                if (pteAnon != null) sb.append("ANON: ").append(pteAnon).append("\n");
+                sb.append("PFN: ").append(pfnLazy != null ? pfnLazy : "N/A").append("\n");
+                sb.append("IN_SWAP: ").append(pteInSwap != null ? pteInSwap : "0").append("\n");
                 break;
 
             default:
@@ -239,6 +289,52 @@ public class PageTableManager {
                 sb.append("PRESENT: ?\n");
                 sb.append("PFN: ?\n");
                 break;
+        }
+
+        return sb.toString();
+    }
+
+    /**
+     * Builds the PTE data string with a specific PFN value.
+     * Used for PFN-only updates after swap in LAZY_ALLOCATION journey.
+     */
+    private String buildPteDataWithPFN(Player player, Journey journey, int floorNum, int chestIdx, boolean isCorrect, String newPfn) {
+        if (!isCorrect) {
+            return buildFakePte(player, floorNum, chestIdx);
+        }
+
+        // Real PTE data for this journey - varies by journey type
+        StringBuilder sb = new StringBuilder();
+        sb.append("= PTE Entry =\n");
+
+        switch (journey) {
+            case LAZY_ALLOCATION:
+                // Lazy Allocation - use current variable values but override PFN
+                String ptePresent = tracker.getVar(player, "ptePresent");
+                String pteRead = tracker.getVar(player, "pteRead");
+                String pteWrite = tracker.getVar(player, "pteWrite");
+                String pteReadOnly = tracker.getVar(player, "pteReadOnly");
+                String pteUser = tracker.getVar(player, "pteUser");
+                String pteKernel = tracker.getVar(player, "pteKernel");
+                String pteFileBacked = tracker.getVar(player, "pteFileBacked");
+                String pteAnon = tracker.getVar(player, "pteAnon");
+                String pteInSwap = tracker.getVar(player, "pteInSwap");
+
+                sb.append("PRESENT: ").append(ptePresent != null ? ptePresent : "0").append("\n");
+                sb.append("READ: ").append(pteRead != null ? pteRead : "0").append("\n");
+                sb.append("WRITE: ").append(pteWrite != null ? pteWrite : "0").append("\n");
+                sb.append("READ_ONLY: ").append(pteReadOnly != null ? pteReadOnly : "0").append("\n");
+                sb.append("USER: ").append(pteUser != null ? pteUser : "1").append("\n");
+                if (pteKernel != null) sb.append("KERNEL: ").append(pteKernel).append("\n");
+                if (pteFileBacked != null) sb.append("FILE_BACKED: ").append(pteFileBacked).append("\n");
+                if (pteAnon != null) sb.append("ANON: ").append(pteAnon).append("\n");
+                sb.append("PFN: ").append(newPfn).append("\n");  // Use provided PFN
+                sb.append("IN_SWAP: ").append(pteInSwap != null ? pteInSwap : "0").append("\n");
+                break;
+
+            default:
+                // For other journeys, use normal build
+                return buildPteData(player, journey, floorNum, chestIdx, isCorrect);
         }
 
         return sb.toString();

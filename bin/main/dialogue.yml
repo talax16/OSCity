@@ -337,19 +337,21 @@ rooms:
     after_lazy_alloc_first:
       - "Find the chest labeled 'ZERO FRAME'."
       - "You will see that your process is mapped to it!"
-      - "Open the chest and look at the book—you will see it's filled with zeros."
-      - "Once you are finished, put it back. We don't want to cause chaos in the RAM."
+      - "You can open the chest and look at the book, you will see it's filled with zeros."
+      - "Once you are finished put it back in, we don't wanna cause a chaos in the RAM."
       - "Press the button next to it to retry the instruction."
 
     after_lazy_alloc_book_back:
       - "The TLB, PTE, and your map are updated."
-      - "The process is requesting another instruction."
+      - "Oh the process is requesting another instruction."
       - "Let's head back and see what the process wants to do."
+      - "Press 'CONTINUE' to proceed."
 
     ram_full_need_swap:
-      - "Let's try to find you an empty frame."
-      - "OH NO! The RAM is full. We need to evict one of the frames—but we can't do that randomly!"
-      - "Head to the Swap District and I will inform you on what to do."
+      - "Let's try to find you an empty frame to write on your page."
+      - "OH NO! The RAM is full, we need to evict one of the frames, but we can't do that randomly!"
+      - "Head to the swap district and I will inform you on what to do."
+      - "Press 'CONTINUE' to proceed."
 
     after_cow_pure:
       - "You've just created a private copy in frame {pfn}."
@@ -374,7 +376,11 @@ rooms:
       - "Press the button to retry the instruction."
 
     after_swap_for_lazy_alloc:
-      - "Frame {pfn} is now free. Press the button to retry the instruction."
+      - "Welcome back to the RAM."
+      - "Frame 0x6 is now free after the swap."
+      - "Take the book from chest 0x6, write 'hello' in it as the process requested."
+      - "Then place it back in the same chest."
+      - "Press the button to retry the instruction."
 
     after_retry_after_swap:
       - "The PFN has been updated to {pfn}. The TLB has also been updated with the new mapping."

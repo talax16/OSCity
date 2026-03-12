@@ -65,19 +65,47 @@ public class SwapClockManager {
      * has been applied, so tracker.getVar(player,"pfn") is already correct).
      */
     public void startClock(Player player) {
+        startClock(player, false);
+    }
+
+    /**
+     * Called when the player enters the Swap District.
+     * @param player the player
+     * @param isRoundTwo true if this is the second round (victim already identified)
+     */
+    public void startClock(Player player, boolean isRoundTwo) {
         String pfnStr = tracker.getVar(player, "pfn");
         int victimFrame = parsePfn(pfnStr);
-        states.put(player.getUniqueId(), new ClockState(victimFrame));
+        ClockState state = new ClockState(victimFrame);
+        states.put(player.getUniqueId(), state);
 
-        // Light all 6 torches (USE BIT = ON)
-        for (int i = 1; i <= 6; i++) {
-            setTorchLit(i, true);
-        }
+        if (isRoundTwo) {
+            // Round 2: Victim frame already identified - torch OFF, sign shows VICTIM
+            for (int i = 1; i <= 6; i++) {
+                String pfnHex = "0x" + Integer.toHexString(i).toUpperCase();
+                if (i == victimFrame) {
+                    // Victim frame: torch OFF, sign shows VICTIM
+                    setTorchLit(i, false);
+                    updateFrameSign(i, pfnHex, "VICTIM!", "Pull the", "lever!");
+                } else {
+                    // Other frames: torch ON (were recently accessed)
+                    setTorchLit(i, true);
+                    updateFrameSign(i, pfnHex, "USE BIT: ON", "", "");
+                }
+            }
+            state.roundTwoStarted = true;
+            player.sendMessage("§6[Clock] §eThe victim frame has been identified. Pull the lever to evict it.");
+        } else {
+            // Round 1: Light all 6 torches (USE BIT = ON)
+            for (int i = 1; i <= 6; i++) {
+                setTorchLit(i, true);
+            }
 
-        // Set each frame sign: PFN label + "USE BIT: ON"
-        for (int i = 1; i <= 6; i++) {
-            String pfnHex = "0x" + Integer.toHexString(i).toUpperCase();
-            updateFrameSign(i, pfnHex, "USE BIT: ON", "", "");
+            // Set each frame sign: PFN label + "USE BIT: ON"
+            for (int i = 1; i <= 6; i++) {
+                String pfnHex = "0x" + Integer.toHexString(i).toUpperCase();
+                updateFrameSign(i, pfnHex, "USE BIT: ON", "", "");
+            }
         }
     }
 
@@ -90,14 +118,28 @@ public class SwapClockManager {
      */
     public boolean handleFrameButton(Player player, int frameNum) {
         ClockState state = states.get(player.getUniqueId());
-        if (state == null) return false;
-
         String pfnHex = "0x" + Integer.toHexString(frameNum).toUpperCase();
+        
+        // Check if victim already found and player is pressing victim button again
+        if ("swap_victim_found".equals(tracker.getPhase(player)) && state != null && frameNum == state.victimFrameNum) {
+            // Player pressed victim button again - complete swap
+            states.remove(player.getUniqueId());
+            updateFrameSign(frameNum, pfnHex, "Swapped out", "to disk", "");
+            tracker.setPhase(player, "swap_after_eviction");
+            dialogue.speak(player, "rooms.swap_district.after_eviction", tracker.getVars(player));
+            player.sendMessage("§6[Clock] §eFrame §f" + pfnHex + "§e evicted to swap!");
+            return true;
+        }
+        
+        if (state == null) return false;
 
         if (isTorchLit(frameNum)) {
             // ── USE BIT is ON ─────────────────────────────────────────────────
             if (state.roundTwoStarted) {
                 // Round 2: frame was recently used → not the victim
+                // Turn off torch to show player checked this frame
+                setTorchLit(frameNum, false);
+                updateFrameSign(frameNum, pfnHex, "USE BIT: OFF", "(checked)", "");
                 player.sendMessage("§6[Clock] §eFrame §f" + pfnHex
                     + "§e was recently accessed — USE BIT is ON. Not the victim. Keep looking.");
             } else {
@@ -114,12 +156,16 @@ public class SwapClockManager {
                     // the player can interact again (prevents skipping straight to victim).
                     Bukkit.getScheduler().runTaskLater(plugin, () -> {
                         state.roundTwoStarted = true;
+                        plugin.getLogger().info("[SwapClock] Starting round 2, victim frame: " + state.victimFrameNum);
                         // Re-light non-victim frames (they were accessed again)
                         for (int i = 1; i <= 6; i++) {
                             if (i != state.victimFrameNum) {
+                                plugin.getLogger().info("[SwapClock] Re-lighting torch " + i);
                                 setTorchLit(i, true);
                                 String h = "0x" + Integer.toHexString(i).toUpperCase();
                                 updateFrameSign(i, h, "USE BIT: ON", "", "");
+                            } else {
+                                plugin.getLogger().info("[SwapClock] Keeping torch " + i + " OFF (victim)");
                             }
                         }
                         player.sendMessage("§6[Clock] §eYou have given every frame a second chance.");
@@ -140,9 +186,8 @@ public class SwapClockManager {
                         + "§e has its USE BIT already OFF.");
                 }
             } else if (frameNum == state.victimFrameNum) {
-                // Round 2, victim found!
-                states.remove(player.getUniqueId());
-                updateFrameSign(frameNum, pfnHex, "VICTIM!", "Pull the", "lever!");
+                // Round 2, victim found! (First press - state is kept for second press)
+                updateFrameSign(frameNum, pfnHex, "VICTIM!", "Press the", "button again!");
                 tracker.setPhase(player, "swap_victim_found");
                 dialogue.speak(player, "rooms.swap_district.victim_found", tracker.getVars(player));
             } else {
@@ -154,25 +199,9 @@ public class SwapClockManager {
         return true;
     }
 
-    // ── Lever pull ────────────────────────────────────────────────────────────
-
-    /**
-     * Called when the player pulls the eviction lever (swapLever button key).
-     * Only acts when the player is in the "swap_victim_found" phase.
-     * @return true if handled.
-     */
-    public boolean handleLeverPull(Player player) {
-        if (!"swap_victim_found".equals(tracker.getPhase(player))) {
-            player.sendMessage("§6[Clock] §cNo victim found yet! Walk the circle and find the frame whose USE BIT is still OFF.");
-            return false;
-        }
-
-        Map<String, String> vars = tracker.getVars(player);
-        dialogue.speak(player, "rooms.swap_district.after_eviction", vars);
-        // Player now has the swap slot info - set phase to indicate they can take swap chest book
-        tracker.setPhase(player, "swap_after_eviction");
-        return true;
-    }
+    // ── Lever pull removed ────────────────────────────────────────────────────
+    // Lever mechanic replaced with button press on victim frame.
+    // handleLeverPull() is no longer used.
 
     // ── Torch helpers ─────────────────────────────────────────────────────────
 
@@ -185,14 +214,19 @@ public class SwapClockManager {
 
     private void setTorchLit(int frameNum, boolean lit) {
         Location loc = getRedstoneLocation(frameNum);
-        if (loc == null) return;
+        if (loc == null) {
+            plugin.getLogger().warning("[SwapClock] setTorchLit: No location for redstone" + frameNum);
+            return;
+        }
         Block block = loc.getBlock();
+        plugin.getLogger().info("[SwapClock] setTorchLit: Frame " + frameNum + " at " + loc.getBlockX() + "," + loc.getBlockY() + "," + loc.getBlockZ() + " - Block: " + block.getType() + " - Setting lit: " + lit);
         BlockData data = block.getBlockData();
         if (data instanceof Lightable lightable) {
             lightable.setLit(lit);
             block.setBlockData(lightable, false); // false = no physics, prevents vanilla override
+            plugin.getLogger().info("[SwapClock] setTorchLit: Successfully set frame " + frameNum + " to lit=" + lit);
         } else {
-            plugin.getLogger().warning("[SwapClock] Block at redstone" + frameNum
+            plugin.getLogger().warning("[SwapClock] setTorchLit: Block at redstone" + frameNum
                 + " is not Lightable: " + data.getMaterial());
         }
     }

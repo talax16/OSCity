@@ -48,6 +48,7 @@ public class DiskRoomManager {
 
     /**
      * Places books in all disk room chests appropriate to the player's journey.
+     * Each chest contains multiple books representing different files and pages.
      */
     public void populateDiskChests(Player player) {
         Journey journey = tracker.getJourney(player);
@@ -56,14 +57,19 @@ public class DiskRoomManager {
         String fileVar  = tracker.getVar(player, "file");
         String diskBlock = tracker.getVar(player, "diskBlock");
 
+        // Clear all chests first
         for (String block : FILE_BLOCKS) {
-            ItemStack book;
-            if ("C".equals(block) && "C".equals(diskBlock)) {
-                book = buildBlockCBook(fileVar);
-            } else {
-                book = buildGenericArchiveBook(block);
+            clearChestConfig("chests.diskRoom.chest" + block);
+        }
+        clearChestConfig("chests.diskRoom.swapChest0");
+        clearChestConfig("chests.diskRoom.swapChest1");
+
+        // Place books in each chest based on block
+        for (String block : FILE_BLOCKS) {
+            List<ItemStack> books = getBooksForBlock(block, fileVar, diskBlock);
+            for (ItemStack book : books) {
+                placeInChest("chests.diskRoom.chest" + block, book);
             }
-            placeInChest("chests.diskRoom.chest" + block, book);
         }
 
         // Swap slot 0
@@ -74,6 +80,89 @@ public class DiskRoomManager {
 
         // Swap slot 1
         placeInChest("chests.diskRoom.swapChest1", buildSwapSlot1Book());
+    }
+
+    /**
+     * Gets the list of books for a specific block.
+     */
+    private List<ItemStack> getBooksForBlock(String block, String fileVar, String diskBlock) {
+        List<ItemStack> books = new ArrayList<>();
+        
+        switch (block) {
+            case "B":
+                // Chest B: mystical_grimoire.spells page 0
+                books.add(buildBook("mystical_grimoire.spells page 0", "Page 0 of mystical_grimoire.spells"));
+                break;
+                
+            case "C":
+                // Chest C: 11 books total
+                // mystical_grimoire.spells pages 1-5 (5 books)
+                for (int i = 1; i <= 5; i++) {
+                    books.add(buildBook("mystical_grimoire.spells page " + i, "Page " + i + " of mystical_grimoire.spells"));
+                }
+                // treasure_map.bin pages 0-2 (3 books)
+                for (int i = 0; i <= 2; i++) {
+                    books.add(buildBook("treasure_map.bin page " + i, "Page " + i + " of treasure_map.bin"));
+                }
+                // enchanted_journal.log pages 0-2 (3 books)
+                for (int i = 0; i <= 2; i++) {
+                    books.add(buildBook("enchanted_journal.log page " + i, "Page " + i + " of enchanted_journal.log"));
+                }
+                break;
+                
+            case "F":
+                // Chest F: ancient_scroll.txt pages 0-2 (3 books)
+                for (int i = 0; i <= 2; i++) {
+                    books.add(buildBook("ancient_scroll.txt page " + i, "Page " + i + " of ancient_scroll.txt"));
+                }
+                break;
+                
+            case "G":
+                // Chest G: ancient_scroll.txt page 3, crystal_atlas.map pages 0-1 (3 books)
+                books.add(buildBook("ancient_scroll.txt page 3", "Page 3 of ancient_scroll.txt"));
+                for (int i = 0; i <= 1; i++) {
+                    books.add(buildBook("crystal_atlas.map page " + i, "Page " + i + " of crystal_atlas.map"));
+                }
+                break;
+                
+            case "H":
+                // Chest H: spellbook.grimoire page 0 (1 book)
+                books.add(buildBook("spellbook.grimoire page 0", "Page 0 of spellbook.grimoire"));
+                break;
+                
+            case "I":
+                // Chest I: cursed_artifact.hex pages 0-2 (3 books)
+                for (int i = 0; i <= 2; i++) {
+                    books.add(buildBook("cursed_artifact.hex page " + i, "Page " + i + " of cursed_artifact.hex"));
+                }
+                break;
+                
+            default:
+                // Chest A, D, E: empty or generic
+                break;
+        }
+        
+        return books;
+    }
+
+    /**
+     * Clears a chest by config path.
+     */
+    private void clearChestConfig(String configPath) {
+        ConfigurationSection sec = plugin.getConfig().getConfigurationSection(configPath);
+        if (sec == null) return;
+        String worldName = sec.getString("world");
+        if (worldName == null) return;
+        World world = Bukkit.getWorld(worldName);
+        if (world == null) return;
+
+        Location loc = new Location(world, sec.getInt("x"), sec.getInt("y"), sec.getInt("z"));
+        Block block = loc.getBlock();
+
+        if (!(block.getState() instanceof Chest chest)) {
+            return;
+        }
+        chest.getInventory().clear();
     }
 
     // ── Book content builders ─────────────────────────────────────────────────
@@ -191,6 +280,15 @@ public class DiskRoomManager {
 
     // ── Chest placement ───────────────────────────────────────────────────────
 
+    private int nextAvailableSlot(Inventory inv) {
+        for (int i = 0; i < inv.getSize(); i++) {
+            if (inv.getItem(i) == null) {
+                return i;
+            }
+        }
+        return -1; // No available slot
+    }
+
     private void placeInChest(String configPath, ItemStack item) {
         ConfigurationSection sec = plugin.getConfig().getConfigurationSection(configPath);
         if (sec == null) {
@@ -212,7 +310,11 @@ public class DiskRoomManager {
         }
 
         Inventory inv = chest.getInventory();
-        inv.clear();
-        inv.setItem(13, item);
+        int slot = nextAvailableSlot(inv);
+        if (slot >= 0) {
+            inv.setItem(slot, item);
+        } else {
+            plugin.getLogger().warning("[DiskRoom] Chest full at " + configPath);
+        }
     }
 }

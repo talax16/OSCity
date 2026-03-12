@@ -57,6 +57,22 @@ public class RAMRoomManager {
     }
 
     /**
+     * Updates ONLY the zero frame sign (frame 9).
+     * Does NOT update frames 0-7 (preserves their chest contents).
+     * Used for LAZY_ALLOCATION after swap to avoid clearing the book in chest7.
+     */
+    public void updateZeroFrameSignOnly(Player player) {
+        Journey journey = tracker.getJourney(player);
+        if (journey == null) return;
+
+        String phase = tracker.getPhase(player);
+        FrameState[] states = getFrameStates(journey, phase);
+
+        // Update only zero frame (frame 9)
+        updateZeroFrameSign(states[8]);
+    }
+
+    /**
      * Gets the frame states for a given journey and phase.
      * Returns array of 9 FrameState objects (8 frames + zero frame).
      */
@@ -198,7 +214,7 @@ public class RAMRoomManager {
             states[2] = new FrameState("0x2", "Process 1", "data");
             states[3] = new FrameState("0x3", "Process 4", "data");
             states[4] = new FrameState("0x4", "Process 5", "data");
-            states[5] = new FrameState("0x5", "FREE", "← After evicting Frame 0x5");
+            states[5] = new FrameState("0x5", "FREE", "0x5");
             states[6] = new FrameState("0x6", "Process 8", "data");
             states[7] = new FrameState("0x7", "Process 9", "data");
             states[8] = new FrameState("0x9", "ZERO FRAME", "(shared by Process 2, 7)");
@@ -209,7 +225,7 @@ public class RAMRoomManager {
             states[2] = new FrameState("0x2", "Process 1", "data");
             states[3] = new FrameState("0x3", "Process 4", "data");
             states[4] = new FrameState("0x4", "Process 5", "data");
-            states[5] = new FrameState("0x5", "Process 6", "data (loaded from disk)");
+            states[5] = new FrameState("0x5", "Process 6", "data");
             states[6] = new FrameState("0x6", "Process 8", "data");
             states[7] = new FrameState("0x7", "Process 9", "data");
             states[8] = new FrameState("0x9", "ZERO FRAME", "(shared by Process 2, 7)");
@@ -244,7 +260,8 @@ public class RAMRoomManager {
             states[7] = new FrameState("0x7", "Process 9", "data");
             states[8] = new FrameState("0x9", "ZERO FRAME", "(shared by Process 2, 4, 7)");
         } else if ("swap_entered".equals(phase) || "swap_after_eviction".equals(phase)) {
-            // Phase 2 - After eviction, before COW
+            // Phase 2 - After eviction, before COW load
+            // Frame 0x6 is now FREE (evicted Process 8), Process 7 has triggered COW - not sharing
             states[0] = new FrameState("0x0", "Process 3", "data");
             states[1] = new FrameState("0x1", "Process 0", "data");
             states[2] = new FrameState("0x2", "Process 3", "data");
@@ -253,7 +270,31 @@ public class RAMRoomManager {
             states[5] = new FrameState("0x5", "Process 6", "data");
             states[6] = new FrameState("0x6", "FREE", "");
             states[7] = new FrameState("0x7", "Process 9", "data");
-            states[8] = new FrameState("0x9", "ZERO FRAME", "(shared by Process 2, 4, 7)");
+            states[8] = new FrameState("0x9", "ZERO FRAME", "(shared by Process 2, 4)");
+        } else if ("swap_lazy_alloc".equals(phase)) {
+            // Phase 2 - After swap, Process 7 about to get private frame 0x6
+            // Zero frame: Process 7 has triggered COW, no longer sharing
+            states[0] = new FrameState("0x0", "Process 3", "data");
+            states[1] = new FrameState("0x1", "Process 0", "data");
+            states[2] = new FrameState("0x2", "Process 3", "data");
+            states[3] = new FrameState("0x3", "Process 1", "data");
+            states[4] = new FrameState("0x4", "Process 5", "data");
+            states[5] = new FrameState("0x5", "Process 6", "data");
+            states[6] = new FrameState("0x6", "FREE", "");
+            states[7] = new FrameState("0x7", "Process 9", "data");
+            states[8] = new FrameState("0x9", "ZERO FRAME", "(shared by Process 2, 4)");
+        } else if ("ram_after_cow".equals(phase)) {
+            // Phase 2 - After COW decision, before swap
+            // Process 7 has triggered COW (READ_ONLY=1) - no longer considered sharing
+            states[0] = new FrameState("0x0", "Process 3", "data");
+            states[1] = new FrameState("0x1", "Process 0", "data");
+            states[2] = new FrameState("0x2", "Process 3", "data");
+            states[3] = new FrameState("0x3", "Process 1", "data");
+            states[4] = new FrameState("0x4", "Process 5", "data");
+            states[5] = new FrameState("0x5", "Process 6", "data");
+            states[6] = new FrameState("0x6", "Process 8", "data");
+            states[7] = new FrameState("0x7", "Process 9", "data");
+            states[8] = new FrameState("0x9", "ZERO FRAME", "(shared by Process 2, 4)");
         } else {
             // Phase 2 - After COW + Write
             states[0] = new FrameState("0x0", "Process 3", "data");
@@ -325,10 +366,12 @@ public class RAMRoomManager {
         if (sec2 != null) {
             String status = state.status;
             plugin.getLogger().info("[RAMRoom] zeroFrame2 status: '" + status + "'");
-            
-            // Split "(shared by Process 2, 7)" across 2 lines
+
+            // Split status like "(shared by Process 2, 4)" across 2 lines
             if (status != null && status.startsWith("(shared by")) {
-                updateSign(sec2, "(shared by", "Process 2, 7)", "", "");
+                // Extract the part after "(shared by " and split across lines
+                String sharedPart = status.substring("(shared by ".length());
+                updateSign(sec2, "(shared by", sharedPart, "", "");
             } else {
                 updateSign(sec2, status, "", "", "");
             }
@@ -346,25 +389,29 @@ public class RAMRoomManager {
     }
 
     /**
-     * Places the Process 5 private copy book in frame 0x2 chest for Pure COW journey.
+     * Places the Process 5 private copy book in frame 0x2 chest for Pure COW journey,
+     * or the COW page book for LAZY_ALLOCATION journey after swap.
      * Uses a WRITABLE_BOOK (book and quill) so the player can edit it.
      * Book contains only zeros (copied from Zero Frame).
      */
     public void placeBookInFrameChest(Player player, int frameNum) {
+        plugin.getLogger().info("[RAMRoom] placeBookInFrameChest START: frameNum=" + frameNum);
         Journey journey = tracker.getJourney(player);
-        if (journey != Journey.PURE_COW) {
-            plugin.getLogger().warning("[RAMRoom] placeBookInFrameChest: Not PURE_COW journey, got " + journey);
+        plugin.getLogger().info("[RAMRoom] placeBookInFrameChest: journey=" + journey);
+        if (journey != Journey.PURE_COW && journey != Journey.LAZY_ALLOCATION) {
+            plugin.getLogger().warning("[RAMRoom] placeBookInFrameChest: Not PURE_COW or LAZY_ALLOCATION journey, got " + journey);
             return;
         }
-        plugin.getLogger().info("[RAMRoom] placeBookInFrameChest: Placing book in chest" + frameNum);
+        plugin.getLogger().info("[RAMRoom] placeBookInFrameChest: Placing book in chest" + frameNum + " for " + journey);
 
         ConfigurationSection chestSec = plugin.getConfig()
             .getConfigurationSection("chests.ramRoom.chest" + frameNum);
+        plugin.getLogger().info("[RAMRoom] placeBookInFrameChest: chestSec=" + chestSec);
         if (chestSec == null) {
             plugin.getLogger().warning("[RAMRoom] placeBookInFrameChest: No config for chest" + frameNum);
             return;
         }
-        
+
         ItemStack bookAndQuill = buildProcess5WritableBook();
         plugin.getLogger().info("[RAMRoom] placeBookInFrameChest: Book type = " + bookAndQuill.getType());
         placeBookInChest(chestSec, bookAndQuill);

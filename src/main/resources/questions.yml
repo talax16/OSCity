@@ -38,16 +38,6 @@ calculator_room:
     correct: "A"
     wrong: "That's incorrect. Do the calculation again."
 
-  page_index:
-    question: "Let's check your work. What is the value of the page index?"
-    options:
-      A: "{optA}"
-      B: "{optB}"
-      C: "{optC}"
-      D: "Other"
-    correct: "A"
-    wrong: "That's incorrect. Do the calculation again."
-
 swap_district:
   clock_algorithm:
     question: "The CLOCK algorithm turns off USE BITs because:"

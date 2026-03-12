@@ -49,13 +49,16 @@ public class DialogueManager {
     private static final long LINE_DELAY_TICKS = 40L; // 2 seconds between lines
 
     public void speak(Player player, String path, Map<String, String> vars) {
+        plugin.getLogger().info("[DialogueManager] Speaking: " + path);
         List<String> lines = dialogue.getStringList(path);
+        plugin.getLogger().info("[DialogueManager] Found " + lines.size() + " lines for: " + path);
         if (lines.isEmpty()) {
             plugin.getLogger().warning("DialogueManager: no content at '" + path + "'");
             return;
         }
         for (int i = 0; i < lines.size(); i++) {
             final String line = lines.get(i);
+            plugin.getLogger().info("[DialogueManager] Scheduling line " + (i+1) + ": " + line);
             Bukkit.getScheduler().runTaskLater(plugin,
                 () -> player.sendMessage(PREFIX + replacePlaceholders(line, vars)),
                 i * LINE_DELAY_TICKS);
