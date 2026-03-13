@@ -9,10 +9,8 @@ import com.oscity.journey.Journey;
 import com.oscity.journey.JourneyManager;
 import com.oscity.session.JourneyTracker;
 import com.oscity.world.LocationRegistry;
-import com.oscity.mechanics.JourneyMapManager;
 import io.papermc.paper.event.player.AsyncChatEvent;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -26,15 +24,12 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.Action;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -74,8 +69,6 @@ public class ChoiceButtonHandler implements Listener {
     // Map: button location → config key name
     private final Map<Location, String> buttons = new HashMap<>();
 
-    // Per-player pending state: waiting for YES/NO confirmation
-    private final Map<UUID, PendingChoice> pendingConfirm = new HashMap<>();
     // Per-player pending state: waiting for quiz answer
     private final Map<UUID, PendingQuiz> pendingQuiz = new HashMap<>();
     // Per-player terminal path selection state:
@@ -83,11 +76,6 @@ public class ChoiceButtonHandler implements Listener {
     private final Map<UUID, Integer> pendingTerminalPath = new HashMap<>();
 
     // ── Inner state classes ───────────────────────────────────────────────────
-
-    private static class PendingChoice {
-        final String buttonKey;
-        PendingChoice(String buttonKey) { this.buttonKey = buttonKey; }
-    }
 
     private static class PendingQuiz {
         final String questionPath;
@@ -265,6 +253,10 @@ public class ChoiceButtonHandler implements Listener {
         }
 
         if ("skipCalc".equals(buttonKey)) {
+            if (tracker.getMode(player) == PlayerMode.ADVENTURER) {
+                player.sendMessage("§6[Kernel Guardian] §7You chose to explore alone — complete the calculation yourself.");
+                return;
+            }
             calculatorListener.skipCalculation(player);
             return;
         }
@@ -520,7 +512,7 @@ public class ChoiceButtonHandler implements Listener {
                                 Journey playerJourney = tracker.getJourney(player);
                                 if (playerJourney == Journey.PURE_COW) {
                                     org.bukkit.Bukkit.getScheduler().runTaskLater(plugin, () -> {
-                                        dialogue.speak(player, "rooms.ram_room.after_cow_pure_success", tracker.getVars(player));
+                                        speakIfLearner(player, "rooms.ram_room.after_cow_pure_success", tracker.getVars(player));
                                     }, 40L);
                                 }
                             } else if ("ram_after_lazy_alloc".equals(phase) && isZeroFrameChest(chestLoc)) {
@@ -770,26 +762,6 @@ public class ChoiceButtonHandler implements Listener {
         Player player = event.getPlayer();
         String msg = PlainTextComponentSerializer.plainText().serialize(event.message()).trim();
 
-        // ── Pending confirmation (1 = YES / 2 = NO) ──────────────────────────
-        if (pendingConfirm.containsKey(player.getUniqueId())) {
-            event.setCancelled(true);
-            PendingChoice pending = pendingConfirm.get(player.getUniqueId());
-            if (msg.equals("1")) {
-                pendingConfirm.remove(player.getUniqueId());
-                Bukkit.getScheduler().runTask(plugin, () ->
-                    resolveConfirmedChoice(player, pending.buttonKey));
-            } else if (msg.equals("2")) {
-                pendingConfirm.remove(player.getUniqueId());
-                player.sendMessage(Component.text("§7Choice cancelled. Press the button again when ready.", NamedTextColor.GRAY));
-            } else {
-                QuestionBank.Question q = questionBank.getQuestion("general.confirm_choice");
-                if (q != null) {
-                    player.sendMessage("§c" + q.wrongFeedback);
-                }
-            }
-            return;
-        }
-
         // ── Pending quiz answer ───────────────────────────────────────────────
         if (pendingQuiz.containsKey(player.getUniqueId())) {
             event.setCancelled(true);
@@ -811,7 +783,7 @@ public class ChoiceButtonHandler implements Listener {
                         journeyMapManager.updateMap(player);
                     }
 
-                    dialogue.speak(player, quiz.onCorrectDialoguePath, tracker.getVars(player));
+                    speakIfLearner(player, quiz.onCorrectDialoguePath, tracker.getVars(player));
                 } else {
                     SQLiteStudyDatabase.logWrongAnswer(
                         tracker.getVar(player, "sessionId"),
@@ -924,7 +896,7 @@ public class ChoiceButtonHandler implements Listener {
                     pageTableManager.updatePteMap(player);
                     // Speak the follow-up dialogue
                     Bukkit.getScheduler().runTaskLater(plugin, () ->
-                        dialogue.speak(player, "rooms.ram_room.after_lazy_alloc_book_back", tracker.getVars(player)), 40L);
+                        speakIfLearner(player, "rooms.ram_room.after_lazy_alloc_book_back", tracker.getVars(player)), 40L);
                 } else {
                     // Book not in chest - player took it out and hasn't returned it
                     player.sendMessage("§c[RAM] Put back the book in the ZERO FRAME chest first!");
@@ -1591,13 +1563,13 @@ public class ChoiceButtonHandler implements Listener {
             // Correct decision - proceed based on journey
             if (correctHit) {
                 // TLB hit (Lucky): reveal PFN on map and go to RAM
-                dialogue.speak(player, "rooms.tlb_room.after_hit_quiz_lucky", tracker.getVars(player));
+                speakIfLearner(player, "rooms.tlb_room.after_hit_quiz_lucky", tracker.getVars(player));
                 journeyMapManager.updateMap(player); // Reveal PFN from TLB entry
                 tracker.setPhase(player, "ram_allow_access");
                 teleportPlayer(player, "ramRoom");
             } else {
                 // TLB miss: ask quiz question before opening page table door
-                dialogue.speak(player, "rooms.tlb_room.after_miss_quiz_non_lucky", tracker.getVars(player));
+                speakIfLearner(player, "rooms.tlb_room.after_miss_quiz_non_lucky", tracker.getVars(player));
                 tracker.setPhase(player, "tlb_miss_quiz");
                 // Ask the miss_door question after dialogue completes (3 second delay)
                 Bukkit.getScheduler().runTaskLater(plugin, () -> {
@@ -1613,7 +1585,7 @@ public class ChoiceButtonHandler implements Listener {
                 // Player pressed HIT but it's actually a MISS
                 player.sendMessage("§cThat's incorrect! Check the VPN signs again - your VPN is NOT displayed in the TLB.");
             }
-            dialogue.speak(player, "rooms.tlb_room.incorrect_decision", tracker.getVars(player));
+            speakIfLearner(player, "rooms.tlb_room.incorrect_decision", tracker.getVars(player));
             // Give another chance - stay in tlb_after_calculator phase
         }
     }
@@ -1663,9 +1635,8 @@ public class ChoiceButtonHandler implements Listener {
         if (label == null) return;
 
         vars.put("button", label);
-        dialogue.speak(player, "rooms.permission_chamber.after_button_press", vars);
-        sendConfirmQuestion(player);
-        pendingConfirm.put(player.getUniqueId(), new PendingChoice("perm_" + buttonKey));
+        player.sendMessage("§7You have selected: §e" + label + "§7.");
+        resolvePermissionDecision(player, buttonKey, journey, vars);
     }
 
     private String permissionDecisionLabel(String key) {
@@ -1685,9 +1656,8 @@ public class ChoiceButtonHandler implements Listener {
         if (label == null) return;
 
         vars.put("button", label);
-        dialogue.speak(player, "rooms.permission_chamber.after_button_press", vars);
-        sendConfirmQuestion(player);
-        pendingConfirm.put(player.getUniqueId(), new PendingChoice("pft_" + buttonKey));
+        player.sendMessage("§7You have selected: §e" + label + "§7.");
+        resolvePageFaultType(player, buttonKey, journey, vars);
     }
 
     private String pageFaultTypeLabel(String key) {
@@ -1707,9 +1677,8 @@ public class ChoiceButtonHandler implements Listener {
         if (label == null) return;
 
         vars.put("button", label);
-        dialogue.speak(player, "rooms.lazy_allocation_room.after_button_press", vars);
-        sendConfirmQuestion(player);
-        pendingConfirm.put(player.getUniqueId(), new PendingChoice("la_" + buttonKey));
+        player.sendMessage("§7You have selected: §e" + label + "§7.");
+        resolveLazyAllocDecision(player, buttonKey, journey, vars);
     }
 
     private String lazyAllocDecisionLabel(String key) {
@@ -1727,9 +1696,8 @@ public class ChoiceButtonHandler implements Listener {
         if (label == null) return;
 
         vars.put("button", label);
-        dialogue.speak(player, "rooms.lazy_allocation_room.after_button_press", vars);
-        sendConfirmQuestion(player);
-        pendingConfirm.put(player.getUniqueId(), new PendingChoice("lac_" + buttonKey));
+        player.sendMessage("§7You have selected: §e" + label + "§7.");
+        resolveLazyAllocCow(player, buttonKey, vars);
     }
 
     private String lazyAllocCowLabel(String key) {
@@ -1748,9 +1716,8 @@ public class ChoiceButtonHandler implements Listener {
         if (label == null) return;
 
         vars.put("button", label);
-        dialogue.speak(player, "rooms.cow_room.after_button_press", vars);
-        sendConfirmQuestion(player);
-        pendingConfirm.put(player.getUniqueId(), new PendingChoice("cow_" + buttonKey));
+        player.sendMessage("§7You have selected: §e" + label + "§7.");
+        resolveCowDecision(player, buttonKey, vars);
     }
 
     private String cowDecisionLabel(String key) {
@@ -1761,24 +1728,6 @@ public class ChoiceButtonHandler implements Listener {
         }
     }
 
-    // ── Resolve confirmed choices ─────────────────────────────────────────────
-
-    private void resolveConfirmedChoice(Player player, String buttonKey) {
-        Journey journey = tracker.getJourney(player);
-        Map<String, String> vars = tracker.getVars(player);
-
-        if (buttonKey.startsWith("perm_")) {
-            resolvePermissionDecision(player, buttonKey.substring(5), journey, vars);
-        } else if (buttonKey.startsWith("pft_")) {
-            resolvePageFaultType(player, buttonKey.substring(4), journey, vars);
-        } else if (buttonKey.startsWith("la_")) {
-            resolveLazyAllocDecision(player, buttonKey.substring(3), journey, vars);
-        } else if (buttonKey.startsWith("lac_")) {
-            resolveLazyAllocCow(player, buttonKey.substring(4), vars);
-        } else if (buttonKey.startsWith("cow_")) {
-            resolveCowDecision(player, buttonKey.substring(4), vars);
-        }
-    }
 
     private void resolvePermissionDecision(Player player, String action, Journey journey, Map<String, String> vars) {
         String answer = buttonToPermissionAnswer(action);
@@ -1786,37 +1735,36 @@ public class ChoiceButtonHandler implements Listener {
 
         if (!correct) {
             SQLiteStudyDatabase.logWrongAnswer(vars.getOrDefault("sessionId", "?"), "permission_chamber");
-            dialogue.speakLine(player, permissionIncorrectFeedback(action), vars);
+            speakLineIfLearner(player, permissionIncorrectFeedback(action), vars);
             return;
         }
 
         switch (answer) {
             case "allow_access":
-                dialogue.speak(player, "feedback.allow_access_correct", vars);
+                speakIfLearner(player, "feedback.allow_access_correct", vars);
                 tracker.setPhase(player, "ram_allow_access");
                 clearPermChoiceSigns();
                 updateSign("perChamber.sign6", "Go to RAM", "", "", "");
                 break;
             case "page_fault":
-                dialogue.speak(player, "feedback.page_fault_correct", vars);
+                speakIfLearner(player, "feedback.page_fault_correct", vars);
                 tracker.setPhase(player, "page_fault_type");
-                // Switch signs to page-fault subtype labels (sign4 disappears)
                 updateSign("perChamber.sign1", "Lazy Allocation", "", "", "");
                 updateSign("perChamber.sign2", "Lazy Loading", "", "", "");
                 updateSign("perChamber.sign3", "Swapping", "", "", "");
                 updateSign("perChamber.sign4", "", "", "", "");
                 updateSign("perChamber.sign5", "Which type of", "page fault?", "", "");
-                dialogue.speak(player, "rooms.permission_chamber.page_fault_subtype_prompt", vars);
+                speakIfLearner(player, "rooms.permission_chamber.page_fault_subtype_prompt", vars);
                 break;
             case "segfault":
-                dialogue.speak(player, "feedback.segfault_correct", vars);
+                speakIfLearner(player, "feedback.segfault_correct", vars);
                 tracker.setPhase(player, "segfault_end");
                 progress.markComplete(player, Journey.PERMISSION_VIOLATION);
                 clearPermChoiceSigns();
                 updateSign("perChamber.sign6", "Terminate", "process and", "finish", "");
                 break;
             case "protection_fault":
-                dialogue.speak(player, "feedback.protection_fault_correct", vars);
+                speakIfLearner(player, "feedback.protection_fault_correct", vars);
                 tracker.setPhase(player, "cow_decision");
                 clearPermChoiceSigns();
                 updateSign("perChamber.sign6", "Go to COW", "room", "", "");
@@ -1858,20 +1806,20 @@ public class ChoiceButtonHandler implements Listener {
 
         switch (expected) {
             case "lazy_allocation":
-                dialogue.speak(player, "feedback.lazy_allocation_correct", vars);
-                dialogue.speak(player, "rooms.permission_chamber.proceed_to_corridor", vars);
+                speakIfLearner(player, "feedback.lazy_allocation_correct", vars);
+                speakIfLearner(player, "rooms.permission_chamber.proceed_to_corridor", vars);
                 tracker.setPhase(player, "lazy_alloc_decision");
                 clearPermSubtypeSigns();
                 break;
             case "lazy_loading":
-                dialogue.speak(player, "feedback.lazy_loading_correct", vars);
-                dialogue.speak(player, "rooms.permission_chamber.proceed_to_corridor", vars);
+                speakIfLearner(player, "feedback.lazy_loading_correct", vars);
+                speakIfLearner(player, "rooms.permission_chamber.proceed_to_corridor", vars);
                 tracker.setPhase(player, "lazy_loading_entered");
                 clearPermSubtypeSigns();
                 break;
             case "swapped_out":
-                dialogue.speak(player, "feedback.swapped_out_correct", vars);
-                dialogue.speak(player, "rooms.permission_chamber.proceed_to_disk", vars);
+                speakIfLearner(player, "feedback.swapped_out_correct", vars);
+                speakIfLearner(player, "rooms.permission_chamber.proceed_to_disk", vars);
                 tracker.setPhase(player, "disk_swap_retrieval");
                 clearPermSubtypeSigns();
                 updateSign("perChamber.sign6", "Go to Disk", "", "", "");
@@ -1900,7 +1848,7 @@ public class ChoiceButtonHandler implements Listener {
 
     private void resolveLazyAllocDecision(Player player, String action, Journey journey, Map<String, String> vars) {
         if ("allocateLazy".equals(action)) {
-            dialogue.speak(player, "rooms.lazy_allocation_room.allocate_correct", vars);
+            speakIfLearner(player, "rooms.lazy_allocation_room.allocate_correct", vars);
             // Update PFN to zero frame (0x9) and PTE flags
             tracker.setVar(player, "pfn", "0x9");
             tracker.setVar(player, "ptePresent", "1");
@@ -1915,13 +1863,13 @@ public class ChoiceButtonHandler implements Listener {
             updateSign("lazyAllocation.mixSign", "Go to RAM", "", "", "");
         } else {
             SQLiteStudyDatabase.logWrongAnswer(vars.getOrDefault("sessionId", "?"), "lazy_allocation_room");
-            dialogue.speak(player, "rooms.lazy_allocation_room.allocate_incorrect", vars);
+            speakIfLearner(player, "rooms.lazy_allocation_room.allocate_incorrect", vars);
         }
     }
 
     private void resolveLazyAllocCow(Player player, String action, Map<String, String> vars) {
         if ("cowLazyAlloc".equals(action)) {
-            dialogue.speak(player, "rooms.lazy_allocation_room.second_visit_correct", vars);
+            speakIfLearner(player, "rooms.lazy_allocation_room.second_visit_correct", vars);
             tracker.setPhase(player, "going_to_cow");
             // Hide COW-decision signs; show "Go to COW room" (btnLazyAlloc now TPs to COW)
             updateSign("lazyAllocation.cowSign", "", "", "", "");
@@ -1930,7 +1878,7 @@ public class ChoiceButtonHandler implements Listener {
             updateSign("lazyAllocation.mixSign", "Go to COW room", "", "", "");
         } else {
             SQLiteStudyDatabase.logWrongAnswer(vars.getOrDefault("sessionId", "?"), "lazy_allocation_cow");
-            dialogue.speak(player, "rooms.lazy_allocation_room.second_visit_incorrect", vars);
+            speakIfLearner(player, "rooms.lazy_allocation_room.second_visit_incorrect", vars);
         }
     }
 
@@ -1952,7 +1900,7 @@ public class ChoiceButtonHandler implements Listener {
             }
             // For LAZY_ALLOCATION: Don't update PTE variables here - they will be updated after swap
 
-            dialogue.speak(player, "rooms.cow_room.allocate_copy_correct", vars);
+            speakIfLearner(player, "rooms.cow_room.allocate_copy_correct", vars);
             tracker.setPhase(player, "ram_after_cow");
             // Reveal the "Go to RAM" sign in the COW room
             updateSign("cow.toRam", "Go to RAM", "", "", "");
@@ -1964,7 +1912,7 @@ public class ChoiceButtonHandler implements Listener {
             }
         } else {
             SQLiteStudyDatabase.logWrongAnswer(vars.getOrDefault("sessionId", "?"), "cow_room");
-            dialogue.speak(player, "rooms.cow_room.terminate_incorrect", vars);
+            speakIfLearner(player, "rooms.cow_room.terminate_incorrect", vars);
         }
     }
 
@@ -2033,6 +1981,22 @@ public class ChoiceButtonHandler implements Listener {
         updateSign("lazyLoading.mixSign", l1, l2, l3, l4);
     }
 
+    // ── Dialogue helpers ──────────────────────────────────────────────────────
+
+    /** Speak dialogue only if the player is not in ADVENTURER mode. */
+    private void speakIfLearner(Player player, String path, Map<String, String> vars) {
+        if (tracker.getMode(player) != PlayerMode.ADVENTURER) {
+            dialogue.speak(player, path, vars);
+        }
+    }
+
+    /** speakLine variant — same mode guard. */
+    private void speakLineIfLearner(Player player, String text, Map<String, String> vars) {
+        if (tracker.getMode(player) != PlayerMode.ADVENTURER) {
+            dialogue.speakLine(player, text, vars);
+        }
+    }
+
     // ── Quiz helpers ──────────────────────────────────────────────────────────
 
     public void askQuestion(Player player, String questionPath,
@@ -2042,13 +2006,6 @@ public class ChoiceButtonHandler implements Listener {
         sendQuestion(player, q);
         pendingQuiz.put(player.getUniqueId(),
             new PendingQuiz(questionPath, onCorrectPhase, onCorrectDialoguePath));
-    }
-
-    private void sendConfirmQuestion(Player player) {
-        QuestionBank.Question q = questionBank.getQuestion("general.confirm_choice");
-        if (q != null) {
-            player.sendMessage("§6[Kernel Guardian] §e" + q.text);
-        }
     }
 
     private void sendQuestion(Player player, QuestionBank.Question q) {

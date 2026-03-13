@@ -1,6 +1,7 @@
 package com.oscity.mechanics;
 
 import com.oscity.content.DialogueManager;
+import com.oscity.mode.PlayerMode;
 import com.oscity.session.JourneyTracker;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
@@ -126,7 +127,8 @@ public class SwapClockManager {
             states.remove(player.getUniqueId());
             updateFrameSign(frameNum, pfnHex, "Swapped out", "to disk", "");
             tracker.setPhase(player, "swap_after_eviction");
-            dialogue.speak(player, "rooms.swap_district.after_eviction", tracker.getVars(player));
+            if (tracker.getMode(player) != PlayerMode.ADVENTURER)
+                dialogue.speak(player, "rooms.swap_district.after_eviction", tracker.getVars(player));
             player.sendMessage("§6[Clock] §eFrame §f" + pfnHex + "§e evicted to swap!");
             return true;
         }
@@ -189,7 +191,8 @@ public class SwapClockManager {
                 // Round 2, victim found! (First press - state is kept for second press)
                 updateFrameSign(frameNum, pfnHex, "VICTIM!", "Press the", "button again!");
                 tracker.setPhase(player, "swap_victim_found");
-                dialogue.speak(player, "rooms.swap_district.victim_found", tracker.getVars(player));
+                if (tracker.getMode(player) != PlayerMode.ADVENTURER)
+                    dialogue.speak(player, "rooms.swap_district.victim_found", tracker.getVars(player));
             } else {
                 // Round 2, off but not the victim (shouldn't occur since non-victims were re-lit)
                 player.sendMessage("§6[Clock] §eFrame §f" + pfnHex

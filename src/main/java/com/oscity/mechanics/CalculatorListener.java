@@ -1,5 +1,6 @@
 package com.oscity.mechanics;
 
+import com.oscity.content.QuestionBank;
 import com.oscity.session.JourneyTracker;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -56,6 +57,7 @@ public class CalculatorListener implements Listener {
     private final JavaPlugin plugin;
     private final JourneyTracker tracker;
     private final JourneyMapManager journeyMapManager;
+    private final QuestionBank questionBank;
 
     private Location hopperLocation;
     private final List<Location> instrFrames = new ArrayList<>();
@@ -68,15 +70,20 @@ public class CalculatorListener implements Listener {
     /** Players who have completed the calculator calculation (used hopper or skip). */
     private final Map<UUID, Boolean> hasCalculated = new HashMap<>();
 
+    /** Players awaiting a calc verification question; value = question path. */
+    private final Map<UUID, String> pendingCalcVerify = new HashMap<>();
+
     /** Cached MapView per frame location so we reuse the same map ID across updates. */
     private final Map<Location, MapView> frameMapViews = new HashMap<>();
 
     // ── Constructor ───────────────────────────────────────────────────────────
 
-    public CalculatorListener(JavaPlugin plugin, JourneyTracker tracker, JourneyMapManager journeyMapManager) {
-        this.plugin  = plugin;
-        this.tracker = tracker;
+    public CalculatorListener(JavaPlugin plugin, JourneyTracker tracker,
+                              JourneyMapManager journeyMapManager, QuestionBank questionBank) {
+        this.plugin        = plugin;
+        this.tracker       = tracker;
         this.journeyMapManager = journeyMapManager;
+        this.questionBank  = questionBank;
         loadConfig();
     }
 
@@ -138,7 +145,8 @@ public class CalculatorListener implements Listener {
         updateInstructionFrames(phase);
         setCalcAwaiting();
         calculating.remove(player.getUniqueId());
-        hasCalculated.remove(player.getUniqueId()); // Reset calculation state
+        hasCalculated.remove(player.getUniqueId());
+        pendingCalcVerify.remove(player.getUniqueId());
     }
 
     /**
@@ -170,6 +178,78 @@ public class CalculatorListener implements Listener {
             setCalcError(va);
             player.sendMessage("§c[Calculator] Could not parse VA '" + va + "'.");
         }
+    }
+
+    // ── Calculator verification questions ────────────────────────────────────
+
+    private void askHexQuestion(Player player, String inputHex, long value) {
+        int totalBits = pageOffsetBits * 2;
+        // Distractor B: nibbles swapped (tests VPN/offset order knowledge)
+        long swapped = ((value & 0xF) << 4) | ((value >> 4) & 0xF);
+
+        tracker.setVar(player, "hex", inputHex);
+        tracker.setVar(player, "optA", formatNibbles(value, totalBits));
+        tracker.setVar(player, "optB", formatNibbles(swapped, totalBits));
+        tracker.setVar(player, "optC", formatNibbles(value ^ 1L, totalBits)); // last bit flipped
+
+        askCalcQuestion(player, "calculator_room.hex_to_binary");
+    }
+
+    private void askPageIndexQuestion(Player player, long value) {
+        tracker.setVar(player, "optA", String.valueOf(value));
+        tracker.setVar(player, "optB", String.valueOf(value + 1));
+        tracker.setVar(player, "optC", String.valueOf(value + 2));
+
+        askCalcQuestion(player, "calculator_room.page_index");
+    }
+
+    private void askCalcQuestion(Player player, String questionPath) {
+        QuestionBank.Question q = questionBank.getQuestion(questionPath);
+        if (q == null) {
+            hasCalculated.put(player.getUniqueId(), true);
+            return;
+        }
+        Map<String, String> vars = tracker.getVars(player);
+        String questionText = q.text;
+        for (Map.Entry<String, String> e : vars.entrySet()) {
+            questionText = questionText.replace("{" + e.getKey() + "}", e.getValue());
+        }
+        player.sendMessage("§6[Quiz] §e" + questionText);
+        player.sendMessage(q.formatOptions(vars));
+        pendingCalcVerify.put(player.getUniqueId(), questionPath);
+    }
+
+    @EventHandler
+    public void onCalcVerifyChat(io.papermc.paper.event.player.AsyncChatEvent event) {
+        Player player = event.getPlayer();
+        String questionPath = pendingCalcVerify.get(player.getUniqueId());
+        if (questionPath == null) return;
+        event.setCancelled(true);
+        String msg = net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
+            .plainText().serialize(event.message()).trim();
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            QuestionBank.Question q = questionBank.getQuestion(questionPath);
+            if (q == null) {
+                pendingCalcVerify.remove(player.getUniqueId());
+                hasCalculated.put(player.getUniqueId(), true);
+                return;
+            }
+            if (q.checkAnswer(msg)) {
+                pendingCalcVerify.remove(player.getUniqueId());
+                hasCalculated.put(player.getUniqueId(), true);
+                player.sendMessage("§a[Quiz] Correct! The Continue button is now enabled.");
+            } else {
+                player.sendMessage("§c" + q.wrongFeedback);
+                // Re-display the question so they can try again
+                Map<String, String> vars = tracker.getVars(player);
+                String questionText = q.text;
+                for (Map.Entry<String, String> e : vars.entrySet()) {
+                    questionText = questionText.replace("{" + e.getKey() + "}", e.getValue());
+                }
+                player.sendMessage("§6[Quiz] §e" + questionText);
+                player.sendMessage(q.formatOptions(vars));
+            }
+        });
     }
 
     // ── Hopper detection ──────────────────────────────────────────────────────
@@ -247,21 +327,22 @@ public class CalculatorListener implements Listener {
                 showResult(input, value);
                 // Only update VPN and offset, NOT PFN (PFN comes from TLB or page table)
                 journeyMapManager.updateMapAfterCalculator(player);
-                hasCalculated.put(player.getUniqueId(), true);
 
-                // Use appropriate summary based on phase
-                String summary;
                 if ("calculator_from_lazy_loading".equals(phase)) {
-                    // Second visit: calculated page index - set it and update map
-                    summary = buildPageIndexSummary(value);
+                    // Second visit: page index — store result, then verify
+                    String summary = buildPageIndexSummary(value);
                     tracker.setVar(player, "pageIndex", String.valueOf(value));
                     journeyMapManager.updateMap(player);
+                    player.sendMessage("§6[Calculator] §aResult: §f" + summary
+                        + "§a — added to your log.");
+                    askPageIndexQuestion(player, value);
                 } else {
-                    summary = buildChatSummary(value);
+                    // First visit (calculator_from_tlb): ask hex→binary verification question
+                    String summary = buildChatSummary(value);
+                    player.sendMessage("§6[Calculator] §aResult: §f" + summary
+                        + "§a — added to your log.");
+                    askHexQuestion(player, input, value);
                 }
-
-                player.sendMessage("§6[Calculator] §aResult: §f" + summary
-                    + "§a — added to your log.");
             } catch (NumberFormatException e) {
                 setCalcError(input);
                 player.sendMessage("§c[Calculator] Could not parse '" + input

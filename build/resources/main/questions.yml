@@ -5,12 +5,6 @@
 #   correct: the correct answer key or text
 #   wrong: feedback shown when the player answers incorrectly
 
-general:
-  confirm_choice:
-    question: "Is this your final answer? Type 1 for YES or 2 for NO."
-    correct: "1"
-    wrong: "Invalid input. Please type 1 for YES or 2 for NO."
-
 tlb_room:
   hit_or_miss:
     question: "Is this correct? Type 1 for YES or 2 for NO."
@@ -30,6 +24,15 @@ tlb_room:
 calculator_room:
   hex_to_binary:
     question: "Let's check your work. What is {hex} in binary?"
+    options:
+      A: "{optA}"
+      B: "{optB}"
+      C: "{optC}"
+      D: "Other"
+    correct: "A"
+    wrong: "That's incorrect. Do the calculation again."
+  page_index:
+    question: "What page index does your virtual address correspond to?"
     options:
       A: "{optA}"
       B: "{optB}"

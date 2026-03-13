@@ -1,7 +1,6 @@
 package com.oscity.mechanics;
 
 import com.oscity.content.DialogueManager;
-import com.oscity.mode.PlayerMode;
 import com.oscity.persistence.SQLiteStudyDatabase;
 import com.oscity.session.JourneyTracker;
 import com.oscity.session.SessionManager;
@@ -37,15 +36,6 @@ public class HintSystem {
      * For LEARNER mode: Shows the normal hint.
      */
     public void showHint(Player player) {
-        PlayerMode mode = journeyTracker.getMode(player);
-        
-        // Adventurer mode: no hints - they must figure it out themselves
-        if (mode == PlayerMode.ADVENTURER) {
-            player.sendMessage("§6[Kernel Guardian] §eAdventurer mode: No hints available. You must figure this out on your own!");
-            player.sendMessage("§6[Kernel Guardian] §7Use 'Explain again' to review instructions or 'Explain a concept' to learn terminology.");
-            return;
-        }
-        
         String phase = journeyTracker.getPhase(player);
         String hintPath = resolveHintPath(player, phase);
 

@@ -61,7 +61,7 @@ public class GuardianInteractionHandler implements Listener {
             .append(Component.text(" — Replay instructions", NamedTextColor.GRAY)));
         if (isAdventurer) {
             player.sendMessage(Component.text("2. Guide me through this step", NamedTextColor.GOLD)
-                .append(Component.text(" — One-time hint (stays in Adventurer mode)", NamedTextColor.GRAY)));
+                .append(Component.text(" — One-time hint", NamedTextColor.GRAY)));
         } else {
             player.sendMessage(Component.text("2. I'm lost", NamedTextColor.GOLD)
                 .append(Component.text(" — Get a hint", NamedTextColor.GRAY)));
@@ -70,10 +70,10 @@ public class GuardianInteractionHandler implements Listener {
             .append(Component.text(" — Learn terminology", NamedTextColor.GRAY)));
         if (isAdventurer) {
             player.sendMessage(Component.text("4. Enable full guidance", NamedTextColor.AQUA)
-                .append(Component.text(" — Switch to Learner mode permanently", NamedTextColor.GRAY)));
+                .append(Component.text(" — Get hints for the rest of this journey", NamedTextColor.GRAY)));
         } else {
             player.sendMessage(Component.text("4. Disable guidance", NamedTextColor.GRAY)
-                .append(Component.text(" — Switch to Adventurer mode", NamedTextColor.GRAY)));
+                .append(Component.text(" — Explore the rest of this journey alone", NamedTextColor.GRAY)));
         }
         player.sendMessage(Component.text(""));
         player.sendMessage(Component.text("Type a number in chat to choose", NamedTextColor.DARK_GRAY, TextDecoration.ITALIC));
@@ -130,23 +130,30 @@ public class GuardianInteractionHandler implements Listener {
     private void handleMenuChoice(Player player, String choice) {
         PlayerMode mode = journeyTracker.getMode(player);
         boolean isAdventurer = (mode == PlayerMode.ADVENTURER);
-        
+
         switch (choice) {
             case "1":
                 replayCurrentDialogue(player);
                 break;
             case "2":
-                if (isAdventurer) {
-                    player.sendMessage(Component.text("§cAdventurer mode: Hints are not available. Use 'Explain again' or 'Explain a concept' instead.", NamedTextColor.RED));
-                } else {
-                    hintSystem.showHint(player);
-                }
+                hintSystem.showHint(player);
                 break;
             case "3":
                 showConceptList(player);
                 break;
+            case "4":
+                if (isAdventurer) {
+                    journeyTracker.setMode(player, PlayerMode.LEARNER);
+                    player.sendMessage("§6[Kernel Guardian] §fVery well. I will guide you from here on.");
+                    player.sendMessage("§6[Kernel Guardian] §aGuidance is now enabled for the rest of this journey.");
+                } else {
+                    journeyTracker.setMode(player, PlayerMode.ADVENTURER);
+                    player.sendMessage("§6[Kernel Guardian] §fUnderstood. You walk alone from here.");
+                    player.sendMessage("§6[Kernel Guardian] §7Guidance is now disabled for the rest of this journey.");
+                }
+                break;
             default:
-                player.sendMessage(Component.text("Please type 1, 2, or 3.", NamedTextColor.RED));
+                player.sendMessage(Component.text("Please type 1, 2, 3, or 4.", NamedTextColor.RED));
         }
     }
 

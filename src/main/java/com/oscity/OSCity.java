@@ -132,7 +132,7 @@ public class OSCity extends JavaPlugin {
         journeyMapManager = new JourneyMapManager(this, journeyTracker);
 
         // Calculator (must be before ChoiceButtonHandler; needs journeyMapManager)
-        calculatorListener = new CalculatorListener(this, journeyTracker, journeyMapManager);
+        calculatorListener = new CalculatorListener(this, journeyTracker, journeyMapManager, questionBank);
         calculatorListener.register();
 
         // TLB room
