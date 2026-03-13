@@ -51,35 +51,34 @@ public class GuardianInteractionHandler implements Listener {
     private void showMainMenu(Player player) {
         PlayerMode mode = journeyTracker.getMode(player);
         boolean isAdventurer = (mode == PlayerMode.ADVENTURER);
-        
+
         player.sendMessage(Component.text("════════════════════════════════", NamedTextColor.GOLD));
         player.sendMessage(Component.text("Kernel Guardian", NamedTextColor.AQUA, TextDecoration.BOLD));
         player.sendMessage(Component.text(""));
         player.sendMessage(Component.text("What would you like to know?", NamedTextColor.YELLOW));
         player.sendMessage(Component.text(""));
         player.sendMessage(Component.text("1. Explain again", NamedTextColor.GREEN)
-            .append(Component.text(" - Replay instructions", NamedTextColor.GRAY)));
-        
+            .append(Component.text(" — Replay instructions", NamedTextColor.GRAY)));
         if (isAdventurer) {
-            player.sendMessage(Component.text("2. I'm lost", NamedTextColor.DARK_GRAY, TextDecoration.STRIKETHROUGH)
-                .append(Component.text(" - Not available in Adventurer mode", NamedTextColor.DARK_GRAY)));
+            player.sendMessage(Component.text("2. Guide me through this step", NamedTextColor.GOLD)
+                .append(Component.text(" — One-time hint (stays in Adventurer mode)", NamedTextColor.GRAY)));
         } else {
             player.sendMessage(Component.text("2. I'm lost", NamedTextColor.GOLD)
-                .append(Component.text(" - Get a hint", NamedTextColor.GRAY)));
+                .append(Component.text(" — Get a hint", NamedTextColor.GRAY)));
         }
-        
         player.sendMessage(Component.text("3. Explain a concept", NamedTextColor.LIGHT_PURPLE)
-            .append(Component.text(" - Learn terminology", NamedTextColor.GRAY)));
-        player.sendMessage(Component.text(""));
-        
+            .append(Component.text(" — Learn terminology", NamedTextColor.GRAY)));
         if (isAdventurer) {
-            player.sendMessage(Component.text("Type 1 or 3 in chat to choose", NamedTextColor.DARK_GRAY, TextDecoration.ITALIC));
+            player.sendMessage(Component.text("4. Enable full guidance", NamedTextColor.AQUA)
+                .append(Component.text(" — Switch to Learner mode permanently", NamedTextColor.GRAY)));
         } else {
-            player.sendMessage(Component.text("Type a number in chat to choose", NamedTextColor.DARK_GRAY, TextDecoration.ITALIC));
+            player.sendMessage(Component.text("4. Disable guidance", NamedTextColor.GRAY)
+                .append(Component.text(" — Switch to Adventurer mode", NamedTextColor.GRAY)));
         }
+        player.sendMessage(Component.text(""));
+        player.sendMessage(Component.text("Type a number in chat to choose", NamedTextColor.DARK_GRAY, TextDecoration.ITALIC));
         player.sendMessage(Component.text("════════════════════════════════", NamedTextColor.GOLD));
 
-        // Register pending menu selection — handled by MenuChatListener (below)
         pendingMenu.put(player.getUniqueId(), true);
     }
 

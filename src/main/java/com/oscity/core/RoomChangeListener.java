@@ -12,8 +12,7 @@ import com.oscity.mechanics.PageTableManager;
 import com.oscity.mechanics.RAMRoomManager;
 import com.oscity.mechanics.SwapClockManager;
 import com.oscity.mechanics.TLBRoomManager;
-import com.oscity.mode.AdventurerModeHandler;
-import com.oscity.mode.LearnerModeHandler;
+import com.oscity.quiz.QuizManager;
 import com.oscity.session.JourneyTracker;
 import com.oscity.world.LocationRegistry;
 import com.oscity.world.RoomRegistry;
@@ -46,8 +45,7 @@ public class RoomChangeListener implements Listener {
     private final RAMRoomManager ramRoomManager;
     private final DiskRoomManager diskRoomManager;
     private final JourneyMapManager journeyMapManager;
-    private final LearnerModeHandler learnerHandler;
-    private final AdventurerModeHandler adventurerHandler;
+    private final QuizManager quizManager;
 
     private String currentRoomTitle = null;
     private boolean guardianSpawned = false;
@@ -64,8 +62,7 @@ public class RoomChangeListener implements Listener {
                                RAMRoomManager ramRoomManager,
                                DiskRoomManager diskRoomManager,
                                JourneyMapManager journeyMapManager,
-                               LearnerModeHandler learnerHandler,
-                               AdventurerModeHandler adventurerHandler) {
+                               QuizManager quizManager) {
         this.plugin = plugin;
         this.guardian = guardian;
         this.roomRegistry = roomRegistry;
@@ -81,15 +78,16 @@ public class RoomChangeListener implements Listener {
         this.ramRoomManager = ramRoomManager;
         this.diskRoomManager = diskRoomManager;
         this.journeyMapManager = journeyMapManager;
-        this.learnerHandler = learnerHandler;
-        this.adventurerHandler = adventurerHandler;
+        this.quizManager = quizManager;
     }
 
     // ── Player join ───────────────────────────────────────────────────────────
 
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
-        progressTracker.unloadPlayer(event.getPlayer().getUniqueId());
+        Player player = event.getPlayer();
+        progressTracker.unloadPlayer(player.getUniqueId());
+        quizManager.dropSession(player);
     }
 
     @EventHandler
@@ -176,23 +174,42 @@ public class RoomChangeListener implements Listener {
     // ── Room entry dialogue dispatch ──────────────────────────────────────────
 
     private void onRoomEntered(Player player, String roomTitle) {
+        // Cancel any pending confirmations when leaving those rooms.
+        // Path selection only cancels when entering a room other than Learner Mode.
+        quizManager.cancelQuizConfirmation(player);
+        if (!"Learner Mode".equals(roomTitle)) {
+            choiceButtonHandler.cancelTerminalPathSelection(player);
+        }
+
         String phase = journeyTracker.getPhase(player);
         Map<String, String> vars = journeyTracker.getVars(player);
 
         switch (roomTitle) {
-            case "Terminal":
-                dialogueManager.speak(player, "rooms.terminal.initial_spawn", vars);
-                journeyTracker.setPhase(player, "terminal_spawn");
+            case "Initial Terminal":
+                if ("terminal_spawn".equals(phase)) {
+                    dialogueManager.speak(player, "rooms.terminal.initial_spawn", vars);
+                }
                 break;
 
             case "Learner Mode":
-                learnerHandler.onModeEntered(player);
+                if ("terminal_journey_chosen".equals(phase)) {
+                    // Journey already chosen — chest is ready
+                    dialogueManager.speak(player, "rooms.learner_mode.ready", vars);
+                } else if (!choiceButtonHandler.isTerminalPathPending(player)) {
+                    // Only greet and start selection if not already mid-selection
+                    if (journeyTracker.hasCompletedQuiz(player)) {
+                        dialogueManager.speak(player, "rooms.learner_mode.quiz_done", vars);
+                    } else {
+                        dialogueManager.speak(player, "rooms.learner_mode.no_quiz_warning", vars);
+                    }
+                    Bukkit.getScheduler().runTaskLater(plugin, () ->
+                        choiceButtonHandler.startTerminalPathSelection(player), 80L);
+                }
                 break;
 
             case "Adventurer Mode":
-                adventurerHandler.onModeEntered(player);
-                Bukkit.getScheduler().runTaskLater(plugin,
-                    () -> choiceButtonHandler.showJourneyList(player), 40L);
+                journeyTracker.setPhase(player, "quiz_active");
+                quizManager.promptQuizStart(player);
                 break;
 
             case "TLB Room":

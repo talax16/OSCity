@@ -74,13 +74,13 @@ public class ChoiceButtonHandler implements Listener {
     // Map: button location → config key name
     private final Map<Location, String> buttons = new HashMap<>();
 
-    // Adventurer mode chest location for access control
-    private Location adventurerChestLoc = null;
-
     // Per-player pending state: waiting for YES/NO confirmation
     private final Map<UUID, PendingChoice> pendingConfirm = new HashMap<>();
     // Per-player pending state: waiting for quiz answer
     private final Map<UUID, PendingQuiz> pendingQuiz = new HashMap<>();
+    // Per-player terminal path selection state:
+    //   0 = awaiting path choice (1/2/3), >0 = path chosen, awaiting guidance (G/A)
+    private final Map<UUID, Integer> pendingTerminalPath = new HashMap<>();
 
     // ── Inner state classes ───────────────────────────────────────────────────
 
@@ -157,8 +157,7 @@ public class ChoiceButtonHandler implements Listener {
         registerFromTpButtons("loadingToCalc", "loadingTp");  // loadingToDisk shares same location
         registerFromTpButtons("diskToRam", "diskToRam");
 
-        // Register mode-start buttons that require journey selection first
-        registerFromTpButtons("adventurerStart", "adventurerStart");
+        // Register mode-start button
         registerFromTpButtons("learnerStart", "learnerStart");
 
         // Register calculator room continue buttons
@@ -182,20 +181,7 @@ public class ChoiceButtonHandler implements Listener {
         registerFromDoorOpen("toLazyLoading");
         registerFromDoorOpen("toLazyAllocation");
 
-        // Load adventurer chest location for access control
-        loadAdventurerChestLocation();
-
         plugin.getLogger().info("ChoiceButtonHandler: loaded " + buttons.size() + " choice/smart buttons.");
-    }
-
-    private void loadAdventurerChestLocation() {
-        ConfigurationSection sec = plugin.getConfig().getConfigurationSection("chests.adventurerChest");
-        if (sec == null) return;
-        String worldName = sec.getString("world");
-        if (worldName == null) return;
-        World world = Bukkit.getWorld(worldName);
-        if (world == null) return;
-        adventurerChestLoc = new Location(world, sec.getInt("x"), sec.getInt("y"), sec.getInt("z"));
     }
 
     private void registerFromTpButtons(String tpKey, String smartKey) {
@@ -279,17 +265,7 @@ public class ChoiceButtonHandler implements Listener {
         }
 
         if ("skipCalc".equals(buttonKey)) {
-            // Skip is only for learner mode
-            if (tracker.getMode(player) == PlayerMode.ADVENTURER) {
-                player.sendMessage("§cAdventurer mode: you must calculate the answer yourself!");
-                return;
-            }
             calculatorListener.skipCalculation(player);
-            return;
-        }
-
-        if ("adventurerStart".equals(buttonKey)) {
-            handleModeStartButton(player, "adventurerStart", "tlbSpawn");
             return;
         }
 
@@ -423,51 +399,11 @@ public class ChoiceButtonHandler implements Listener {
     // ── Chat listener (YES/NO confirms and quiz answers) ─────────────────────
 
     /**
-     * Blocks opening the adventurer mode chest until the player has chosen a journey.
-     */
-    @EventHandler(priority = EventPriority.LOW)
-    public void onInventoryOpen(InventoryOpenEvent event) {
-        if (!(event.getPlayer() instanceof Player player)) return;
-        if (adventurerChestLoc == null) return;
-
-        // Check if opening the adventurer chest
-        if (event.getInventory().getHolder() instanceof org.bukkit.block.Chest chest) {
-            Location chestLoc = chest.getLocation();
-            if (chestLoc.getWorld() != null && chestLoc.getWorld().equals(adventurerChestLoc.getWorld())
-                    && chestLoc.getBlockX() == adventurerChestLoc.getBlockX()
-                    && chestLoc.getBlockY() == adventurerChestLoc.getBlockY()
-                    && chestLoc.getBlockZ() == adventurerChestLoc.getBlockZ()) {
-                String phase = tracker.getPhase(player);
-                if (!"terminal_journey_chosen".equals(phase)) {
-                    event.setCancelled(true);
-                    player.sendMessage("§cYou must select a journey first! Use the terminal to choose your journey.");
-                }
-            }
-        }
-    }
-
-    /**
-     * Blocks access to the adventurer mode chest until the player has chosen a journey.
+     * Handles inventory click events for chest interactions (RAM room, etc.).
      */
     @EventHandler(priority = EventPriority.LOW)
     public void onInventoryClick(InventoryClickEvent event) {
         if (!(event.getWhoClicked() instanceof Player player)) return;
-        if (adventurerChestLoc == null) return;
-
-        // Check if clicking in the adventurer chest by comparing block location
-        if (event.getInventory().getHolder() instanceof org.bukkit.block.Chest chest) {
-            Location chestLoc = chest.getLocation();
-            if (chestLoc.getWorld() != null && chestLoc.getWorld().equals(adventurerChestLoc.getWorld())
-                    && chestLoc.getBlockX() == adventurerChestLoc.getBlockX()
-                    && chestLoc.getBlockY() == adventurerChestLoc.getBlockY()
-                    && chestLoc.getBlockZ() == adventurerChestLoc.getBlockZ()) {
-                String phase = tracker.getPhase(player);
-                if (!"terminal_journey_chosen".equals(phase)) {
-                    event.setCancelled(true);
-                    player.sendMessage("§cYou must select a journey first! Use the terminal to choose your journey.");
-                }
-            }
-        }
 
         // Check if placing swap PFN book in RAM room chest (for SWAPPED_OUT journey)
         if (event.getInventory().getHolder() instanceof org.bukkit.block.Chest ramChest) {
@@ -600,6 +536,43 @@ public class ChoiceButtonHandler implements Listener {
                 }
             }
         }
+    }
+
+    /**
+     * Blocks the learnerChest from being opened until the player has chosen a journey
+     * (phase == "terminal_journey_chosen").
+     */
+    @EventHandler(priority = EventPriority.LOW)
+    public void onInventoryOpen(InventoryOpenEvent event) {
+        if (!(event.getPlayer() instanceof Player player)) return;
+        if (!(event.getInventory().getHolder() instanceof org.bukkit.block.Chest chest)) return;
+
+        Location chestLoc = chest.getLocation();
+        Location learnerChestLoc = getLearnerChestLocation();
+        if (learnerChestLoc == null) return;
+
+        if (chestLoc.getBlockX() == learnerChestLoc.getBlockX()
+                && chestLoc.getBlockY() == learnerChestLoc.getBlockY()
+                && chestLoc.getBlockZ() == learnerChestLoc.getBlockZ()
+                && chestLoc.getWorld() != null
+                && chestLoc.getWorld().equals(learnerChestLoc.getWorld())) {
+
+            String phase = tracker.getPhase(player);
+            if (!"terminal_journey_chosen".equals(phase)) {
+                event.setCancelled(true);
+                player.sendMessage("§6[Kernel Guardian] §7Choose your journey at the terminal first.");
+            }
+        }
+    }
+
+    private Location getLearnerChestLocation() {
+        ConfigurationSection sec = plugin.getConfig().getConfigurationSection("chests.learnerChest");
+        if (sec == null) return null;
+        String worldName = sec.getString("world");
+        if (worldName == null) return null;
+        World world = Bukkit.getWorld(worldName);
+        if (world == null) return null;
+        return new Location(world, sec.getInt("x"), sec.getInt("y"), sec.getInt("z"));
     }
 
     /**
@@ -851,11 +824,72 @@ public class ChoiceButtonHandler implements Listener {
             return;
         }
 
-        // ── Adventure mode journey selection (chat "1"–"8") ──────────────────
-        if ("adventurer_select".equals(tracker.getPhase(player))) {
+        // ── Terminal path selection ───────────────────────────────────────────
+        UUID termUuid = player.getUniqueId();
+        Integer termStep = pendingTerminalPath.get(termUuid);
+        if (termStep != null) {
             event.setCancelled(true);
-            Bukkit.getScheduler().runTask(plugin, () -> handleJourneySelection(player, msg));
+            if (termStep == 0) {
+                // Step 1: awaiting top-level choice 1/2/3
+                int choice;
+                try {
+                    choice = Integer.parseInt(msg);
+                    if (choice < 1 || choice > 3) throw new NumberFormatException();
+                } catch (NumberFormatException e) {
+                    player.sendMessage("§cPlease type §e1§c, §e2§c, or §e3§c.");
+                    return;
+                }
+                if (choice == 1) {
+                    // Show the 7-journey list with quiz results
+                    pendingTerminalPath.put(termUuid, -1);
+                    Bukkit.getScheduler().runTask(plugin, () -> showJourneyList(player));
+                } else if (choice == 2) {
+                    // All in order — advance index and pick next journey
+                    int idx = tracker.getAllInOrderIndex(player);
+                    idx = (idx % 7) + 1;
+                    tracker.setAllInOrderIndex(player, idx);
+                    Journey next = Journey.fromNumber(idx);
+                    if (next == null) next = Journey.LUCKY;
+                    final Journey picked = next;
+                    pendingTerminalPath.put(termUuid, picked.number);
+                    Bukkit.getScheduler().runTask(plugin, () -> askGuidance(player, picked));
+                } else {
+                    // Random
+                    Journey random = Journey.random();
+                    pendingTerminalPath.put(termUuid, random.number);
+                    Bukkit.getScheduler().runTask(plugin, () -> askGuidance(player, random));
+                }
+            } else if (termStep == -1) {
+                // Step 2a: awaiting journey choice 1-7 from the list
+                int choice;
+                try {
+                    choice = Integer.parseInt(msg);
+                    if (choice < 1 || choice > 7) throw new NumberFormatException();
+                } catch (NumberFormatException e) {
+                    player.sendMessage("§cPlease type a number from §e1 §cto §e7§c.");
+                    return;
+                }
+                Journey picked = Journey.fromNumber(choice);
+                if (picked == null) picked = Journey.LUCKY;
+                final Journey journey = picked;
+                pendingTerminalPath.put(termUuid, journey.number);
+                Bukkit.getScheduler().runTask(plugin, () -> askGuidance(player, journey));
+            } else {
+                // Step 3: awaiting guidance G/A
+                String input = msg.toUpperCase();
+                if (!input.equals("G") && !input.equals("A")) {
+                    player.sendMessage("§cPlease type §eG §cor §eA§c.");
+                    return;
+                }
+                boolean guided = input.equals("G");
+                int journeyNumber = termStep;
+                pendingTerminalPath.remove(termUuid);
+                Bukkit.getScheduler().runTask(plugin, () ->
+                    startJourneyFromTerminal(player, journeyNumber, guided));
+            }
+            return;
         }
+
     }
 
     // ── RAM Room multi-state button ───────────────────────────────────────────
@@ -1401,6 +1435,107 @@ public class ChoiceButtonHandler implements Listener {
         teleportPlayer(player, destination);
     }
 
+    // ── Terminal path selection ───────────────────────────────────────────────
+
+    /**
+     * Shows the path-selection menu to the player and registers them in the
+     * pending-terminal-path map so their next chat messages are intercepted.
+     * Called by RoomChangeListener when the player enters the Terminal with
+     * phase "terminal_path_select".
+     */
+    public void cancelTerminalPathSelection(Player player) {
+        pendingTerminalPath.remove(player.getUniqueId());
+    }
+
+    public boolean isTerminalPathPending(Player player) {
+        return pendingTerminalPath.containsKey(player.getUniqueId());
+    }
+
+    public void startTerminalPathSelection(Player player) {
+        pendingTerminalPath.put(player.getUniqueId(), 0);  // 0 = awaiting top-level 1/2/3
+
+        boolean quizDone = tracker.hasCompletedQuiz(player);
+        List<Journey> recommended = tracker.getRecommendedJourneys(player);
+
+        player.sendMessage("§8§m════════════════════════════════════════");
+        player.sendMessage("§6§l         CHOOSE YOUR PATH");
+        player.sendMessage("§8§m════════════════════════════════════════");
+        if (quizDone && !recommended.isEmpty()) {
+            player.sendMessage("§e1§7) §6Pick from the journey list §7— your quiz results shown");
+        } else if (quizDone) {
+            player.sendMessage("§e1§7) §6Pick from the journey list §7— you got them all right!");
+        } else {
+            player.sendMessage("§e1§7) §6Pick from the journey list");
+        }
+        player.sendMessage("§e2§7) §bAll journeys in order §7— easiest to hardest, one at a time");
+        player.sendMessage("§e3§7) §dRandom §7— let fate decide");
+        player.sendMessage("§8§m════════════════════════════════════════");
+        player.sendMessage("§7Type §e1§7, §e2§7, or §e3§7:");
+    }
+
+    private void showJourneyList(Player player) {
+        boolean quizDone = tracker.hasCompletedQuiz(player);
+        Map<Journey, Integer> wrongCounts = tracker.getQuizWrongCounts(player);
+        int maxWrong = quizDone
+            ? wrongCounts.values().stream().mapToInt(Integer::intValue).max().orElse(0)
+            : 0;
+
+        player.sendMessage("§8§m════════════════════════════════════════");
+        player.sendMessage("§6§l         JOURNEY LIST");
+        if (quizDone && maxWrong > 0) {
+            player.sendMessage("§7Journeys marked §6★ §7are where you struggled most.");
+        }
+        player.sendMessage("§8§m════════════════════════════════════════");
+
+        Journey[] sorted = Journey.values().clone();
+        java.util.Arrays.sort(sorted, java.util.Comparator.comparingInt(j -> j.number));
+        for (Journey j : sorted) {
+            StringBuilder line = new StringBuilder("§e" + j.number + "§7) §f" + j.displayName);
+            if (quizDone) {
+                int wrong = wrongCounts.getOrDefault(j, 0);
+                String wrongStr = wrong == 0 ? "§a0 wrong" : "§c" + wrong + " wrong";
+                line.append(" §8(").append(wrongStr);
+                if (maxWrong > 0 && wrong == maxWrong) {
+                    line.append(" §6★ Recommended");
+                }
+                line.append("§8)");
+            }
+            player.sendMessage(line.toString());
+        }
+
+        player.sendMessage("§8§m════════════════════════════════════════");
+        player.sendMessage("§7Type §e1§7-§e7§7 to choose:");
+    }
+
+    private void askGuidance(Player player, Journey journey) {
+        player.sendMessage("§8§m════════════════════════════════════════");
+        player.sendMessage("§6§l      GUIDANCE PREFERENCE");
+        player.sendMessage("§7Journey: §f" + journey.displayName);
+        player.sendMessage("§8§m════════════════════════════════════════");
+        player.sendMessage("§eG§7) §aWith Kernel Guardian §7— hints & explanations");
+        player.sendMessage("§eA§7) §7Alone §8— no hints, full freedom");
+        player.sendMessage("§8§m════════════════════════════════════════");
+        player.sendMessage("§7Type §eG §7or §eA§7:");
+    }
+
+    /**
+     * Resolves the player's path + guidance choices and starts their journey.
+     * Sets mode, journey, phase, gives the map, and speaks the journey dialogue.
+     */
+    private void startJourneyFromTerminal(Player player, int journeyNumber, boolean guided) {
+        Journey journey = Journey.fromNumber(journeyNumber);
+        if (journey == null) journey = Journey.LUCKY;
+
+        tracker.setMode(player, guided ? PlayerMode.LEARNER : PlayerMode.ADVENTURER);
+        tracker.setJourney(player, journey);
+        tracker.setPhase(player, "terminal_journey_chosen");
+
+        Map<String, String> vars = tracker.getVars(player);
+        dialogue.speak(player, "rooms.learner_mode.ready", vars);
+
+        journeyMapManager.giveInitialMap(player, "learnerChest");
+    }
+
     // ── End Terminal: Restart Journey ─────────────────────────────────────────
 
     /**
@@ -1411,10 +1546,11 @@ public class ChoiceButtonHandler implements Listener {
     private void handleEndToStart(Player player) {
         plugin.getLogger().info("[EndToStart] Resetting journey state for " + player.getName());
 
-        // Reset phase to terminal spawn
-        tracker.setPhase(player, "terminal_spawn");
+        // After quiz completion: go to path selection; first-time: show initial welcome
+        boolean quizDone = tracker.hasCompletedQuiz(player);
+        tracker.setPhase(player, quizDone ? "terminal_path_select" : "terminal_spawn");
 
-        // Clear journey vars (but keep session ID and learner journey counter)
+        // Clear journey vars (preserve session ID and learner journey counter)
         String sessionId = tracker.getVar(player, "sessionId");
         String learnerJourneyNum = tracker.getVar(player, "learnerJourneyNum");
         tracker.clearVars(player);
@@ -1430,13 +1566,6 @@ public class ChoiceButtonHandler implements Listener {
 
         // Teleport to initial terminal
         teleportPlayer(player, "initialSpawn");
-
-        // Speak initial dialogue
-        Bukkit.getScheduler().runTaskLater(plugin, () -> {
-            dialogue.speak(player, "rooms.terminal.initial_spawn", tracker.getVars(player));
-        }, 20L);
-
-        player.sendMessage("§a[Journey Reset] Starting fresh! Choose your journey in the terminal.");
     }
 
     // ── TLB Room: hit/miss decision ───────────────────────────────────────────
@@ -1837,56 +1966,6 @@ public class ChoiceButtonHandler implements Listener {
             SQLiteStudyDatabase.logWrongAnswer(vars.getOrDefault("sessionId", "?"), "cow_room");
             dialogue.speak(player, "rooms.cow_room.terminate_incorrect", vars);
         }
-    }
-
-    // ── Journey selection (adventurer mode) ───────────────────────────────────
-
-    /** Show the journey list — all journeys are unlocked in Adventurer Mode. */
-    public void showJourneyList(Player player) {
-        player.sendMessage("§6════════════════════════════════");
-        player.sendMessage("§b§lChoose Your Journey");
-        player.sendMessage("§7All journeys available. Choose your challenge.");
-        player.sendMessage("");
-        for (Journey j : Journey.values()) {
-            boolean done = progress.isComplete(player, j);
-            String prefix = done ? "§a[✓] " : "§e[→] ";
-            String name   = done ? "§7" + j.displayName : "§f" + j.displayName;
-            player.sendMessage("  §f" + j.number + ". " + prefix + name);
-        }
-        player.sendMessage("");
-        player.sendMessage("§7Type §f1§7–§f7 §7to choose, or §f8 §7for random.");
-        player.sendMessage("§6════════════════════════════════");
-    }
-
-    private void handleJourneySelection(Player player, String input) {
-        int choice;
-        try {
-            choice = Integer.parseInt(input.trim());
-        } catch (NumberFormatException e) {
-            player.sendMessage("§cPlease type a number between 1 and 8.");
-            return;
-        }
-
-        Journey selected;
-        if (choice == 8) {
-            List<Journey> unlocked = new ArrayList<>();
-            for (Journey j : Journey.values()) {
-                if (progress.isUnlocked(player, j)) unlocked.add(j);
-            }
-            selected = unlocked.get((int) (Math.random() * unlocked.size()));
-            tracker.setJourney(player, selected);
-            dialogue.speak(player, "rooms.terminal.journey_random", tracker.getVars(player));
-        } else {
-            selected = Journey.fromNumber(choice);
-            if (selected == null) {
-                player.sendMessage("§cInvalid choice. Type 1–7 to select a journey or 8 for random.");
-                return;
-            }
-            tracker.setJourney(player, selected);
-            dialogue.speak(player, "rooms.terminal.journey_selected", tracker.getVars(player));
-        }
-        tracker.setPhase(player, "terminal_journey_chosen");
-        journeyMapManager.giveInitialMap(player, "adventurerChest");
     }
 
     // ── Public sign update methods (called by RoomChangeListener) ─────────────

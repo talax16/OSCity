@@ -28,10 +28,10 @@ public class QuestionBank {
     }
 
     public void load() {
+        // Always overwrite from the jar so the server data folder stays in sync
+        // with the bundled questions (safe during active development).
+        plugin.saveResource("questions.yml", true);
         File file = new File(plugin.getDataFolder(), "questions.yml");
-        if (!file.exists()) {
-            plugin.saveResource("questions.yml", false);
-        }
         questions = YamlConfiguration.loadConfiguration(file);
         plugin.getLogger().info("QuestionBank: loaded questions.yml");
     }

@@ -48,3 +48,324 @@ swap_district:
       D: "To prevent fragmentation."
     correct: "B"
     wrong: "That's incorrect, try again."
+
+# ── Assessment Quiz ───────────────────────────────────────────────────────────
+# 4 questions per journey (q1/q2 = easy, q3/q4 = hard)
+# Answer distribution: 7A, 7B, 7C, 7D across all 28 questions
+
+assessment_quiz:
+
+  lucky_journey:
+    q1:
+      difficulty: easy
+      question: "What does a TLB hit mean?"
+      options:
+        A: "The VPN is found in the TLB cache, so the PFN is returned immediately."
+        B: "The page is present in physical RAM and its dirty bit is set."
+        C: "The OS has validated the translation and stored it in the page table."
+        D: "The CPU skips the MMU and accesses physical memory directly."
+      correct: "A"
+      wrong: "Not quite. Think about what the TLB stores and what a cache hit means."
+
+    q2:
+      difficulty: easy
+      question: "What information does a TLB entry contain?"
+      options:
+        A: "The virtual address, the physical address, and the page size in bytes."
+        B: "The process ID, the page directory index, and the page table index."
+        C: "The VPN, the PFN, and control bits such as valid and protection bits."
+        D: "The swap slot number, the dirty bit, and the instruction pointer."
+      correct: "C"
+      wrong: "Not quite. Think about what the TLB needs to perform a translation."
+
+    q3:
+      difficulty: hard
+      question: "Why does the page offset stay the same when translating from a virtual address to a physical address?"
+      options:
+        A: "Because the OS copies the offset into the physical address during the page table walk."
+        B: "Because the TLB stores the offset alongside the PFN and appends it during translation."
+        C: "Because the MMU zeroes the offset field and replaces it with the frame number during lookup."
+        D: "Because the offset indicates position within a page, and pages and frames are the same size, so the in-page position does not change."
+      correct: "D"
+      wrong: "Not quite. Think about what the offset represents and why page size equals frame size."
+
+    q4:
+      difficulty: hard
+      question: "Why does the TLB improve performance compared to always consulting the page table?"
+      options:
+        A: "It eliminates the need for virtual addresses entirely in the MMU."
+        B: "It caches recent VPN-to-PFN translations, avoiding an extra memory access on every address lookup."
+        C: "It stores physical pages directly inside the CPU, removing RAM latency."
+        D: "It compresses page table entries so the entire table fits in cache."
+      correct: "B"
+      wrong: "Not quite. Think about what problem the TLB solves and how caching helps."
+
+  tlb_miss_no_fault:
+    q1:
+      difficulty: easy
+      question: "What happens on a TLB miss?"
+      options:
+        A: "The faulting instruction is aborted and the process is sent a signal."
+        B: "The page is fetched from disk and placed into a free physical frame."
+        C: "The CPU stalls until the OS manually inserts the entry into the TLB."
+        D: "The hardware walks the page table to find the VPN-to-PFN mapping."
+      correct: "D"
+      wrong: "Not quite. Think about what needs to happen when the TLB does not have the answer."
+
+    q2:
+      difficulty: easy
+      question: "In a two-level page table, what does the first part of the VPN (high-order bits) index into?"
+      options:
+        A: "The page directory, to locate the correct second-level page table."
+        B: "A specific PTE within the second-level page table."
+        C: "The TLB, to check whether a cached translation already exists."
+        D: "The swap area, to determine whether the page has been evicted to disk."
+      correct: "A"
+      wrong: "Not quite. Think about the hierarchy — what does the top level of a two-level table hold?"
+
+    q3:
+      difficulty: hard
+      question: "In a two-level page table, what is the role of the page directory?"
+      options:
+        A: "To store the raw data of each virtual page for fast CPU access."
+        B: "To hold TLB entries sorted by VPN for fast hardware lookup."
+        C: "To map the high-order VPN bits to the correct second-level page table."
+        D: "To track which pages have been recently accessed and may need eviction."
+      correct: "C"
+      wrong: "Not quite. Think about what the top-level structure in a two-level scheme maps to."
+
+    q4:
+      difficulty: hard
+      question: "After a TLB miss and a successful page table walk (present=1, permissions OK), what happens next?"
+      options:
+        A: "A page fault exception is raised and control is passed to the OS handler."
+        B: "The PFN is loaded into the TLB and the memory access is retried."
+        C: "The entire TLB is flushed and the page table walk is performed again."
+        D: "The OS writes a new PTE to the page table and sends the result to the CPU."
+      correct: "B"
+      wrong: "Not quite. The walk succeeded — think about what the hardware does with the result."
+
+  permission_violation:
+    q1:
+      difficulty: easy
+      question: "A process reads from a page with present=1 but the read permission bit is cleared. What happens?"
+      options:
+        A: "The OS fetches a fresh copy of the page from disk and grants read access."
+        B: "A protection fault is raised, typically resulting in a segmentation fault."
+        C: "The TLB is flushed and the access is silently retried by the hardware."
+        D: "The process is suspended until another process releases the page's read lock."
+      correct: "B"
+      wrong: "Not quite. The page is present — the problem is the permission. Think about what the OS does."
+
+    q2:
+      difficulty: easy
+      question: "Which PTE bits determine whether a memory access is permitted?"
+      options:
+        A: "The dirty bit and the present bit stored in the page table entry."
+        B: "The reference bit and the swap-location bits stored in the entry."
+        C: "The page directory index and the page table index within the VPN."
+        D: "The protection bits specifying read, write, and execute permissions."
+      correct: "D"
+      wrong: "Not quite. Think about which bits in a PTE describe what the process is allowed to do."
+
+    q3:
+      difficulty: hard
+      question: "A process writes to a read-only page with Kernel=1 and User=0. What should the OS do?"
+      options:
+        A: "Terminate the process — the page is kernel-only and read-only, so user access is forbidden."
+        B: "Allocate a new private frame, copy the page contents, and grant write permissions."
+        C: "Raise a page fault, load a fresh copy from disk, and retry the write instruction."
+        D: "Clear the read-only bit in the PTE and immediately retry the write instruction."
+      correct: "A"
+      wrong: "Not quite. Kernel=1, User=0 means this page belongs to the kernel. Think about what that means for a user process."
+
+    q4:
+      difficulty: hard
+      question: "What is the key difference between a permission violation fault and a page-not-present fault?"
+      options:
+        A: "Permission violations are triggered by TLB misses; page-not-present faults by TLB hits."
+        B: "Permission violations always terminate the process; page-not-present faults are always recoverable by the OS."
+        C: "A permission violation occurs when the page is present but the access type is forbidden; a page-not-present fault occurs when the page is simply not in RAM."
+        D: "Permission violations only happen during write operations; page-not-present faults only during read operations."
+      correct: "C"
+      wrong: "Not quite. Focus on the state of the page in each case — is it in RAM or not?"
+
+  swapped_out_page:
+    q1:
+      difficulty: easy
+      question: "What does it mean for a page to be swapped out?"
+      options:
+        A: "The page has been permanently deleted from the process's virtual address space."
+        B: "The page has been duplicated and shared with another process's address space."
+        C: "The page has been moved from RAM to disk swap space, and its present bit is cleared."
+        D: "The page is currently being written to by the CPU and cannot be accessed yet."
+      correct: "C"
+      wrong: "Not quite. Think about where the page goes when RAM is full and it needs to make room."
+
+    q2:
+      difficulty: easy
+      question: "When evicting a modified (dirty) page from RAM, what must the OS do before freeing the frame?"
+      options:
+        A: "Simply discard the frame, since the page can be reloaded from the executable later."
+        B: "Write the page to swap space on disk before the frame is reused."
+        C: "Copy the page contents into the TLB so it can be quickly restored on next access."
+        D: "Mark the frame as read-only and leave it in RAM until the process exits cleanly."
+      correct: "B"
+      wrong: "Not quite. The page has been modified — discarding it would lose data. Think about where it needs to go."
+
+    q3:
+      difficulty: hard
+      question: "In the Second-Chance (CLOCK) algorithm, what happens when the clock hand reaches a frame with use bit = 1?"
+      options:
+        A: "The use bit is cleared to 0 and the clock hand advances, giving the frame a second chance."
+        B: "That frame is immediately selected as the eviction victim and written to swap."
+        C: "The page in that frame is copied to swap space while the use bit remains at 1."
+        D: "The frame is permanently locked in memory and the clock hand skips it forever."
+      correct: "A"
+      wrong: "Not quite. The name 'Second-Chance' is a hint — think about what the algorithm gives the frame."
+
+    q4:
+      difficulty: hard
+      question: "After a swapped-out page is loaded back into a free frame, what must the OS update before restarting the faulting instruction?"
+      options:
+        A: "Only the TLB entry for the VPN, leaving the page table PTE unchanged until the next access."
+        B: "Only the swap slot index field in the PTE, while keeping the present bit cleared to 0."
+        C: "The page directory entry to point directly to the new frame, bypassing the second-level PTE."
+        D: "The PTE with the new PFN and the present bit set to 1, so the page table reflects the page is now in RAM."
+      correct: "D"
+      wrong: "Not quite. Think about what the page table needs to reflect after the page is back in RAM."
+
+  pure_cow:
+    q1:
+      difficulty: easy
+      question: "Two processes share the same physical frames, all marked read-only with a COW flag. What happens when one process writes to one of these shared pages?"
+      options:
+        A: "Both processes immediately get separate private copies of all shared pages in RAM."
+        B: "The write is blocked and queued until the other process explicitly releases the page."
+        C: "The page is marked dirty and both processes see the updated content in the shared frame."
+        D: "The OS allocates a new private frame for the writing process, copies the page, and updates its PTE."
+      correct: "D"
+      wrong: "Not quite. COW is lazy — think about what happens only to the process that actually writes."
+
+    q2:
+      difficulty: easy
+      question: "When a write is attempted on a COW-marked read-only page, what fault is triggered?"
+      options:
+        A: "A protection fault, because the page is marked read-only in the PTE."
+        B: "A page-not-present fault, because the COW page must first be fetched from disk."
+        C: "A TLB miss, because COW pages are deliberately excluded from the TLB cache."
+        D: "A double fault that immediately terminates the process without OS intervention."
+      correct: "A"
+      wrong: "Not quite. The page is present — think about what the PTE says about write permissions."
+
+    q3:
+      difficulty: hard
+      question: "After the OS handles a COW write fault, what is the correct state of the writing process's mapping?"
+      options:
+        A: "The writing process continues using the original shared frame, but with write permission added to its PTE."
+        B: "The original shared frame is zeroed out and transferred exclusively to the writing process."
+        C: "The writing process has a new private frame with the original contents copied in, and its PTE updated to the new PFN with write permissions."
+        D: "Both processes receive new separate frames, each containing a full copy of the original page data."
+      correct: "C"
+      wrong: "Not quite. Think about what 'copy-on-write' literally means — a copy is made for the writer only."
+
+    q4:
+      difficulty: hard
+      question: "Why is mapping shared pages as read-only COW more efficient than immediately giving each process its own private copy?"
+      options:
+        A: "Because COW completely eliminates page faults for all shared pages after they are first mapped."
+        B: "Because most shared pages are never written to, so private copies are only made for pages that actually need to diverge."
+        C: "Because COW pages are stored in the TLB rather than RAM, reducing physical memory pressure significantly."
+        D: "Because read-only COW pages are never selected by the CLOCK algorithm and thus stay in RAM permanently."
+      correct: "B"
+      wrong: "Not quite. Think about how many of the shared pages a typical process actually writes to."
+
+  lazy_loading:
+    q1:
+      difficulty: easy
+      question: "What is demand paging (lazy loading)?"
+      options:
+        A: "Preloading all process pages into RAM before the first instruction executes."
+        B: "Loading pages predictively based on access patterns observed from previous runs."
+        C: "Deferring the loading of a page from disk until the process actually accesses it."
+        D: "Loading pages in fixed-size batches during every context switch to reduce fault frequency."
+      correct: "C"
+      wrong: "Not quite. Think about what 'lazy' means — when exactly does the page get loaded?"
+
+    q2:
+      difficulty: easy
+      question: "When a file-backed page is first accessed and triggers a page fault, where does the OS load it from?"
+      options:
+        A: "Anonymous swap space, where it was placed when the process was first created."
+        B: "A pre-zeroed physical frame that was reserved for the process at startup."
+        C: "The TLB cache, which holds a compressed copy of recently evicted file-backed pages."
+        D: "The original backing file on disk, such as the executable or a memory-mapped file."
+      correct: "D"
+      wrong: "Not quite. File-backed means the page has a source file. Think about where that file lives."
+
+    q3:
+      difficulty: hard
+      question: "In OS City's lazy loading, what formula computes which part of the file to load?"
+      options:
+        A: "page_index = VPN x page_size + offset"
+        B: "page_index = offset / page_size"
+        C: "page_index = (VA - base_address) / page_size"
+        D: "page_index = VPN / page_size + base_offset"
+      correct: "B"
+      wrong: "Not quite. In OS City's simplified model, you already have the offset from the address split."
+
+    q4:
+      difficulty: hard
+      question: "After the OS handles a lazy loading page fault and loads the page into a free frame, what must it do before restarting the faulting instruction?"
+      options:
+        A: "Update the PTE with the new PFN and set the present bit to 1."
+        B: "Flush the entire TLB and perform a fresh page table walk from the page directory."
+        C: "Write the previously occupying frame's contents to swap regardless of its dirty bit."
+        D: "Mark the newly loaded page as COW in case another process needs to share it later."
+      correct: "A"
+      wrong: "Not quite. Think about what the page table needs to reflect now that the page is in RAM."
+
+  lazy_allocation:
+    q1:
+      difficulty: easy
+      question: "What distinguishes anonymous memory from file-backed memory?"
+      options:
+        A: "Anonymous memory has no backing file and cannot be reloaded from disk if evicted; file-backed memory can be reloaded from its source file."
+        B: "Anonymous memory is stored in the TLB; file-backed memory is stored in the page table."
+        C: "Anonymous memory is reserved exclusively for the kernel; file-backed memory is for user processes only."
+        D: "Anonymous memory is always resident in RAM; file-backed memory is always kept on disk."
+      correct: "A"
+      wrong: "Not quite. Think about what 'anonymous' means — does it have a file on disk to reload from?"
+
+    q2:
+      difficulty: easy
+      question: "Why must anonymous memory frames be zeroed before being given to a process?"
+      options:
+        A: "To ensure the CLOCK algorithm can correctly track whether the frame has been accessed."
+        B: "Because the TLB only caches translations for frames that have been explicitly zeroed first."
+        C: "To prevent information leakage from the previous occupant's data still in the frame."
+        D: "To allow the OS to detect when the process has written to the frame for the first time."
+      correct: "C"
+      wrong: "Not quite. Think about what could still be in a frame that was previously used by another process."
+
+    q3:
+      difficulty: hard
+      question: "Why does the OS initially map a lazily-allocated anonymous page to a shared zero page rather than allocating a private frame immediately?"
+      options:
+        A: "Because zeroed frames are stored in swap space and must be loaded like any other faulted page."
+        B: "Because the COW mechanism requires all pages to begin as shared before they can become private."
+        C: "Because the hardware cannot zero a frame without first mapping it as shared and read-only."
+        D: "Because many allocated pages are never accessed, and accessed pages may only be read, so deferring allocation avoids unnecessary work."
+      correct: "D"
+      wrong: "Not quite. Think about how many allocated pages a process actually ends up writing to."
+
+    q4:
+      difficulty: hard
+      question: "What distinguishes a lazy allocation page fault from a lazy loading page fault?"
+      options:
+        A: "Lazy allocation faults can only occur on writes; lazy loading faults can only occur on reads."
+        B: "Lazy allocation involves anonymous memory with no backing file — the OS provides a zeroed frame; lazy loading involves file-backed memory read from a specific file on disk."
+        C: "Lazy allocation always triggers the CLOCK replacement algorithm; lazy loading uses a separate eviction policy."
+        D: "Lazy allocation faults are resolved entirely in hardware; lazy loading faults always require OS software intervention."
+      correct: "B"
+      wrong: "Not quite. Think about what the two types of memory are backed by — or not backed by."

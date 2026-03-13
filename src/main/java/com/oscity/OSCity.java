@@ -18,8 +18,6 @@ import com.oscity.mechanics.RAMRoomManager;
 import com.oscity.mechanics.SwapClockManager;
 import com.oscity.mechanics.TeleportManager;
 import com.oscity.mechanics.TLBRoomManager;
-import com.oscity.mode.AdventurerModeHandler;
-import com.oscity.mode.LearnerModeHandler;
 import com.oscity.persistence.SQLiteStudyDatabase;
 import com.oscity.quiz.QuizManager;
 import com.oscity.session.JourneyTracker;
@@ -62,8 +60,6 @@ public class OSCity extends JavaPlugin {
     private PageTableManager pageTableManager;
     private RAMRoomManager ramRoomManager;
     private DiskRoomManager diskRoomManager;
-    private LearnerModeHandler learnerModeHandler;
-    private AdventurerModeHandler adventurerModeHandler;
     private ChoiceButtonHandler choiceButtonHandler;
     private CalculatorListener calculatorListener;
 
@@ -113,7 +109,8 @@ public class OSCity extends JavaPlugin {
 
         // Game systems
         hintSystem = new HintSystem(sessionManager, dialogueManager, journeyTracker);
-        quizManager = new QuizManager(sessionManager, roomRegistry, questionBank);
+        quizManager = new QuizManager(this, sessionManager, roomRegistry, questionBank, journeyTracker);
+        quizManager.register();
 
         // Room display
         if (configManager.isRoomDisplayEnabled()) {
@@ -137,10 +134,6 @@ public class OSCity extends JavaPlugin {
         // Calculator (must be before ChoiceButtonHandler; needs journeyMapManager)
         calculatorListener = new CalculatorListener(this, journeyTracker, journeyMapManager);
         calculatorListener.register();
-
-        // Mode handlers
-        learnerModeHandler    = new LearnerModeHandler(journeyTracker, dialogueManager, journeyMapManager);
-        adventurerModeHandler = new AdventurerModeHandler(journeyTracker, dialogueManager);
 
         // TLB room
         tlbRoomManager = new TLBRoomManager(this, journeyTracker);
@@ -172,7 +165,7 @@ public class OSCity extends JavaPlugin {
             dialogueManager, journeyTracker, calculatorListener,
             progressTracker, choiceButtonHandler, swapClockManager,
             tlbRoomManager, pageTableManager, ramRoomManager, diskRoomManager,
-            journeyMapManager, learnerModeHandler, adventurerModeHandler
+            journeyMapManager, quizManager
         );
         getServer().getPluginManager().registerEvents(roomChangeListener, this);
 

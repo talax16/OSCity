@@ -31,10 +31,8 @@ public class DialogueManager {
     }
 
     public void load() {
+        plugin.saveResource("dialogue.yml", true);
         File file = new File(plugin.getDataFolder(), "dialogue.yml");
-        if (!file.exists()) {
-            plugin.saveResource("dialogue.yml", false);
-        }
         dialogue = YamlConfiguration.loadConfiguration(file);
         plugin.getLogger().info("DialogueManager: loaded dialogue.yml");
     }

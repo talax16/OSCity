@@ -279,7 +279,30 @@ choiceButtons:
     x: 24
     y: -32
     z: 47
-  
+
+  # buttons for quiz in terminal
+  quizBtnA:
+    world: "OSCityWorld"
+    x: 203
+    y: 86
+    z: 313
+  quizBtnB:
+    world: "OSCityWorld"
+    x: 203
+    y: 86
+    z: 315
+  quizBtnC:
+    world: "OSCityWorld"
+    x: 203
+    y: 86
+    z: 317
+  quizBtnD:
+    world: "OSCityWorld"
+    x: 203
+    y: 86
+    z: 319
+
+
 tpButtons:
   learnerStart: # button to start the learner's mode, teleports to TLB room
     world: "OSCityWorld"
@@ -289,13 +312,13 @@ tpButtons:
     y: 87
     z: 301
   
-  adventurerStart: # button to start the adventurer's mode, teleports to TLB room
-    world: "OSCityWorld"
-    destination: tlbSpawn
-    message: "&aTeleported to TLB room!"
-    x: 203
-    y: 87
-    z: 316
+  # adventurerStart: # button to start the adventurer's mode, teleports to TLB room
+  #   world: "OSCityWorld"
+  #   destination: tlbSpawn
+  #   message: "&aTeleported to TLB room!"
+  #   x: 203
+  #   y: 87
+  #   z: 316
   
   pt1ToChamber: # teleport to permission chamber from Page table 1
     world: "OSCityWorld"
