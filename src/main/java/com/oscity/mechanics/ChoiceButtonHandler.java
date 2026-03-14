@@ -184,7 +184,6 @@ public class ChoiceButtonHandler implements Listener {
         if (world == null) return;
         Location loc = new Location(world, btn.getInt("x"), btn.getInt("y"), btn.getInt("z"));
         buttons.put(loc, smartKey);
-        plugin.getLogger().info("[CalcContinue] Registered button " + smartKey + " at " + loc.getBlockX() + "," + loc.getBlockY() + "," + loc.getBlockZ());
     }
 
     private void registerFromDoorOpen(String key) {
@@ -199,7 +198,6 @@ public class ChoiceButtonHandler implements Listener {
         if (world == null) return;
         Location loc = new Location(world, sec.getInt("x"), sec.getInt("y"), sec.getInt("z"));
         buttons.put(loc, key);
-        plugin.getLogger().info("[DoorOpen] Registered " + key + " at " + loc.getBlockX() + "," + loc.getBlockY() + "," + loc.getBlockZ());
     }
 
     // ── Button press ─────────────────────────────────────────────────────────
@@ -783,7 +781,7 @@ public class ChoiceButtonHandler implements Listener {
                         journeyMapManager.updateMap(player);
                     }
 
-                    speakIfLearner(player, quiz.onCorrectDialoguePath, tracker.getVars(player));
+                    dialogue.speak(player, quiz.onCorrectDialoguePath, tracker.getVars(player));
                 } else {
                     SQLiteStudyDatabase.logWrongAnswer(
                         tracker.getVar(player, "sessionId"),
@@ -1563,13 +1561,13 @@ public class ChoiceButtonHandler implements Listener {
             // Correct decision - proceed based on journey
             if (correctHit) {
                 // TLB hit (Lucky): reveal PFN on map and go to RAM
-                speakIfLearner(player, "rooms.tlb_room.after_hit_quiz_lucky", tracker.getVars(player));
+                dialogue.speak(player, "rooms.tlb_room.after_hit_quiz_lucky", tracker.getVars(player));
                 journeyMapManager.updateMap(player); // Reveal PFN from TLB entry
                 tracker.setPhase(player, "ram_allow_access");
                 teleportPlayer(player, "ramRoom");
             } else {
                 // TLB miss: ask quiz question before opening page table door
-                speakIfLearner(player, "rooms.tlb_room.after_miss_quiz_non_lucky", tracker.getVars(player));
+                dialogue.speak(player, "rooms.tlb_room.after_miss_quiz_non_lucky", tracker.getVars(player));
                 tracker.setPhase(player, "tlb_miss_quiz");
                 // Ask the miss_door question after dialogue completes (3 second delay)
                 Bukkit.getScheduler().runTaskLater(plugin, () -> {

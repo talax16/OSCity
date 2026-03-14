@@ -237,10 +237,11 @@ public class RoomChangeListener implements Listener {
                 if (!"page_directory".equals(phase) && !"correct_floor".equals(phase)) {
                     speakIfLearner(player, "rooms.page_table_library.entrance", vars);
                     Bukkit.getScheduler().runTaskLater(plugin, () ->
-                        speakIfLearner(player, "rooms.page_table_library.before_entering", vars), 60L);
+                        speakIfLearner(player, "rooms.page_table_library.page_directory", vars), 660L);
+                } else {
+                    speakIfLearner(player, "rooms.page_table_library.page_directory", vars);
                 }
                 journeyTracker.setPhase(player, "page_directory");
-                speakIfLearner(player, "rooms.page_table_library.page_directory", vars);
                 choiceButtonHandler.closeDoor("tlbToPt");
                 break;
 
@@ -384,7 +385,11 @@ public class RoomChangeListener implements Listener {
             speakIfLearner(player, "rooms.page_table_library.correct_floor", vars);
         } else if (!expectedFloor.equals("?")) {
             journeyTracker.setPhase(player, "wrong_floor");
-            speakIfLearner(player, "rooms.page_table_library.wrong_floor", vars);
+            Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                if ("wrong_floor".equals(journeyTracker.getPhase(player))) {
+                    speakIfLearner(player, "rooms.page_table_library.wrong_floor", journeyTracker.getVars(player));
+                }
+            }, 200L);
         } else {
             journeyTracker.setPhase(player, "correct_floor");
             speakIfLearner(player, "rooms.page_table_library.correct_floor", vars);
@@ -437,9 +442,7 @@ public class RoomChangeListener implements Listener {
         // For Pure COW: place book in frame 0x2 chest after COW allocation
         // Note: Frame 0x2 uses chest3 in config (chest1=frame0, chest2=frame1, chest3=frame2)
         Journey currentJourney = journeyTracker.getJourney(player);
-        plugin.getLogger().info("[RoomChange] RAM entry: phase=" + phase + ", journey=" + currentJourney);
         if ("ram_after_cow".equals(phase) && currentJourney == Journey.PURE_COW) {
-            plugin.getLogger().info("[RoomChange] Placing book in frame 0x2 chest (chest3) for Pure COW");
             ramRoomManager.placeBookInFrameChest(player, 3);  // Use chest3 for frame 0x2
         }
 
@@ -492,8 +495,6 @@ public class RoomChangeListener implements Listener {
                 break;
             case "swap_after_eviction":
                 Journey swapJourney = journeyTracker.getJourney(player);
-                plugin.getLogger().info("[RoomChange] swap_after_eviction: journey=" + swapJourney);
-
                 if (swapJourney == Journey.LAZY_LOADING) {
                     journeyTracker.setPhase(player, "swap_lazy_loading");
                     choiceButtonHandler.setRamMixSign("RETRY", "INSTRUCTION", "", "");
@@ -501,13 +502,10 @@ public class RoomChangeListener implements Listener {
                         speakIfLearner(player, "rooms.ram_room.after_swap_for_lazy_loading",
                             journeyTracker.getVars(player)), 40L);
                 } else if (swapJourney == Journey.LAZY_ALLOCATION) {
-                    plugin.getLogger().info("[RoomChange] LAZY_ALLOCATION after swap: placing book in chest7 (frame 0x6)");
                     ramRoomManager.placeBookInFrameChest(player, 7);
                     journeyTracker.setPhase(player, "swap_lazy_alloc");
                     ramRoomManager.updateZeroFrameSignOnly(player);
-                    plugin.getLogger().info("[RoomChange] LAZY_ALLOCATION: Phase changed to swap_lazy_alloc, zero frame sign updated");
                     choiceButtonHandler.setRamMixSign("RETRY", "INSTRUCTION", "", "");
-                    plugin.getLogger().info("[RoomChange] LAZY_ALLOCATION: Speaking after_swap_for_lazy_alloc dialogue");
                     Bukkit.getScheduler().runTaskLater(plugin, () ->
                         speakIfLearner(player, "rooms.ram_room.after_swap_for_lazy_alloc",
                             journeyTracker.getVars(player)), 40L);

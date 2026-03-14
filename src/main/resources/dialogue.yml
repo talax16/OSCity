@@ -140,6 +140,12 @@ rooms:
 
   page_table_library:
     entrance:
+      - "You are about to walk through the multi-level page table."
+      - "But wait—how will we know which page table is ours?"
+      - "The Page Table Base Register (PTBR) points to this process's page directory."
+      - "The PTBR contains the address of where YOUR page table starts."
+      - "It's like a bookmark that says: 'This process's memory mappings begin here.'"
+      - "Every process has its own PTBR, so every process has its own page table."
       - "You are now at the entrance to the Multi-Level Page Table Library."
       - "Remember: The TLB is the CPU's fast cache. It doesn't always have the answer."
       - "When the TLB missed, we must find the answer the hard way—the Page Table."
@@ -149,14 +155,6 @@ rooms:
       - "  - One Page Directory at the Ground Floor"
       - "  - Three Page Table levels above it"
       - "This way, unused memory regions don't waste space."
-
-    before_entering:
-      - "You are about to walk through the multi-level page table."
-      - "But wait—how will we know which page table is ours?"
-      - "The Page Table Base Register (PTBR) points to this process's page directory."
-      - "The PTBR contains the address of where YOUR page table starts."
-      - "It's like a bookmark that says: 'This process's memory mappings begin here.'"
-      - "Every process has its own PTBR, so every process has its own page table."
       - "Enter when you're ready."
 
     page_directory:
@@ -178,7 +176,7 @@ rooms:
     wrong_floor:
       - "You are not on the correct floor. This is Page Table Floor {floor}."
 
-    map_updated:
+    tp_permission_chamber:
       - "I know these terms can be confusing. You can ask me about them in the next room."
       - "For now, press the button to take you to the Permission Chamber. I will meet you there."
 
@@ -354,6 +352,7 @@ rooms:
       - "Find the chest labeled 'ZERO FRAME'."
       - "You will see that your process is mapped to it!"
       - "You can open the chest and look at the book, you will see it's filled with zeros."
+      - "To prevent information leakage from previous frame contents, anonymous memory frames must be zeroed before use."
       - "Once you are finished put it back in, we don't wanna cause a chaos in the RAM."
       - "Press the button next to it to retry the instruction."
 

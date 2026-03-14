@@ -347,14 +347,11 @@ public class RAMRoomManager {
     }
 
     private void updateZeroFrameSign(FrameState state) {
-        plugin.getLogger().info("[RAMRoom] updateZeroFrameSign called: pfn=" + state.pfn + ", process=" + state.process + ", status='" + state.status + "'");
-        
         // Update zeroFrame1 sign (top at y=-58) - Frame label and process name
         ConfigurationSection sec1 = plugin.getConfig()
             .getConfigurationSection("signs.ramRoom.zeroFrame1");
         if (sec1 != null) {
             updateSign(sec1, "Frame " + state.pfn + ":", state.process, "", "");
-            plugin.getLogger().info("[RAMRoom] zeroFrame1: Frame " + state.pfn + " | " + state.process);
         } else {
             plugin.getLogger().warning("[RAMRoom] No config for signs.ramRoom.zeroFrame1");
         }
@@ -365,7 +362,6 @@ public class RAMRoomManager {
             .getConfigurationSection("signs.ramRoom.zeroFrame2");
         if (sec2 != null) {
             String status = state.status;
-            plugin.getLogger().info("[RAMRoom] zeroFrame2 status: '" + status + "'");
 
             // Split status like "(shared by Process 2, 4)" across 2 lines
             if (status != null && status.startsWith("(shared by")) {
@@ -395,27 +391,20 @@ public class RAMRoomManager {
      * Book contains only zeros (copied from Zero Frame).
      */
     public void placeBookInFrameChest(Player player, int frameNum) {
-        plugin.getLogger().info("[RAMRoom] placeBookInFrameChest START: frameNum=" + frameNum);
         Journey journey = tracker.getJourney(player);
-        plugin.getLogger().info("[RAMRoom] placeBookInFrameChest: journey=" + journey);
         if (journey != Journey.PURE_COW && journey != Journey.LAZY_ALLOCATION) {
             plugin.getLogger().warning("[RAMRoom] placeBookInFrameChest: Not PURE_COW or LAZY_ALLOCATION journey, got " + journey);
             return;
         }
-        plugin.getLogger().info("[RAMRoom] placeBookInFrameChest: Placing book in chest" + frameNum + " for " + journey);
 
         ConfigurationSection chestSec = plugin.getConfig()
             .getConfigurationSection("chests.ramRoom.chest" + frameNum);
-        plugin.getLogger().info("[RAMRoom] placeBookInFrameChest: chestSec=" + chestSec);
         if (chestSec == null) {
             plugin.getLogger().warning("[RAMRoom] placeBookInFrameChest: No config for chest" + frameNum);
             return;
         }
 
-        ItemStack bookAndQuill = buildProcess5WritableBook();
-        plugin.getLogger().info("[RAMRoom] placeBookInFrameChest: Book type = " + bookAndQuill.getType());
-        placeBookInChest(chestSec, bookAndQuill);
-        plugin.getLogger().info("[RAMRoom] placeBookInFrameChest: Book placed successfully");
+        placeBookInChest(chestSec, buildProcess5WritableBook());
     }
 
     private ItemStack buildProcess5WritableBook() {
@@ -444,7 +433,6 @@ public class RAMRoomManager {
             return;
         }
         if (book == null || book.getType() == Material.AIR) {
-            plugin.getLogger().info("[RAMRoom] placeBookInChest: Skipping AIR book");
             return;
         }
         String worldName = sec.getString("world");
@@ -460,8 +448,6 @@ public class RAMRoomManager {
 
         Location loc = new Location(world, sec.getInt("x"), sec.getInt("y"), sec.getInt("z"));
         Block block = loc.getBlock();
-        plugin.getLogger().info("[RAMRoom] placeBookInChest: Checking chest at " + loc.getBlockX() + "," + loc.getBlockY() + "," + loc.getBlockZ() + " - Block type: " + block.getType());
-
         if (!(block.getState() instanceof Chest chest)) {
             plugin.getLogger().warning("[RAMRoom] placeBookInChest: No chest at config path (found: " + block.getType() + ")");
             return;
@@ -470,7 +456,6 @@ public class RAMRoomManager {
         Inventory inv = chest.getInventory();
         inv.clear();
         inv.setItem(13, book);
-        plugin.getLogger().info("[RAMRoom] placeBookInChest: Book placed in chest (type: " + book.getType() + ")");
     }
 
     private ItemStack buildRamFrameBook(FrameState state, Journey journey) {
@@ -570,20 +555,16 @@ public class RAMRoomManager {
 
         Location loc = new Location(world, sec.getInt("x"), sec.getInt("y"), sec.getInt("z"));
         Block block = loc.getBlock();
-        plugin.getLogger().info("[RAMRoom] updateSign: Checking " + sec.getCurrentPath() + " at " + loc.getBlockX() + "," + loc.getBlockY() + "," + loc.getBlockZ() + " - Block type: " + block.getType());
-
         if (!(block.getState() instanceof Sign sign)) {
             plugin.getLogger().warning("[RAMRoom] updateSign: No sign at " + sec.getCurrentPath() + " (found: " + block.getType() + ")");
             return;
         }
 
-        plugin.getLogger().info("[RAMRoom] updateSign: Writing lines: '" + line1 + "', '" + line2 + "', '" + line3 + "', '" + line4 + "'");
         sign.getSide(Side.FRONT).line(0, Component.text(line1));
         sign.getSide(Side.FRONT).line(1, Component.text(line2));
         sign.getSide(Side.FRONT).line(2, Component.text(line3));
         sign.getSide(Side.FRONT).line(3, Component.text(line4));
         sign.update(true);
-        plugin.getLogger().info("[RAMRoom] updateSign: Sign updated successfully");
     }
 
     // ── Inner class ───────────────────────────────────────────────────────────

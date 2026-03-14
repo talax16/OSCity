@@ -314,7 +314,7 @@ public class QuizManager implements Listener {
         }
 
         player.sendMessage("§8§m════════════════════════════════════════");
-        player.sendMessage("§7Head to the §eHouse of Learning §7to choose your journey.");
+        player.sendMessage("§7Head to the §eDeparture Gate §7to choose your journey.");
 
         // Mark quiz complete so terminal shows path selection on next visit
         journeyTracker.setPhase(player, "terminal_path_select");

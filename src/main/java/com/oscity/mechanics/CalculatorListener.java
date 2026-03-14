@@ -130,18 +130,6 @@ public class CalculatorListener implements Listener {
      * phase should be "calculator_from_tlb" or "calculator_from_lazy_loading".
      */
     public void onCalculatorRoomEntered(Player player, String phase) {
-        plugin.getLogger().info("[FrameDebug] Room entered. instrFrames=" + instrFrames.size()
-            + " calcFrames=" + calcFrames.size() + " phase=" + phase);
-        for (int i = 0; i < instrFrames.size(); i++) {
-            Location l = instrFrames.get(i);
-            plugin.getLogger().info("[FrameDebug] instrFrame" + (i+1) + ": ("
-                + l.getBlockX() + "," + l.getBlockY() + "," + l.getBlockZ() + ")");
-        }
-        for (int i = 0; i < calcFrames.size(); i++) {
-            Location l = calcFrames.get(i);
-            plugin.getLogger().info("[FrameDebug] calcFrame" + (i+1) + ": ("
-                + l.getBlockX() + "," + l.getBlockY() + "," + l.getBlockZ() + ")");
-        }
         updateInstructionFrames(phase);
         setCalcAwaiting();
         calculating.remove(player.getUniqueId());
@@ -526,23 +514,7 @@ public class CalculatorListener implements Listener {
 
     private ItemFrame findItemFrameAt(Location loc) {
         Location center = loc.clone().add(0.5, 0.5, 0.5);
-
-        // Log all nearby entities to help debug missing frames
         java.util.Collection<Entity> nearby = loc.getWorld().getNearbyEntities(center, 2.0, 2.0, 2.0);
-        if (nearby.isEmpty()) {
-            plugin.getLogger().info("[FrameDebug] No entities within 2 blocks of ("
-                + loc.getBlockX() + "," + loc.getBlockY() + "," + loc.getBlockZ() + ")");
-        } else {
-            for (Entity entity : nearby) {
-                Location el = entity.getLocation();
-                double dist = el.distance(center);
-                plugin.getLogger().info("[FrameDebug] Near (" + loc.getBlockX() + "," + loc.getBlockY() + "," + loc.getBlockZ() + "): "
-                    + entity.getType() + " at (" + String.format("%.2f", el.getX()) + ","
-                    + String.format("%.2f", el.getY()) + "," + String.format("%.2f", el.getZ()) + ")"
-                    + " dist=" + String.format("%.2f", dist)
-                    + (entity instanceof ItemFrame ? " [ITEM FRAME]" : ""));
-            }
-        }
 
         ItemFrame closest = null;
         double minDist = Double.MAX_VALUE;
@@ -555,13 +527,8 @@ public class CalculatorListener implements Listener {
                 }
             }
         }
-        if (closest != null) {
-            plugin.getLogger().info("[FrameDebug] -> Using frame at ("
-                + String.format("%.2f", closest.getLocation().getX()) + ","
-                + String.format("%.2f", closest.getLocation().getY()) + ","
-                + String.format("%.2f", closest.getLocation().getZ()) + ")");
-        } else {
-            plugin.getLogger().warning("[FrameDebug] -> No item frame found near ("
+        if (closest == null) {
+            plugin.getLogger().warning("CalculatorListener: no item frame found near ("
                 + loc.getBlockX() + "," + loc.getBlockY() + "," + loc.getBlockZ() + ")");
         }
         return closest;
