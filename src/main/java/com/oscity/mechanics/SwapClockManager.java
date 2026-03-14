@@ -172,7 +172,7 @@ public class SwapClockManager {
                         }
                         player.sendMessage("§6[Clock] §eYou have given every frame a second chance.");
                         player.sendMessage("§6[Clock] §eWalk the circle again. One frame did not get a second chance...");
-                    }, 40L); // 2-second delay before round 2 activates
+                    }, 5L); // 0.5-second delay before round 2 activates
                 }
             }
         } else {

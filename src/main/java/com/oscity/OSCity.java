@@ -98,6 +98,7 @@ public class OSCity extends JavaPlugin {
         // Content systems (load YAML files)
         dialogueManager = new DialogueManager(this);
         dialogueManager.load();
+        getServer().getPluginManager().registerEvents(dialogueManager, this);
 
         questionBank = new QuestionBank(this);
         questionBank.load();

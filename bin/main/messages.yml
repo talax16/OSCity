@@ -2,8 +2,8 @@
 terminal:
   welcome: "&6You have been chosen to replace me, the Kernel Guardian. Proceed with caution."
   chooseModePrompt: "&eChoose your mode:"
-  learnerMode: "&aLearner Mode &7- More guidance, no TNT"
-  adventurerMode: "&cAdventurer Mode &7- Less help, TNT enabled"
+  learnerMode: "&aLearner Mode &7- More guidance"
+  adventurerMode: "&cAdventurer Mode &7- No guidance, limited hints"
   needPaper: "&cYou need to take the paper first!"
   
 # TLB Room messages

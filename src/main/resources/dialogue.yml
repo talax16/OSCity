@@ -8,22 +8,11 @@ rooms:
       - "Greetings, traveler. I am the Kernel Guardian, architect of this digital realm."
       - "You have been chosen to replace me in maintaining the delicate balance of OSCity."
       - "This is Terminal Plaza—the gateway between worlds."
-      - "To your left: the departure gate—step inside and your journey through OSCity begins."
+      - "To your left: the Departure Gate—step inside and your journey through OSCity begins."
       - "To your right: the Assessment Room—a short quiz that helps me point you to the right journey."
       - "I recommend starting with the quiz. It will tell you exactly where to begin."
 
-    # enter_learner:
-    #   - "Excellent choice. The House of Learning rewards curiosity with hints."
-    #   - "When you're uncertain, call upon me and I shall guide you."
-    #   - "No explosions here—only opportunity to understand."
-
-    # inside_both:
-    #   - "Open the chest and you will find a map with an instruction."
-    #   - "Take the map—it is your guide through the journey."
-    #   - "When you're ready, press the button to proceed to OSCity."
-    #   - "Do not forget the map!"
-
-    path_select:
+    path_select: # Is this working?
       - "Welcome back, traveler. The paths of OSCity await your command."
       - "Choose your journey path below — I will guide you from there."
 
@@ -110,6 +99,10 @@ rooms:
     after_miss_quiz_lucky:
       - "No, in this Lucky case, the VPN IS displayed on one of the chests in this room."
       - "Double check the VPN tag and try again."
+
+    incorrect_decision:
+      - "That is not correct. Think carefully about what the TLB result means."
+      - "Try again."
 
   calculator_room:
     from_tlb_spawn:

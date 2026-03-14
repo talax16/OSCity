@@ -43,10 +43,21 @@ public class KernelGuardian {
         // Spawn
         npc.spawn(location);
         npc.setProtected(true);
+        
         currentLocation = location.clone();
-    
+
         // Then set skin
         setComputerSkin();
+        
+        // Set glowing after entity is spawned
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            if (npc != null && npc.isSpawned()) {
+                org.bukkit.entity.Entity entity = npc.getEntity();
+                if (entity != null) {
+                    entity.setGlowing(true);
+                }
+            }
+        }, 5L);
         
         startLookingAtPlayer();
         

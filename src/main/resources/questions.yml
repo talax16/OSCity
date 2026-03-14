@@ -41,17 +41,6 @@ calculator_room:
     correct: "A"
     wrong: "That's incorrect. Do the calculation again."
 
-swap_district:
-  clock_algorithm:
-    question: "The CLOCK algorithm turns off USE BITs because:"
-    options:
-      A: "To identify least recently used frames."
-      B: "To give each frame a second chance before eviction."
-      C: "To save energy."
-      D: "To prevent fragmentation."
-    correct: "B"
-    wrong: "That's incorrect, try again."
-
 # ── Assessment Quiz ───────────────────────────────────────────────────────────
 # 4 questions per journey (q1/q2 = easy, q3/q4 = hard)
 # Answer distribution: 7A, 7B, 7C, 7D across all 28 questions

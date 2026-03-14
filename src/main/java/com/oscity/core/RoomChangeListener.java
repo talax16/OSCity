@@ -188,9 +188,9 @@ public class RoomChangeListener implements Listener {
 
     private void onRoomEntered(Player player, String roomTitle) {
         // Cancel any pending confirmations when leaving those rooms.
-        // Path selection only cancels when entering a room other than Learner Mode.
+        // Path selection only cancels when entering a room other than Departure Gate.
         quizManager.cancelQuizConfirmation(player);
-        if (!"Learner Mode".equals(roomTitle)) {
+        if (!"Departure Gate".equals(roomTitle)) {
             choiceButtonHandler.cancelTerminalPathSelection(player);
         }
 
@@ -204,7 +204,7 @@ public class RoomChangeListener implements Listener {
                 }
                 break;
 
-            case "Learner Mode":
+            case "Departure Gate":
                 if ("terminal_journey_chosen".equals(phase)) {
                     // Journey already chosen — chest is ready
                     dialogueManager.speak(player, "rooms.learner_mode.ready", vars);
@@ -220,7 +220,7 @@ public class RoomChangeListener implements Listener {
                 }
                 break;
 
-            case "Adventurer Mode":
+            case "Assessment Room":
                 journeyTracker.setPhase(player, "quiz_active");
                 quizManager.promptQuizStart(player);
                 break;

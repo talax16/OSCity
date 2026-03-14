@@ -20,14 +20,14 @@ rooms:
     npcPosition: { x: 159, y: 86, z: 311 }
 
   learnerMode:
-    title: "Learner Mode"
+    title: "Departure Gate"
     world: "OSCityWorld"
     min: { x: 195, y: 86, z: 296 }
     max: { x: 204, y: 90, z: 307 }
     npcPosition: { x: 199, y: 86, z: 304 }
   
   adventurerMode:
-    title: "Adventurer Mode"
+    title: "Assessment Room"
     world: "OSCityWorld"
     min: { x: 195, y: 86, z: 311 }
     max: { x: 204, y: 90, z: 321 }

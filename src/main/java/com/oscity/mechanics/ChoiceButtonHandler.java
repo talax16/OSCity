@@ -1368,9 +1368,10 @@ public class ChoiceButtonHandler implements Listener {
         }
 
         if (hasCorrectPTE) {
+            speakIfLearner(player, "rooms.page_table_library.tp_permission_chamber", tracker.getVars(player));
             teleportPlayer(player, "permissionChamber");
         } else {
-            player.sendMessage("§c[Page Table] You need the correct PTE map from Chest " 
+            player.sendMessage("§c[Page Table] You need the correct PTE map from Chest "
                 + correctChestIndex + " to proceed!");
         }
     }
