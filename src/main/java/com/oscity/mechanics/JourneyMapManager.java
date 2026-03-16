@@ -165,9 +165,6 @@ public class JourneyMapManager {
                 lines.add("Page_index: " + safe(pageIdx));
             }
 
-            // Swap slot (revealed when the PTE is checked)
-            String slot = vars.getOrDefault("slot", "?");
-            if (!"?".equals(slot) && !slot.isEmpty()) lines.add("Slot: " + safe(slot));
         }
 
         return lines;

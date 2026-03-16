@@ -25,8 +25,7 @@ public class SwappedOutPage implements JourneyScenario {
         vars.put("offset",      "1011");
         vars.put("offsetHex",   "0xB");
         vars.put("pfn",         "0x2");   // PFN after loading from swap
-        vars.put("slot",        "0");     // Swap retrieval slot
-        vars.put("expectedFloor", "1");
+vars.put("expectedFloor", "1");
         vars.put("hex",  "0x7B");
         vars.put("optA", "0111 1011");
         vars.put("optB", "0111 1101");

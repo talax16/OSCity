@@ -6,6 +6,10 @@ import com.oscity.session.JourneyTracker;
 import com.oscity.session.SessionManager;
 import org.bukkit.entity.Player;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
 /**
  * Delivers contextual hints to the player when they click "I'm lost".
  * Hints are loaded from dialogue.yml under the "hints" section.
@@ -19,13 +23,19 @@ public class HintSystem {
     private final SessionManager sessionManager;
     private final DialogueManager dialogueManager;
     private final JourneyTracker journeyTracker;
+    private final com.oscity.config.ConfigManager configManager;
+
+    /** Tracks how many hints each player has requested for phases with multiple hints. */
+    private final Map<UUID, Integer> calcHintCounter = new HashMap<>();
 
     public HintSystem(SessionManager sessionManager,
                       DialogueManager dialogueManager,
-                      JourneyTracker journeyTracker) {
+                      JourneyTracker journeyTracker,
+                      com.oscity.config.ConfigManager configManager) {
         this.sessionManager = sessionManager;
         this.dialogueManager = dialogueManager;
         this.journeyTracker = journeyTracker;
+        this.configManager = configManager;
     }
 
     /**
@@ -37,16 +47,26 @@ public class HintSystem {
      */
     public void showHint(Player player) {
         String phase = journeyTracker.getPhase(player);
+
+        // For phases with multiple numbered hints, tell the player which hint they're on
+        if ("calculator_from_tlb".equals(phase)) {
+            int current = calcHintCounter.getOrDefault(player.getUniqueId(), 0);
+            player.sendMessage(configManager.getMessage("feedback.hint_counter", "{current}", String.valueOf(current + 1), "{total}", "3"));
+        }
+
         String hintPath = resolveHintPath(player, phase);
 
-        if (dialogueManager.hasPath(hintPath)) {
+        if (hintPath != null && dialogueManager.hasPath(hintPath)) {
             dialogueManager.speak(player, hintPath, journeyTracker.getVars(player));
         } else {
-            player.sendMessage("§6[Kernel Guardian] §fLook around carefully—the answer is nearby.");
+            player.sendMessage(configManager.getMessage("feedback.hint_fallback"));
         }
 
         sessionManager.recordHintUsed();
         SQLiteStudyDatabase.logHintUsed(sessionManager.getSessionId(), phase);
+        
+        // Track for Quick Learner achievement
+        sessionManager.getStats().onHintUsed();
     }
 
     // ── Phase → hint path mapping ─────────────────────────────────────────────
@@ -65,8 +85,11 @@ public class HintSystem {
                         ? "hints.tlb_room.after_calculator_lucky"
                         : "hints.tlb_room.after_calculator_non_lucky";
 
-            case "calculator_from_tlb":
-                return "hints.calculator_room.from_tlb_hint1";
+            case "calculator_from_tlb": {
+                int count = calcHintCounter.getOrDefault(player.getUniqueId(), 0);
+                calcHintCounter.put(player.getUniqueId(), (count + 1) % 3);
+                return "hints.calculator_room.from_tlb_hint" + (count + 1);
+            }
             case "calculator_from_lazy_loading":
                 return "hints.calculator_room.from_lazy_loading";
 
@@ -105,7 +128,7 @@ public class HintSystem {
             default:
                 if (phase.startsWith("ram_")) return "hints.ram_room.general";
                 if (phase.startsWith("swap_")) return "hints.swap_district.lost";
-                return "hints.terminal.before_entering";
+                return null;
         }
     }
 }

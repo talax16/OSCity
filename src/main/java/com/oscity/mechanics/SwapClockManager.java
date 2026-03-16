@@ -1,5 +1,6 @@
 package com.oscity.mechanics;
 
+import com.oscity.OSCity;
 import com.oscity.content.DialogueManager;
 import com.oscity.mode.PlayerMode;
 import com.oscity.session.JourneyTracker;
@@ -36,7 +37,7 @@ import java.util.UUID;
  */
 public class SwapClockManager {
 
-    private final JavaPlugin plugin;
+    private final OSCity plugin;
     private final JourneyTracker tracker;
     private final DialogueManager dialogue;
 
@@ -47,13 +48,14 @@ public class SwapClockManager {
         final Set<Integer> roundOnePressed = new HashSet<>();
         boolean roundTwoStarted = false;
         final int victimFrameNum; // 1-6
+        int wrongPresses = 0;  // Track wrong presses for achievement
 
         ClockState(int victimFrameNum) {
             this.victimFrameNum = victimFrameNum;
         }
     }
 
-    public SwapClockManager(JavaPlugin plugin, JourneyTracker tracker, DialogueManager dialogue) {
+    public SwapClockManager(OSCity plugin, JourneyTracker tracker, DialogueManager dialogue) {
         this.plugin   = plugin;
         this.tracker  = tracker;
         this.dialogue = dialogue;
@@ -95,7 +97,7 @@ public class SwapClockManager {
                 }
             }
             state.roundTwoStarted = true;
-            player.sendMessage("§6[Clock] §eThe victim frame has been identified. Pull the lever to evict it.");
+            player.sendMessage(plugin.getConfigManager().getMessage("clock.victim_identified"));
         } else {
             // Round 1: Light all 6 torches (USE BIT = ON)
             for (int i = 1; i <= 6; i++) {
@@ -127,9 +129,16 @@ public class SwapClockManager {
             states.remove(player.getUniqueId());
             updateFrameSign(frameNum, pfnHex, "Swapped out", "to disk", "");
             tracker.setPhase(player, "swap_after_eviction");
+            player.sendMessage(plugin.getConfigManager().getMessage("clock.evicted_to_swap", "{pfn}", pfnHex));
+            player.sendMessage(plugin.getConfigManager().getMessage("system.frame_swapped_out",
+                "{pfn}", pfnHex));
             if (tracker.getMode(player) != PlayerMode.ADVENTURER)
                 dialogue.speak(player, "rooms.swap_district.after_eviction", tracker.getVars(player));
-            player.sendMessage("§6[Clock] §eFrame §f" + pfnHex + "§e evicted to swap!");
+            
+            // Check if perfect run (no wrong presses)
+            boolean perfect = state.wrongPresses == 0;
+            plugin.getAchievementManager().onSwapClockComplete(player, perfect);
+            
             return true;
         }
         
@@ -142,14 +151,12 @@ public class SwapClockManager {
                 // Turn off torch to show player checked this frame
                 setTorchLit(frameNum, false);
                 updateFrameSign(frameNum, pfnHex, "USE BIT: OFF", "(checked)", "");
-                player.sendMessage("§6[Clock] §eFrame §f" + pfnHex
-                    + "§e was recently accessed — USE BIT is ON. Not the victim. Keep looking.");
+                player.sendMessage(plugin.getConfigManager().getMessage("clock.recently_accessed", "{pfn}", pfnHex));
             } else {
                 // Round 1: flip USE BIT OFF (give second chance)
                 setTorchLit(frameNum, false);
                 updateFrameSign(frameNum, pfnHex, "USE BIT: OFF", "(2nd chance)", "");
-                player.sendMessage("§6[Clock] §eUSE BIT for Frame §f" + pfnHex
-                    + "§e flipped OFF. Second chance given. Move on.");
+                player.sendMessage(plugin.getConfigManager().getMessage("clock.use_bit_flipped", "{pfn}", pfnHex));
                 state.roundOnePressed.add(frameNum);
 
                 if (state.roundOnePressed.size() == 6) {
@@ -170,8 +177,8 @@ public class SwapClockManager {
                                 plugin.getLogger().info("[SwapClock] Keeping torch " + i + " OFF (victim)");
                             }
                         }
-                        player.sendMessage("§6[Clock] §eYou have given every frame a second chance.");
-                        player.sendMessage("§6[Clock] §eWalk the circle again. One frame did not get a second chance...");
+                        player.sendMessage(plugin.getConfigManager().getMessage("clock.all_given_second_chance"));
+                        player.sendMessage(plugin.getConfigManager().getMessage("clock.walk_again"));
                     }, 5L); // 0.5-second delay before round 2 activates
                 }
             }
@@ -180,23 +187,24 @@ public class SwapClockManager {
             if (!state.roundTwoStarted) {
                 // Round 1 — a torch is already off (player pressed it earlier)
                 if (state.roundOnePressed.contains(frameNum)) {
-                    player.sendMessage("§6[Clock] §eYou already flipped Frame §f" + pfnHex
-                        + "§e's USE BIT. Move on to the next frame.");
+                    player.sendMessage(plugin.getConfigManager().getMessage("clock.already_flipped", "{pfn}", pfnHex));
                 } else {
                     // Shouldn't happen (we lit all on entry), but handle gracefully
-                    player.sendMessage("§6[Clock] §eFrame §f" + pfnHex
-                        + "§e has its USE BIT already OFF.");
+                    player.sendMessage(plugin.getConfigManager().getMessage("clock.already_off", "{pfn}", pfnHex));
                 }
             } else if (frameNum == state.victimFrameNum) {
                 // Round 2, victim found! (First press - state is kept for second press)
                 updateFrameSign(frameNum, pfnHex, "VICTIM!", "Press the", "button again!");
                 tracker.setPhase(player, "swap_victim_found");
+                player.sendMessage(plugin.getConfigManager().getMessage("system.victim_confirmed", "{pfn}", pfnHex));
                 if (tracker.getMode(player) != PlayerMode.ADVENTURER)
                     dialogue.speak(player, "rooms.swap_district.victim_found", tracker.getVars(player));
             } else {
                 // Round 2, off but not the victim (shouldn't occur since non-victims were re-lit)
-                player.sendMessage("§6[Clock] §eFrame §f" + pfnHex
-                    + "§e has USE BIT OFF — but this is not your victim frame. Investigate further.");
+                player.sendMessage(plugin.getConfigManager().getMessage("clock.off_not_victim", "{pfn}", pfnHex));
+                // Wrong press - track for achievement
+                state.wrongPresses++;
+                plugin.getAchievementManager().onWrongAnswer(player, "swap_clock");
             }
         }
         return true;

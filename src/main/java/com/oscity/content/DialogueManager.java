@@ -92,6 +92,39 @@ public class DialogueManager implements Listener {
     }
 
     /**
+     * Send dialogue at the given YAML path with delays between lines, but no freeze.
+     * Used for terminal rooms where the player should still be able to move.
+     */
+    public void speakDelayed(Player player, String path, Map<String, String> vars) {
+        List<String> lines = dialogue.getStringList(path);
+        if (lines.isEmpty()) {
+            plugin.getLogger().warning("DialogueManager: no content at '" + path + "'");
+            return;
+        }
+        for (int i = 0; i < lines.size(); i++) {
+            final String line = lines.get(i);
+            Bukkit.getScheduler().runTaskLater(plugin,
+                () -> player.sendMessage(PREFIX + replacePlaceholders(line, vars)),
+                i * LINE_DELAY_TICKS);
+        }
+    }
+
+    /**
+     * Send all lines at a given YAML path instantly (no freeze, no delay).
+     * Used for short meta-responses like guidance on/off confirmations.
+     */
+    public void speakInstant(Player player, String path, Map<String, String> vars) {
+        List<String> lines = dialogue.getStringList(path);
+        if (lines.isEmpty()) {
+            plugin.getLogger().warning("DialogueManager: no content at '" + path + "'");
+            return;
+        }
+        for (String line : lines) {
+            player.sendMessage(PREFIX + replacePlaceholders(line, vars));
+        }
+    }
+
+    /**
      * Retrieve a single string from YAML (for non-list entries like explanations).
      */
     public String getString(String path, Map<String, String> vars) {

@@ -1,5 +1,6 @@
 package com.oscity.mechanics;
 
+import com.oscity.content.DialogueManager;
 import com.oscity.content.QuestionBank;
 import com.oscity.session.JourneyTracker;
 import net.kyori.adventure.text.Component;
@@ -58,6 +59,7 @@ public class CalculatorListener implements Listener {
     private final JourneyTracker tracker;
     private final JourneyMapManager journeyMapManager;
     private final QuestionBank questionBank;
+    private final DialogueManager dialogueManager;
 
     private Location hopperLocation;
     private final List<Location> instrFrames = new ArrayList<>();
@@ -73,17 +75,22 @@ public class CalculatorListener implements Listener {
     /** Players awaiting a calc verification question; value = question path. */
     private final Map<UUID, String> pendingCalcVerify = new HashMap<>();
 
+    /** Players who pressed skip (vs used the hopper) — determines post-quiz dialogue. */
+    private final Map<UUID, Boolean> wasSkipped = new HashMap<>();
+
     /** Cached MapView per frame location so we reuse the same map ID across updates. */
     private final Map<Location, MapView> frameMapViews = new HashMap<>();
 
     // ── Constructor ───────────────────────────────────────────────────────────
 
     public CalculatorListener(JavaPlugin plugin, JourneyTracker tracker,
-                              JourneyMapManager journeyMapManager, QuestionBank questionBank) {
-        this.plugin        = plugin;
-        this.tracker       = tracker;
+                              JourneyMapManager journeyMapManager, QuestionBank questionBank,
+                              DialogueManager dialogueManager) {
+        this.plugin          = plugin;
+        this.tracker         = tracker;
         this.journeyMapManager = journeyMapManager;
-        this.questionBank  = questionBank;
+        this.questionBank    = questionBank;
+        this.dialogueManager = dialogueManager;
         loadConfig();
     }
 
@@ -135,6 +142,7 @@ public class CalculatorListener implements Listener {
         calculating.remove(player.getUniqueId());
         hasCalculated.remove(player.getUniqueId());
         pendingCalcVerify.remove(player.getUniqueId());
+        wasSkipped.remove(player.getUniqueId());
     }
 
     /**
@@ -145,6 +153,13 @@ public class CalculatorListener implements Listener {
     }
 
     /**
+     * Check if player has a pending calculator quiz waiting for an answer.
+     */
+    public boolean hasPendingCalcVerify(Player player) {
+        return pendingCalcVerify.containsKey(player.getUniqueId());
+    }
+
+    /**
      * Skip button: use the journey's VA directly, show result immediately (no 5s wait).
      * Called by ChoiceButtonHandler when the player presses the skipCalc button.
      */
@@ -152,19 +167,20 @@ public class CalculatorListener implements Listener {
         if (calculating.getOrDefault(player.getUniqueId(), false)) return;
         String va = tracker.getVar(player, "va");
         if ("?".equals(va) || va.isEmpty()) {
-            player.sendMessage("§c[Calculator] No virtual address found for your journey.");
+            player.sendMessage(((com.oscity.OSCity) plugin).getConfigManager().getMessage("errors.calculator.no_va"));
             return;
         }
         try {
             long value = parseInput(va);
             showResult(va, value);
             journeyMapManager.updateMapAfterCalculator(player);
-            hasCalculated.put(player.getUniqueId(), true);
             String summary = buildChatSummary(value);
-            player.sendMessage("§6[Calculator] §a(Skipped) Result: §f" + summary + "§a — added to your log.");
+            player.sendMessage(((com.oscity.OSCity) plugin).getConfigManager().getMessage("feedback.calculator_skipped", "{summary}", summary));
+            wasSkipped.put(player.getUniqueId(), true);
+            askHexQuestion(player, va, value);
         } catch (NumberFormatException e) {
             setCalcError(va);
-            player.sendMessage("§c[Calculator] Could not parse VA '" + va + "'.");
+            player.sendMessage(((com.oscity.OSCity) plugin).getConfigManager().getMessage("errors.calculator.parse_error_va", "{va}", va));
         }
     }
 
@@ -225,7 +241,16 @@ public class CalculatorListener implements Listener {
             if (q.checkAnswer(msg)) {
                 pendingCalcVerify.remove(player.getUniqueId());
                 hasCalculated.put(player.getUniqueId(), true);
-                player.sendMessage("§a[Quiz] Correct! The Continue button is now enabled.");
+                player.sendMessage(((com.oscity.OSCity) plugin).getConfigManager().getMessage("feedback.calculator_quiz_correct"));
+                boolean skipped = wasSkipped.getOrDefault(player.getUniqueId(), false);
+                wasSkipped.remove(player.getUniqueId());
+                String phase = tracker.getPhase(player);
+                if ("calculator_from_tlb".equals(phase)) {
+                    String dialoguePath = skipped
+                        ? "rooms.calculator_room.from_tlb_skip"
+                        : "rooms.calculator_room.from_tlb_after_quiz";
+                    dialogueManager.speakInstant(player, dialoguePath, tracker.getVars(player));
+                }
             } else {
                 player.sendMessage("§c" + q.wrongFeedback);
                 // Re-display the question so they can try again
@@ -283,13 +308,13 @@ public class CalculatorListener implements Listener {
         BookMeta meta = (BookMeta) book.getItemMeta();
         List<Component> pages = meta != null ? meta.pages() : java.util.Collections.emptyList();
         if (pages.isEmpty()) {
-            player.sendMessage("§c[Calculator] First page is empty. Write a number.");
+            player.sendMessage(((com.oscity.OSCity) plugin).getConfigManager().getMessage("errors.calculator.empty_page"));
             return;
         }
         String pageText = PlainTextComponentSerializer.plainText().serialize(pages.get(0)).trim();
         String input    = pageText.split("\n")[0].trim();
         if (input.isEmpty()) {
-            player.sendMessage("§c[Calculator] First page is empty. Write a number.");
+            player.sendMessage(((com.oscity.OSCity) plugin).getConfigManager().getMessage("errors.calculator.empty_page"));
             return;
         }
 
@@ -306,7 +331,7 @@ public class CalculatorListener implements Listener {
     private void startCalculation(Player player, String input, String phase) {
         calculating.put(player.getUniqueId(), true);
         setCalcCalculating();
-        player.sendMessage("§6[Calculator] §eProcessing: §f" + input + "§e...");
+        player.sendMessage(((com.oscity.OSCity) plugin).getConfigManager().getMessage("feedback.calculator_processing", "{input}", input));
 
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             calculating.remove(player.getUniqueId());
@@ -321,20 +346,17 @@ public class CalculatorListener implements Listener {
                     String summary = buildPageIndexSummary(value);
                     tracker.setVar(player, "pageIndex", String.valueOf(value));
                     journeyMapManager.updateMap(player);
-                    player.sendMessage("§6[Calculator] §aResult: §f" + summary
-                        + "§a — added to your log.");
+                    player.sendMessage(((com.oscity.OSCity) plugin).getConfigManager().getMessage("feedback.calculator_result", "{summary}", summary));
                     askPageIndexQuestion(player, value);
                 } else {
                     // First visit (calculator_from_tlb): ask hex→binary verification question
                     String summary = buildChatSummary(value);
-                    player.sendMessage("§6[Calculator] §aResult: §f" + summary
-                        + "§a — added to your log.");
+                    player.sendMessage(((com.oscity.OSCity) plugin).getConfigManager().getMessage("feedback.calculator_result", "{summary}", summary));
                     askHexQuestion(player, input, value);
                 }
             } catch (NumberFormatException e) {
                 setCalcError(input);
-                player.sendMessage("§c[Calculator] Could not parse '" + input
-                    + "'. Use hex (0xFF), binary (0b1010), or decimal. For page index, use format: 0xE/0x10");
+                player.sendMessage(((com.oscity.OSCity) plugin).getConfigManager().getMessage("errors.calculator.parse_error", "{input}", input));
             }
         }, 100L); // 5 seconds = 100 ticks
     }
@@ -373,9 +395,13 @@ public class CalculatorListener implements Listener {
         String binary = formatNibbles(value, pageOffsetBits * 2);
         long vpn = value >> pageOffsetBits;
         long off = value & ((1L << pageOffsetBits) - 1);
+        String vpnHex = "0x" + Long.toHexString(vpn).toUpperCase();
+        String offHex = "0x" + Long.toHexString(off).toUpperCase();
+        String vpnBin = formatNibbles(vpn, pageOffsetBits);
+        String offBin = formatNibbles(off, pageOffsetBits);
         return "Binary=" + binary
-            + ", VPN=" + vpn + " (0x" + Long.toHexString(vpn).toUpperCase() + ")"
-            + ", Offset=" + off + " (0x" + Long.toHexString(off).toUpperCase() + ")";
+            + ", VPN=" + vpnHex + " (" + vpnBin + ")"
+            + ", Offset=" + offHex + " (" + offBin + ")";
     }
 
     /** Build summary for page index calculation (visit 2). */

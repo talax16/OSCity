@@ -19,14 +19,14 @@ rooms:
     max: { x: 168, y: 90, z: 313 }
     npcPosition: { x: 159, y: 86, z: 311 }
 
-  learnerMode:
+  departureGate:
     title: "Departure Gate"
     world: "OSCityWorld"
     min: { x: 195, y: 86, z: 296 }
     max: { x: 204, y: 90, z: 307 }
     npcPosition: { x: 199, y: 86, z: 304 }
   
-  adventurerMode:
+  assessmentRoom:
     title: "Assessment Room"
     world: "OSCityWorld"
     min: { x: 195, y: 86, z: 311 }
@@ -304,7 +304,7 @@ choiceButtons:
 
 
 tpButtons:
-  learnerStart: # button to start the learner's mode, teleports to TLB room
+  gameStart: # button to start the game, teleports to TLB room
     world: "OSCityWorld"
     destination: tlbSpawn
     message: "&aTeleported to TLB room!"
@@ -507,7 +507,12 @@ tpButtons:
   
 signs:
   tlb:
-    vpn1: 
+    hitDecision: # sign next to HIT button — changes to "Go to RAM" after quiz
+      world: "OSCityWorld"
+      x: 65
+      y: 18
+      z: 10
+    vpn1:
       world: "OSCityWorld"
       x: 92
       y: 19

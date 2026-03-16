@@ -16,6 +16,7 @@ public class SessionManager {
     private boolean isActive;
     private int hintsUsed;
     private int wrongAnswers;
+    private SessionStats stats;        // Achievement tracking
 
     public SessionManager() {
         this.sessionId = UUID.randomUUID().toString().substring(0, 8); // Short anonymous ID
@@ -23,6 +24,7 @@ public class SessionManager {
         this.isActive = false;
         this.hintsUsed = 0;
         this.wrongAnswers = 0;
+        this.stats = new SessionStats();
     }
 
     /**
@@ -83,6 +85,21 @@ public class SessionManager {
 
     public int getWrongAnswers() {
         return wrongAnswers;
+    }
+
+    /** Get achievement stats tracker */
+    public SessionStats getStats() {
+        return stats;
+    }
+
+    /** Start fresh session (reset stats) */
+    public void startNewSession() {
+        this.sessionId = UUID.randomUUID().toString().substring(0, 8);
+        this.startTime = LocalDateTime.now();
+        this.isActive = false;
+        this.hintsUsed = 0;
+        this.wrongAnswers = 0;
+        this.stats = new SessionStats();
     }
 
     public long getSessionDurationSeconds() {

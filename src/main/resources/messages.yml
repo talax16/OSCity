@@ -1,72 +1,168 @@
-# Terminal messages
-terminal:
-  welcome: "&6You have been chosen to replace me, the Kernel Guardian. Proceed with caution."
-  chooseModePrompt: "&eChoose your mode:"
-  learnerMode: "&aLearner Mode &7- More guidance"
-  adventurerMode: "&cAdventurer Mode &7- No guidance, limited hints"
-  needPaper: "&cYou need to take the paper first!"
-  
-# TLB Room messages
-tlb:
-  welcome: "&6Welcome to the TLB Room! Let's check if your page is cached."
-  hint: "&7Look for the VPN tag that matches your Virtual Page Number"
-  hit: "&aPage found in TLB! PFN: {pfn}"
-  miss: "&cTLB Miss - Need to walk the page table"
+# ─── Feedback ─────────────────────────────────────────────────────────────────
+feedback:
+  correct: "&a✔ Correct!"
+  correct_answer: "&7The correct answer was &e{answer}&7."
+  wrong_streak_reset: "&c✗ Wrong answer! Streak reset."
+  achievement_unlock: "&a&lAchievement Unlocked: &f{name}"
+  selected:               "&7You have selected: &e{label}&7."
+  ram_page_placed:        "&a[RAM] Page placed! Press the button to finish."
+  ram_book_placed:        "&a[RAM] Book placed! Press the button to retry the instruction."
+  calculator_result:      "&6[Calculator] &aResult: &f{summary}&a — added to your log."
+  calculator_skipped:     "&6[Calculator] &a(Skipped) Result: &f{summary}&a — added to your log."
+  calculator_processing:  "&6[Calculator] &eProcessing: &f{input}&e..."
+  calculator_quiz_correct: "&a[Quiz] Correct! The Continue button is now enabled."
+  hint_counter:           "&6[Kernel Guardian] &7(Hint {current} of {total})"
+  hint_fallback:          "&6[Kernel Guardian] &fI don't have anything to hint for this step."
 
-# Page Table messages
-pageTable:
-  welcome: "&6Page Table Library - {floor}"
-  findPte: "&7Find the chest labeled '{index}'"
-  
-# Permission Chamber messages
-permission:
-  welcome: "&6Permission Chamber - Checking access rights"
-  allowed: "&aAccess granted!"
-  denied: "&cAccess denied!"
-  pageFault: "&eRaising page fault..."
+# ─── Guardian (single-line pre-prefixed, used outside DialogueManager) ─────────
+guardian:
+  quiz_cancelled: "&6[Kernel Guardian] &7Very well. Return whenever you are ready."
+  no_journey_selected: "&6[Kernel Guardian] &7Choose your journey at the terminal first."
 
-# Calculator Room messages
-calculator:
-  welcome: "&6Calculator Room - Convert your Virtual Address"
-  instruction: "&7Convert {va} from hexadecimal to binary"
-  vpnLabel: "&eVPN (first 4 bits):"
-  offsetLabel: "&eOffset (last 4 bits):"
+# ─── OS system notifications (visible to all players) ─────────────────────────
+system:
+  tlb_updated:       "&8[OS] &7TLB updated: VPN &f{vpn} &7\u2192 PFN &f{pfn}"
+  pte_updated:       "&8[OS] &7PTE updated: &f{values}"
+  pte_tlb_updated:   "&8[OS] &7PTE and TLB updated."
+  frame_swapped_out: "&8[OS] &7Frame &f{pfn} &7swapped to disk. PTE: PRESENT=0, IN_SWAP=1."
+  victim_confirmed:  "&8[OS] &7Frame &f{pfn} &7identified as victim \u2014 USE BIT is OFF."
 
-# RAM Room messages
-ram:
-  welcome: "&6RAM Room {number}"
-  frameLabel: "&7Frame {pfn}"
-  emptyFrame: "&7Empty frame"
-  
-# Disk Room messages
-disk:
-  welcome: "&6Disk Room - Persistent Storage"
-  findPage: "&7Locate page {index} in chest {chest}"
+# ─── Clock algorithm messages ──────────────────────────────────────────────────
+clock:
+  victim_identified: "&6[Clock] &eThe victim frame has been identified. Pull the lever to evict it."
+  evicted_to_swap: "&6[Clock] &eFrame &f{pfn}&e evicted to swap!"
+  recently_accessed: "&6[Clock] &eFrame &f{pfn}&e was recently accessed — USE BIT is ON. Not the victim. Keep looking."
+  use_bit_flipped: "&6[Clock] &eUSE BIT for Frame &f{pfn}&e flipped OFF. Second chance given. Move on."
+  all_given_second_chance: "&6[Clock] &eYou have given every frame a second chance."
+  walk_again: "&6[Clock] &eWalk the circle again. One frame did not get a second chance..."
+  already_flipped: "&6[Clock] &eYou already flipped Frame &f{pfn}&e's USE BIT. Move on to the next frame."
+  already_off: "&6[Clock] &eFrame &f{pfn}&e has its USE BIT already OFF."
+  off_not_victim: "&6[Clock] &eFrame &f{pfn}&e has USE BIT OFF — but this is not your victim frame. Investigate further."
 
-# Swap District messages
-swap:
-  welcome: "&6Swap District - Frame Eviction"
-  clockAlgorithm: "&7Walk around the circle, checking use bits"
-  victimFound: "&aVictim frame found: {pfn}"
+# ─── Errors ───────────────────────────────────────────────────────────────────
+errors:
+  tlb_room:
+    answer_quiz_first:      "&c[TLB Room] Answer the TLB hit/miss quiz first!"
+    visit_calculator_first: "&c[TLB Room] You need to visit the Calculator Room first to get your VPN!"
+    decide_hit_or_miss:     "&c[TLB Room] Decide if this is a TLB hit or miss first!"
+    visit_calculator:       "&cVisit the Calculator Room first, then come back to make your decision."
+    reconsider:             "&ePress the HIT or MISS button again when you're ready."
+  ram:
+    write_hello_and_place:  "&c[RAM] Write 'hello' in the book and place it back in the frame 0x2 chest!"
+    take_book_write_place:  "&c[RAM] Take the book from frame 0x2 chest (your private copy), write 'hello' in it, and put it back!"
+    place_swap_book:        "&c[RAM] Place the swap slot 0 book in the chest first!"
+    retrieve_swap_page:     "&c[RAM] You need the page from swap slot 0! Go to the disk room and retrieve it."
+    put_book_back:          "&c[RAM] Make sure to put back the book in the chest!"
+    write_correct_content:  "&c[RAM] Make sure to write what the process asked to write!"
+    place_disk_file:        "&cYou must place the file retrieved from the disk in the free frame!"
+  permission:
+    use_door_lazy_alloc:    "&c[Permission Chamber] Use the door button to proceed to the Lazy Allocation Room!"
+    use_door_lazy_loading:  "&c[Permission Chamber] Use the door button to proceed to the Lazy Loading Room!"
+    make_choice_first:      "&c[Permission Chamber] Make your choice using the buttons first!"
+    wrong_door:             "&c[Permission Chamber] This door is not for your current journey!"
+  disk:
+    retrieve_swap_slot:     "&c[Disk Room] You must retrieve the page from swap slot 0 first!"
+    retrieve_treasure_map:  "&c[Disk Room] You must retrieve the correct page from chest C (treasure_map.bin page 0)!"
+  swap:
+    complete_algorithm:     "&cComplete the swap algorithm first! Find the victim frame and pull the lever."
+  page_table:
+    no_vpn:                 "&c[Page Table] No VPN found! Complete the calculator first."
+    need_pte_map:           "&c[Page Table] You need the correct PTE map from Chest {chest} to proceed!"
+  terminal:
+    select_journey_first:   "&cYou must select a journey first! Use the terminal to choose your journey."
+    take_map_first:         "&cYou must take the journey map from the chest first!"
+  calculator:
+    no_va:                  "&c[Calculator] No virtual address found for your journey."
+    parse_error_va:         "&c[Calculator] Could not parse VA '{va}'."
+    parse_error:            "&c[Calculator] Could not parse '{input}'. Use hex (0xFF), binary (0b1010), or decimal. For page index, use format: 0xE/0x10"
+    calculate_page_index:   "&c[Calculator] You must calculate the page index first! Use the hopper or press skip."
+    calculate_va:           "&c[Calculator] You must calculate your VA first! Use the hopper or press skip."
+    answer_quiz_first:      "&c[Calculator] Answer the quiz question first before continuing."
+    empty_page:             "&c[Calculator] First page is empty. Write a number."
+  guardian:
+    type_1_to_4:            "&cPlease type 1, 2, 3, or 4."
+    type_from_list:         "&cPlease type a number from the list."
+    type_range:             "&cPlease type a number between 1 and {max}."
+  quiz:
+    type_1_or_2:            "&cPlease type &e1 &cto start or &e2 &cto go back."
+    type_abcd:              "&cPlease type A, B, C, or D."
+    type_1_to_3:            "&cPlease type &e1&c, &e2&c, or &e3&c."
+    type_1_to_7_or_back:    "&cPlease type a number from &e1 &cto &e7&c, or &eB &cto go back."
+    type_g_a_or_back:       "&cPlease type &eG&c, &eA&c, or &eB &cto go back."
 
-# COW Room messages
-cow:
-  welcome: "&6Copy-on-Write Room"
-  explanation: "&7Process wants to write to a shared page"
-  
-# Lazy Allocation messages
-lazyAllocation:
-  welcome: "&6Lazy Allocation Room"
-  explanation: "&7Page wasn't allocated until now"
 
-# Lazy Loading messages
-lazyLoading:
-  welcome: "&6Lazy Loading Room"
-  explanation: "&7Page needs to be loaded from disk"
+# ─── Permission incorrect feedback ───────────────────────────────────────────
+permission_feedback:
+  allow_access: "&cNo. Check the PRESENT bit and permission flags again."
+  page_fault:   "&cNo. The PRESENT bit is 1. This page is already in memory."
+  segfault:     "&cNo. Check if this is truly an out-of-bounds access."
+  protection:   "&cNo. Check the COW bit and what operation is requested."
+  default:      "&cThat's not correct. Try again."
 
-# General messages
-general:
-  teleported: "&aTeleported to {location}"
-  correctChoice: "&aCorrect!"
-  wrongChoice: "&cIncorrect!"
-  journeyComplete: "&6&lCongratulations! Journey Complete!"
+page_fault_type_feedback:
+  lazy_allocation: "&cCheck the ANON bit. Is it truly anonymous?"
+  lazy_loading:    "&cCheck the FILE_BACKED bit. Is it truly file-backed?"
+  swapping:        "&cCheck the IN_SWAP bit. Look at your PTE again."
+  default:         "&cThat's not correct. Try again."
+
+# ─── UI menus ─────────────────────────────────────────────────────────────────
+ui:
+  separator:             "&8&m════════════════════════════════════════"
+  guardian_separator:    "&6════════════════════════════════"
+
+  choose_path:
+    title:               "&6&l         CHOOSE YOUR PATH"
+    option1_quiz:        "&e1&7) &6Pick from the journey list &7— your quiz results shown"
+    option1_all_right:   "&e1&7) &6Pick from the journey list &7— you got them all right!"
+    option1_basic:       "&e1&7) &6Pick from the journey list"
+    option2:             "&e2&7) &bAll journeys in order &7— easiest to hardest, one at a time"
+    option3:             "&e3&7) &dRandom &7— let fate decide"
+    prompt:              "&7Type &e1&7, &e2&7, or &e3&7:"
+
+  journey_list:
+    title:               "&6&l         JOURNEY LIST"
+    starred_note:        "&7Journeys marked &6\u2605 &7are where you struggled most."
+    prompt:              "&7Type &e1&7-&e7&7 to choose, or &eB &7to go back:"
+
+  guidance:
+    title:               "&6&l      GUIDANCE PREFERENCE"
+    journey_label:       "&7Journey: &f{journey}"
+    option_g:            "&eG&7) &aWith Kernel Guardian &7— hints & explanations"
+    option_g_note:       "    &8\u26a0 The Guardian will pause your movement while speaking."
+    option_a:            "&eA&7) &7Alone &8— no hints, full freedom"
+    prompt:              "&7Type &eG&7, &eA&7, or &eB &7to go back:"
+
+  quiz:
+    title:               "&6&l         ASSESSMENT QUIZ"
+    subtitle:            "&7Answer &e28 questions&7 — type &eA&7, &eB&7, &eC&7, or &eD&7."
+    results_title:       "&6&l         QUIZ RESULTS"
+    all_correct:         "&a&l\u2714 All correct!"
+    all_correct_note1:   "&7Apply your knowledge with a &erandom journey"
+    all_correct_note2:   "&7or go &ethrough all journeys &7from easiest to hardest."
+    recommended_footer:  "&7You can also go through all journeys or pick a random one."
+    footer:              "&7Head to the &eDeparture Gate &7to choose your journey."
+    question_prompt:     "&7Type &eA&7, &eB&7, &eC&7, or &eD&7:"
+
+  guardian_menu:
+    title:               "Kernel Guardian"
+    what_would_you_know: "What would you like to know?"
+    prompt:              "Type a number in chat to choose"
+    option1_brief:       "1. Brief me"
+    option1_brief_desc:  " — Get a briefing on this room"
+    option1_explain:     "1. Explain again"
+    option1_explain_desc: " — Replay instructions"
+    option2_guide:       "2. Guide me through this step"
+    option2_guide_desc:  " — One-time hint"
+    option2_lost:        "2. I'm lost"
+    option2_lost_desc:   " — Get a hint"
+    option3:             "3. Explain a concept"
+    option3_desc:        " — Learn terminology"
+    option4_enable:      "4. Enable full guidance"
+    option4_enable_desc: " — Get hints for the rest of this journey"
+    option4_disable:     "4. Disable guidance"
+    option4_disable_desc: " — Explore the rest of this journey alone"
+
+  concepts:
+    title:               "Concepts I can explain here:"
+    empty:               "  There are no concepts to explain in this area."
+    choose_prompt:       "Choose the number of the concept you want to ask about."

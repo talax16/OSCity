@@ -16,14 +16,12 @@ public class JourneyManager {
 
     /** Next phase after the player confirms a frame in the RAM Room (allow_access). */
     public static String nextPhaseAfterRamConfirm(Journey j) {
-        return j == Journey.LUCKY ? "ram_finish" : "ram_retry_tlb_miss";
+        return "ram_finish";
     }
 
     /** RAM mix-sign text [l1, l2, l3, l4] after allow_access confirm. */
     public static String[] ramSignAfterConfirm(Journey j) {
-        return j == Journey.LUCKY
-            ? new String[]{"FINISH", "", "", ""}
-            : new String[]{"RETRY", "INSTRUCTION", "", ""};
+        return new String[]{"FINISH", "", "", ""};
     }
 
     /** After COW: true when the journey still needs a Swap District visit (Lazy Allocation). */
@@ -57,11 +55,8 @@ public class JourneyManager {
      */
     public static Map<String, String> swapEntryVarUpdates(Journey j, String currentPfnCow) {
         Map<String, String> updates = new LinkedHashMap<>();
-        if (j == Journey.LAZY_LOADING) {
-            updates.put("slot", "1");
-        } else if (j == Journey.LAZY_ALLOCATION) {
+        if (j == Journey.LAZY_ALLOCATION) {
             updates.put("pfn",  currentPfnCow);
-            updates.put("slot", "0");
         }
         return updates;
     }

@@ -217,16 +217,19 @@ public class PageTableManager {
                 break;
 
             case SWAPPED_OUT:
-                // Swapped-Out Page
-                sb.append("PRESENT: 0\n");
+                // Swapped-Out Page — initially swapped out; after book placed, vars are updated
+                String swapPresent = tracker.getVar(player, "ptePresent");
+                String swapPfn     = tracker.getVar(player, "pfn");
+                boolean loaded = "1".equals(swapPresent);
+                sb.append("PRESENT: ").append(loaded ? "1" : "0").append("\n");
                 sb.append("READ: 1\n");
                 sb.append("WRITE: 1\n");
                 sb.append("READ_ONLY: 0\n");
                 sb.append("USER: 1\n");
                 sb.append("KERNEL: 0\n");
-                sb.append("PFN: N/A\n");
-                sb.append("IN_SWAP: 1\n");
-                sb.append("SWAP_SLOT: 0\n");
+                sb.append("PFN: ").append(loaded ? (swapPfn != null ? swapPfn : "0x2") : "N/A").append("\n");
+                sb.append("IN_SWAP: ").append(loaded ? "0" : "1").append("\n");
+                if (!loaded) sb.append("SWAP_SLOT: 0\n");
                 break;
 
             case PURE_COW:

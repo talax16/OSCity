@@ -3,18 +3,62 @@
 #   display: Display name
 #   description: What the player did
 
-journey_complete:
-  display: "Journey Complete"
-  description: "Complete a full journey"
+# ─── Understanding-Based Achievements ────────────────────────────────────────
+first_steps:
+  display: "First Steps"
+  description: "Complete your first journey"
 
-tlb_master:
-  display: "TLB Master"
-  description: "Correctly identify a TLB hit"
+explorer:
+  display: "Explorer"
+  description: "Complete 3 different journeys"
 
-page_table_explorer:
-  display: "Page Table Explorer"
-  description: "Navigate the page table library"
+scholar:
+  display: "Scholar"
+  description: "Complete all 7 journeys"
 
-permission_expert:
-  display: "Permission Expert"
-  description: "Pass the Permission Chamber without errors"
+tlb_expert:
+  display: "TLB Expert"
+  description: "Complete Lucky journey and any other journey"
+
+cow_understander:
+  display: "COW Understander"
+  description: "Complete Pure COW or Lazy Allocation journey"
+
+laziness_pro:
+  display: "The Laziness Pro"
+  description: "Complete both Lazy Loading and Lazy Allocation journeys"
+
+swap_master:
+  display: "Swap Master"
+  description: "Complete the Swapped Out journey"
+
+# ─── Accuracy Achievements ────────────────────────────────────────────────────
+flawless_journey:
+  display: "Flawless Journey"
+  description: "Complete a journey with zero wrong answers"
+
+quick_learner:
+  display: "Quick Learner"
+  description: "Complete a journey using 2 or fewer hints"
+
+# ─── Streak Achievements ──────────────────────────────────────────────────────
+on_fire:
+  display: "On Fire"
+  description: "Get 5 correct answers in a row"
+
+unstoppable:
+  display: "Unstoppable"
+  description: "Get 10 correct answers in a row"
+
+perfect_run:
+  display: "Perfect Run"
+  description: "Complete 3 journeys in a row without errors"
+
+# ─── Curiosity Achievements ───────────────────────────────────────────────────
+curious_mind:
+  display: "Curious Mind"
+  description: "Ask the Kernel Guardian to explain 5 concepts"
+
+kernel_scholar:
+  display: "Kernel Scholar"
+  description: "Ask the Kernel Guardian to explain 10 concepts"

@@ -6,6 +6,7 @@ import com.oscity.content.QuestionBank;
 import com.oscity.core.GuardianInteractionHandler;
 import com.oscity.core.KernelGuardian;
 import com.oscity.core.RoomChangeListener;
+import com.oscity.gamification.AchievementManager;
 import com.oscity.gamification.ProgressTracker;
 import com.oscity.mechanics.CalculatorListener;
 import com.oscity.mechanics.ChoiceButtonHandler;
@@ -63,6 +64,9 @@ public class OSCity extends JavaPlugin {
     private ChoiceButtonHandler choiceButtonHandler;
     private CalculatorListener calculatorListener;
 
+    // Gamification
+    private AchievementManager achievementManager;
+
     @Override
     public void onEnable() {
         saveDefaultConfig();
@@ -109,8 +113,8 @@ public class OSCity extends JavaPlugin {
         progressTracker = new ProgressTracker();
 
         // Game systems
-        hintSystem = new HintSystem(sessionManager, dialogueManager, journeyTracker);
-        quizManager = new QuizManager(this, sessionManager, roomRegistry, questionBank, journeyTracker);
+        hintSystem = new HintSystem(sessionManager, dialogueManager, journeyTracker, configManager);
+        quizManager = new QuizManager(this, configManager, sessionManager, roomRegistry, questionBank, journeyTracker);
         quizManager.register();
 
         // Room display
@@ -133,7 +137,7 @@ public class OSCity extends JavaPlugin {
         journeyMapManager = new JourneyMapManager(this, journeyTracker);
 
         // Calculator (must be before ChoiceButtonHandler; needs journeyMapManager)
-        calculatorListener = new CalculatorListener(this, journeyTracker, journeyMapManager, questionBank);
+        calculatorListener = new CalculatorListener(this, journeyTracker, journeyMapManager, questionBank, dialogueManager);
         calculatorListener.register();
 
         // TLB room
@@ -151,6 +155,12 @@ public class OSCity extends JavaPlugin {
         // Choice buttons
         choiceButtonHandler = new ChoiceButtonHandler(this, journeyTracker, dialogueManager, questionBank, progressTracker, locationRegistry, calculatorListener, swapClockManager, journeyMapManager, pageTableManager);
         choiceButtonHandler.register();
+
+        // Achievement manager
+        achievementManager = new AchievementManager(sessionManager, configManager);
+
+        // Register commands
+        getCommand("progress").setExecutor(new com.oscity.commands.ProgressCommand(achievementManager));
 
         // NPC / Guardian
         kernelGuardian = new KernelGuardian(this);
@@ -191,4 +201,5 @@ public class OSCity extends JavaPlugin {
     public JourneyTracker getJourneyTracker()   { return journeyTracker; }
     public SessionManager getSessionManager()   { return sessionManager; }
     public QuizManager getQuizManager()         { return quizManager; }
+    public AchievementManager getAchievementManager() { return achievementManager; }
 }

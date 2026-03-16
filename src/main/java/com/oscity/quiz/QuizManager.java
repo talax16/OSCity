@@ -1,5 +1,6 @@
 package com.oscity.quiz;
 
+import com.oscity.config.ConfigManager;
 import com.oscity.content.QuestionBank;
 import com.oscity.journey.Journey;
 import com.oscity.persistence.SQLiteStudyDatabase;
@@ -49,6 +50,7 @@ public class QuizManager implements Listener {
     // ── Dependencies ──────────────────────────────────────────────────────────
 
     private final JavaPlugin plugin;
+    private final ConfigManager configManager;
     private final SessionManager sessionManager;
     private final RoomRegistry roomRegistry;
     private final QuestionBank questionBank;
@@ -87,10 +89,12 @@ public class QuizManager implements Listener {
 
     // ── Constructor ───────────────────────────────────────────────────────────
 
-    public QuizManager(JavaPlugin plugin, SessionManager sessionManager,
+    public QuizManager(JavaPlugin plugin, ConfigManager configManager,
+                       SessionManager sessionManager,
                        RoomRegistry roomRegistry, QuestionBank questionBank,
                        JourneyTracker journeyTracker) {
         this.plugin         = plugin;
+        this.configManager  = configManager;
         this.sessionManager = sessionManager;
         this.roomRegistry   = roomRegistry;
         this.questionBank   = questionBank;
@@ -115,7 +119,7 @@ public class QuizManager implements Listener {
         boolean isCorrect = question.checkAnswer(playerAnswer);
 
         if (isCorrect) {
-            player.sendMessage("§a§lCorrect!");
+            player.sendMessage(configManager.getMessage("feedback.correct"));
         } else {
             player.sendMessage("§c" + question.wrongFeedback);
             sessionManager.recordWrongAnswer();
@@ -137,10 +141,10 @@ public class QuizManager implements Listener {
         QuizSession session = new QuizSession(questions);
         activeSessions.put(player.getUniqueId(), session);
 
-        player.sendMessage("§8§m════════════════════════════════════════");
-        player.sendMessage("§6§l         ASSESSMENT QUIZ");
-        player.sendMessage("§7Answer §e28 questions§7 — type §eA§7, §eB§7, §eC§7, or §eD§7.");
-        player.sendMessage("§8§m════════════════════════════════════════");
+        player.sendMessage(configManager.getMessage("ui.separator"));
+        player.sendMessage(configManager.getMessage("ui.quiz.title"));
+        player.sendMessage(configManager.getMessage("ui.quiz.subtitle"));
+        player.sendMessage(configManager.getMessage("ui.separator"));
 
         Bukkit.getScheduler().runTaskLater(plugin, () -> askQuestion(player, session), 20L);
     }
@@ -155,7 +159,7 @@ public class QuizManager implements Listener {
      */
     public void promptQuizStart(Player player) {
         boolean hasResults = journeyTracker.hasCompletedQuiz(player);
-        player.sendMessage("§8§m════════════════════════════════════════");
+        player.sendMessage(configManager.getMessage("ui.separator"));
         if (hasResults) {
             player.sendMessage("§6[Kernel Guardian] §eYou have attempted this quiz before.");
             player.sendMessage("§6[Kernel Guardian] §7Starting again will §cerase your previous results");
@@ -167,7 +171,7 @@ public class QuizManager implements Listener {
             player.sendMessage("§6[Kernel Guardian] §7Your answers will help me recommend the best path for you.");
             player.sendMessage("§6[Kernel Guardian] §eType §a1 §eto begin, or §c2 §eto go back.");
         }
-        player.sendMessage("§8§m════════════════════════════════════════");
+        player.sendMessage(configManager.getMessage("ui.separator"));
         awaitingConfirm.add(player.getUniqueId());
     }
 
@@ -200,13 +204,13 @@ public class QuizManager implements Listener {
             } else if ("2".equals(input)) {
                 awaitingConfirm.remove(player.getUniqueId());
                 Bukkit.getScheduler().runTask(plugin, () -> {
-                    player.sendMessage("§6[Kernel Guardian] §7Very well. Return whenever you are ready.");
+                    player.sendMessage(configManager.getMessage("guardian.quiz_cancelled"));
                     boolean quizDone = journeyTracker.hasCompletedQuiz(player);
                     journeyTracker.setPhase(player, quizDone ? "terminal_path_select" : "terminal_spawn");
                 });
             } else {
                 Bukkit.getScheduler().runTask(plugin, () ->
-                    player.sendMessage("§cPlease type §e1 §cto start or §e2 §cto go back."));
+                    player.sendMessage(configManager.getMessage("errors.quiz.type_1_or_2")));
             }
             return;
         }
@@ -222,7 +226,7 @@ public class QuizManager implements Listener {
         if (!input.equals("A") && !input.equals("B")
                 && !input.equals("C") && !input.equals("D")) {
             Bukkit.getScheduler().runTask(plugin, () ->
-                player.sendMessage("§cPlease type A, B, C, or D."));
+                player.sendMessage(configManager.getMessage("errors.quiz.type_abcd")));
             return;
         }
 
@@ -239,10 +243,10 @@ public class QuizManager implements Listener {
             player, qq.journey, qq.question.text, input, qq.question.correctAnswer);
 
         if (correct) {
-            player.sendMessage("§a✔ Correct!");
+            player.sendMessage(configManager.getMessage("feedback.correct"));
         } else {
             player.sendMessage("§c✘ " + qq.question.wrongFeedback);
-            player.sendMessage("§7The correct answer was §e" + qq.question.correctAnswer + "§7.");
+            player.sendMessage(configManager.getMessage("feedback.correct_answer", "{answer}", qq.question.correctAnswer));
         }
 
         if (session.hasNext()) {
@@ -259,12 +263,12 @@ public class QuizManager implements Listener {
         int num   = session.index + 1;
         int total = session.questions.size();
 
-        player.sendMessage("§8§m════════════════════════════════════════");
+        player.sendMessage(configManager.getMessage("ui.separator"));
         player.sendMessage("§eQuestion §6" + num + " §8/ §7" + total
             + "   §8[§6" + qq.journey.displayName + "§8]");
         player.sendMessage("§f" + qq.question.text);
         player.sendMessage(qq.question.formatOptions(null));
-        player.sendMessage("§7Type §eA§7, §eB§7, §eC§7, or §eD§7:");
+        player.sendMessage(configManager.getMessage("ui.quiz.question_prompt"));
     }
 
     private void showResults(Player player) {
@@ -277,9 +281,9 @@ public class QuizManager implements Listener {
             byJourney.computeIfAbsent(r.journey, k -> new ArrayList<>()).add(r);
         }
 
-        player.sendMessage("§8§m════════════════════════════════════════");
-        player.sendMessage("§6§l         QUIZ RESULTS");
-        player.sendMessage("§8§m════════════════════════════════════════");
+        player.sendMessage(configManager.getMessage("ui.separator"));
+        player.sendMessage(configManager.getMessage("ui.quiz.results_title"));
+        player.sendMessage(configManager.getMessage("ui.separator"));
 
         for (Journey j : Journey.values()) {
             List<JourneyTracker.QuizResult> jResults =
@@ -295,14 +299,14 @@ public class QuizManager implements Listener {
             }
         }
 
-        player.sendMessage("§8§m════════════════════════════════════════");
+        player.sendMessage(configManager.getMessage("ui.separator"));
 
         // Recommendation
         List<Journey> recommended = journeyTracker.getRecommendedJourneys(player);
         if (recommended.isEmpty()) {
-            player.sendMessage("§a§l✔ All correct!");
-            player.sendMessage("§7Apply your knowledge with a §erandom journey");
-            player.sendMessage("§7or go §ethrough all journeys §7from easiest to hardest.");
+            player.sendMessage(configManager.getMessage("ui.quiz.all_correct"));
+            player.sendMessage(configManager.getMessage("ui.quiz.all_correct_note1"));
+            player.sendMessage(configManager.getMessage("ui.quiz.all_correct_note2"));
         } else {
             player.sendMessage("§6§lRECOMMENDED JOURNEY"
                 + (recommended.size() > 1 ? "S" : "") + ":");
@@ -310,11 +314,11 @@ public class QuizManager implements Listener {
                 player.sendMessage("  §e▶ §f" + j.displayName
                     + " §8(§c" + wrongCounts.getOrDefault(j, 0) + " wrong§8)");
             }
-            player.sendMessage("§7You can also go through all journeys or pick a random one.");
+            player.sendMessage(configManager.getMessage("ui.quiz.recommended_footer"));
         }
 
-        player.sendMessage("§8§m════════════════════════════════════════");
-        player.sendMessage("§7Head to the §eDeparture Gate §7to choose your journey.");
+        player.sendMessage(configManager.getMessage("ui.separator"));
+        player.sendMessage(configManager.getMessage("ui.quiz.footer"));
 
         // Mark quiz complete so terminal shows path selection on next visit
         journeyTracker.setPhase(player, "terminal_path_select");
