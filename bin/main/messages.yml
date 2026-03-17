@@ -34,7 +34,7 @@ clock:
   recently_accessed: "&6[Clock] &eFrame &f{pfn}&e was recently accessed — USE BIT is ON. Not the victim. Keep looking."
   use_bit_flipped: "&6[Clock] &eUSE BIT for Frame &f{pfn}&e flipped OFF. Second chance given. Move on."
   all_given_second_chance: "&6[Clock] &eYou have given every frame a second chance."
-  walk_again: "&6[Clock] &eWalk the circle again. One frame did not get a second chance..."
+  walk_again: "&6[Clock] &eWalk the circle again. One frame might not get a second chance..."
   already_flipped: "&6[Clock] &eYou already flipped Frame &f{pfn}&e's USE BIT. Move on to the next frame."
   already_off: "&6[Clock] &eFrame &f{pfn}&e has its USE BIT already OFF."
   off_not_victim: "&6[Clock] &eFrame &f{pfn}&e has USE BIT OFF — but this is not your victim frame. Investigate further."

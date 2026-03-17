@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.logging.Logger;
 
 /**
  * Manages session-only achievements for the educational game.
@@ -17,6 +18,7 @@ import java.util.HashSet;
  * All unlocks are logged to the database for study analysis.
  */
 public class AchievementManager {
+    private static final Logger log = Logger.getLogger("OSCity");
     private final SessionManager sessionManager;
     private final ConfigManager configManager;
     private final Map<String, Set<String>> unlockedAchievements = new HashMap<>();
@@ -35,6 +37,12 @@ public class AchievementManager {
     public void onJourneyComplete(Player player, String journeyName) {
         SessionStats stats = sessionManager.getStats();
         stats.onJourneyComplete(journeyName);
+        log.info("[Achievement] onJourneyComplete: journey=" + journeyName
+            + " | total=" + stats.completedJourneys.size()
+            + " | wrongAnswers=" + stats.currentJourneyWrongAnswers
+            + " | hints=" + stats.currentJourneyHints
+            + " | perfectStreak=" + stats.perfectJourneyStreak
+            + " | correctStreak=" + stats.currentCorrectStreak);
         
         // Understanding achievements
         checkUnlock(player, "first_steps", stats.journeysCompleted >= 1);
@@ -114,15 +122,18 @@ public class AchievementManager {
     /** Check and unlock achievement */
     private void checkUnlock(Player player, String achievementName, boolean condition) {
         if (!condition) return;
-        
+
         String sessionId = sessionManager.getSessionId();
         unlockedAchievements.putIfAbsent(sessionId, new HashSet<>());
         Set<String> sessionUnlocked = unlockedAchievements.get(sessionId);
-        
+
         if (!sessionUnlocked.contains(achievementName)) {
             sessionUnlocked.add(achievementName);
+            log.info("[Achievement] UNLOCKED: " + achievementName + " | player=" + player.getName());
             SQLiteStudyDatabase.logAchievement(sessionId, achievementName);
             player.sendMessage(configManager.getMessage("feedback.achievement_unlock", "{name}", achievementName));
+        } else {
+            log.info("[Achievement] already unlocked: " + achievementName + " | player=" + player.getName());
         }
     }
     

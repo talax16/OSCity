@@ -101,6 +101,7 @@ public class DialogueManager implements Listener {
             plugin.getLogger().warning("DialogueManager: no content at '" + path + "'");
             return;
         }
+        plugin.getLogger().info("[DialogueManager] speakDelayed: '" + path + "' (" + lines.size() + " lines)");
         for (int i = 0; i < lines.size(); i++) {
             final String line = lines.get(i);
             Bukkit.getScheduler().runTaskLater(plugin,
@@ -119,6 +120,7 @@ public class DialogueManager implements Listener {
             plugin.getLogger().warning("DialogueManager: no content at '" + path + "'");
             return;
         }
+        plugin.getLogger().info("[DialogueManager] speakInstant: '" + path + "' (" + lines.size() + " lines)");
         for (String line : lines) {
             player.sendMessage(PREFIX + replacePlaceholders(line, vars));
         }

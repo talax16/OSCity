@@ -127,7 +127,7 @@ public class OSCity extends JavaPlugin {
 
         // Teleport buttons
         boolean debugClicks = configManager.isDebugMode();
-        teleportManager = new TeleportManager(this, locationRegistry, debugClicks);
+        teleportManager = new TeleportManager(this, locationRegistry, journeyTracker, debugClicks);
         teleportManager.register();
 
         // Swap clock (must be before ChoiceButtonHandler and RoomChangeListener)

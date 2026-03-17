@@ -180,6 +180,7 @@ public class RoomChangeListener implements Listener {
      * Null mode (pre-journey) and LEARNER both pass through.
      */
     private void speakIfLearner(Player player, String path, Map<String, String> vars) {
+        plugin.getLogger().info("[Dialogue] speakIfLearner '" + path + "' | mode=" + journeyTracker.getMode(player));
         if (journeyTracker.getMode(player) != PlayerMode.ADVENTURER) {
             dialogueManager.speak(player, path, vars);
         }
@@ -197,6 +198,11 @@ public class RoomChangeListener implements Listener {
 
         String phase = journeyTracker.getPhase(player);
         Map<String, String> vars = journeyTracker.getVars(player);
+        Journey enteredJourney = journeyTracker.getJourney(player);
+        plugin.getLogger().info("[RoomChange] " + player.getName() + " entered '" + roomTitle
+            + "' | phase=" + phase
+            + " | journey=" + (enteredJourney != null ? enteredJourney.name() : "none")
+            + " | mode=" + journeyTracker.getMode(player));
 
         switch (roomTitle) {
             case "Departure Gate":
@@ -401,6 +407,7 @@ public class RoomChangeListener implements Listener {
     }
 
     private void handleDiskEntry(Player player, String phase, Map<String, String> vars) {
+        plugin.getLogger().info("[Disk] handleDiskEntry | phase=" + phase + " | journey=" + journeyTracker.getJourney(player));
         speakIfLearner(player, "rooms.disk_room.at_spawn", vars);
         Journey journey = journeyTracker.getJourney(player);
         if (journey == null) return;
@@ -411,12 +418,14 @@ public class RoomChangeListener implements Listener {
         String diskDialogue = JourneyManager.diskPromptDialogue(journey);
         if (diskPhase != null) {
             journeyTracker.setPhase(player, diskPhase);
+            // at_spawn has 3 lines × 40 ticks = 120 ticks; delay follow-up by 160L to avoid overlap
             Bukkit.getScheduler().runTaskLater(plugin, () ->
-                speakIfLearner(player, diskDialogue, journeyTracker.getVars(player)), 40L);
+                speakIfLearner(player, diskDialogue, journeyTracker.getVars(player)), 160L);
         }
     }
 
     private void handleRAMEntry(Player player, String phase, Map<String, String> vars) {
+        plugin.getLogger().info("[RAM] handleRAMEntry | phase=" + phase + " | journey=" + journeyTracker.getJourney(player));
         // Don't speak at_spawn dialogue for phases that have their own full dialogue
         if (!"swap_after_eviction".equals(phase) && !"swap_lazy_alloc".equals(phase)
                 && !"ram_after_cow".equals(phase) && !"ram_allow_access".equals(phase)

@@ -249,17 +249,24 @@ public class PageTableManager {
                 break;
 
             case LAZY_LOADING:
-                // Lazy Loading - file-backed, not yet loaded
-                sb.append("PRESENT: 0\n");
-                sb.append("READ: 0\n");
-                sb.append("WRITE: 0\n");
+                // Lazy Loading - file-backed initially; after disk retrieval ptePresent=1
+                String lazyPresent = tracker.getVar(player, "ptePresent");
+                String lazyPfn     = tracker.getVar(player, "pfn");
+                boolean lazyLoaded = "1".equals(lazyPresent);
+                sb.append("PRESENT: ").append(lazyLoaded ? "1" : "0").append("\n");
+                sb.append("READ: ").append(lazyLoaded ? "1" : "0").append("\n");
+                sb.append("WRITE: ").append(lazyLoaded ? "1" : "0").append("\n");
                 sb.append("READ_ONLY: 0\n");
                 sb.append("USER: 1\n");
                 sb.append("KERNEL: 0\n");
-                sb.append("FILE_BACKED: 1\n");
-                sb.append("PFN: N/A\n");
-                sb.append("FILE_NAME:\n");
-                sb.append("treasure_map.bin\n");
+                if (!lazyLoaded) {
+                    sb.append("FILE_BACKED: 1\n");
+                    sb.append("PFN: N/A\n");
+                    sb.append("FILE_NAME:\n");
+                    sb.append("treasure_map.bin\n");
+                } else {
+                    sb.append("PFN: ").append(lazyPfn != null ? lazyPfn : "N/A").append("\n");
+                }
                 break;
 
             case LAZY_ALLOCATION:

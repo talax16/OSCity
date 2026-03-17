@@ -152,6 +152,8 @@ public class GuardianInteractionHandler implements Listener {
     private void handleMenuChoice(Player player, String choice) {
         PlayerMode mode = journeyTracker.getMode(player);
         boolean isAdventurer = (mode == PlayerMode.ADVENTURER);
+        plugin.getLogger().info("[Guardian] " + player.getName() + " chose menu option '" + choice
+            + "' | phase=" + journeyTracker.getPhase(player) + " | mode=" + mode);
 
         switch (choice) {
             case "1":
@@ -191,9 +193,13 @@ public class GuardianInteractionHandler implements Listener {
             showConceptList(player);
             return;
         }
+        String conceptName = CONCEPTS.get(indices.get(choice - 1))[0];
         String key = "explanations." + CONCEPTS.get(indices.get(choice - 1))[1];
+        plugin.getLogger().info("[Guardian] " + player.getName() + " requested explanation: '" + conceptName
+            + "' (key=" + key + ") | phase=" + journeyTracker.getPhase(player));
         String text = dialogueManager.getString(key, journeyTracker.getVars(player));
         if (text == null) {
+            plugin.getLogger().warning("[Guardian] No explanation found at: " + key);
             dialogueManager.speakInstant(player, "guardian.meta.no_explanation", null);
         } else {
             player.sendMessage("§6[Kernel Guardian] §f" + text);
@@ -283,6 +289,13 @@ public class GuardianInteractionHandler implements Listener {
     private void showConceptList(Player player) {
         String phase = journeyTracker.getPhase(player);
         List<Integer> indices = getConceptsForPhase(phase);
+        StringBuilder conceptNames = new StringBuilder();
+        for (int i : indices) {
+            if (conceptNames.length() > 0) conceptNames.append(", ");
+            conceptNames.append(CONCEPTS.get(i)[0]);
+        }
+        plugin.getLogger().info("[Guardian] " + player.getName() + " opened concept list | phase=" + phase
+            + " | available=[" + conceptNames + "]");
 
         player.sendMessage(Component.text(config.getMessage("ui.guardian_separator"), NamedTextColor.GOLD));
         player.sendMessage(Component.text(config.getMessage("ui.concepts.title"), NamedTextColor.AQUA, TextDecoration.BOLD));

@@ -9,6 +9,7 @@ import org.bukkit.entity.Player;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.logging.Logger;
 
 /**
  * Delivers contextual hints to the player when they click "I'm lost".
@@ -20,6 +21,7 @@ import java.util.UUID;
  */
 public class HintSystem {
 
+    private static final Logger log = Logger.getLogger("OSCity");
     private final SessionManager sessionManager;
     private final DialogueManager dialogueManager;
     private final JourneyTracker journeyTracker;
@@ -55,10 +57,13 @@ public class HintSystem {
         }
 
         String hintPath = resolveHintPath(player, phase);
+        log.info("[Hint] " + player.getName() + " requested hint | phase=" + phase
+            + " | resolved=" + (hintPath != null ? hintPath : "none"));
 
         if (hintPath != null && dialogueManager.hasPath(hintPath)) {
             dialogueManager.speak(player, hintPath, journeyTracker.getVars(player));
         } else {
+            log.info("[Hint] No hint found for phase=" + phase);
             player.sendMessage(configManager.getMessage("feedback.hint_fallback"));
         }
 
@@ -119,6 +124,8 @@ public class HintSystem {
 
             case "lazy_loading_entered":
                 return "hints.lazy_loading_room.clues";
+            case "lazy_loading_returned":
+                return "hints.lazy_loading_room.after_calculator";
 
             case "disk_lazy_loading":
                 return "hints.disk_room.lazy_loading";

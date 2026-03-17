@@ -39,6 +39,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.logging.Logger;
 
 /**
  * Handles the Calculator Room mechanic:
@@ -54,6 +55,8 @@ import java.util.UUID;
  * Frames can be either wall signs OR item frames (books will be written to item frames).
  */
 public class CalculatorListener implements Listener {
+
+    private static final Logger log = Logger.getLogger("OSCity");
 
     private final JavaPlugin plugin;
     private final JourneyTracker tracker;
@@ -137,6 +140,8 @@ public class CalculatorListener implements Listener {
      * phase should be "calculator_from_tlb" or "calculator_from_lazy_loading".
      */
     public void onCalculatorRoomEntered(Player player, String phase) {
+        log.info("[Calc] " + player.getName() + " entered Calculator Room | phase=" + phase
+            + " | va=" + tracker.getVar(player, "va"));
         updateInstructionFrames(phase);
         setCalcAwaiting();
         calculating.remove(player.getUniqueId());
@@ -170,14 +175,31 @@ public class CalculatorListener implements Listener {
             player.sendMessage(((com.oscity.OSCity) plugin).getConfigManager().getMessage("errors.calculator.no_va"));
             return;
         }
+        String phase = tracker.getPhase(player);
+        boolean isPageIndex = "calculator_from_lazy_loading".equals(phase);
+        log.info("[Calc] " + player.getName() + " SKIP | phase=" + phase
+            + " | isPageIndex=" + isPageIndex + " | va=" + va);
         try {
             long value = parseInput(va);
-            showResult(va, value);
+            log.info("[Calc] Skip result | value=" + value
+                + (isPageIndex ? " (pageIndex)" : " (vpn=" + (value >> pageOffsetBits)
+                    + " offset=" + (value & ((1L << pageOffsetBits) - 1)) + ")"));
+            showResult(va, value, isPageIndex);
             journeyMapManager.updateMapAfterCalculator(player);
-            String summary = buildChatSummary(value);
-            player.sendMessage(((com.oscity.OSCity) plugin).getConfigManager().getMessage("feedback.calculator_skipped", "{summary}", summary));
             wasSkipped.put(player.getUniqueId(), true);
-            askHexQuestion(player, va, value);
+            if (isPageIndex) {
+                long offset = value & ((1L << pageOffsetBits) - 1);
+                long pageIndex = offset / (1L << pageOffsetBits);
+                String summary = buildPageIndexSummary(pageIndex);
+                tracker.setVar(player, "pageIndex", String.valueOf(pageIndex));
+                journeyMapManager.updateMap(player);
+                player.sendMessage(((com.oscity.OSCity) plugin).getConfigManager().getMessage("feedback.calculator_skipped", "{summary}", summary));
+                askPageIndexQuestion(player, pageIndex);
+            } else {
+                String summary = buildChatSummary(value);
+                player.sendMessage(((com.oscity.OSCity) plugin).getConfigManager().getMessage("feedback.calculator_skipped", "{summary}", summary));
+                askHexQuestion(player, va, value);
+            }
         } catch (NumberFormatException e) {
             setCalcError(va);
             player.sendMessage(((com.oscity.OSCity) plugin).getConfigManager().getMessage("errors.calculator.parse_error_va", "{va}", va));
@@ -196,6 +218,10 @@ public class CalculatorListener implements Listener {
         tracker.setVar(player, "optB", formatNibbles(swapped, totalBits));
         tracker.setVar(player, "optC", formatNibbles(value ^ 1L, totalBits)); // last bit flipped
 
+        log.info("[Calc] " + player.getName() + " asking hex_to_binary | hex=" + inputHex
+            + " | optA=" + formatNibbles(value, totalBits)
+            + " | optB=" + formatNibbles(swapped, totalBits)
+            + " | optC=" + formatNibbles(value ^ 1L, totalBits));
         askCalcQuestion(player, "calculator_room.hex_to_binary");
     }
 
@@ -204,12 +230,15 @@ public class CalculatorListener implements Listener {
         tracker.setVar(player, "optB", String.valueOf(value + 1));
         tracker.setVar(player, "optC", String.valueOf(value + 2));
 
+        log.info("[Calc] " + player.getName() + " asking page_index | correct=" + value
+            + " | optA=" + value + " | optB=" + (value + 1) + " | optC=" + (value + 2));
         askCalcQuestion(player, "calculator_room.page_index");
     }
 
     private void askCalcQuestion(Player player, String questionPath) {
         QuestionBank.Question q = questionBank.getQuestion(questionPath);
         if (q == null) {
+            log.warning("[Calc] No question found for path: " + questionPath + " — skipping quiz");
             hasCalculated.put(player.getUniqueId(), true);
             return;
         }
@@ -238,6 +267,9 @@ public class CalculatorListener implements Listener {
                 hasCalculated.put(player.getUniqueId(), true);
                 return;
             }
+            log.info("[Calc] " + player.getName() + " answered '" + msg
+                + "' for '" + questionPath + "' | correct=" + q.checkAnswer(msg)
+                + " | phase=" + tracker.getPhase(player));
             if (q.checkAnswer(msg)) {
                 pendingCalcVerify.remove(player.getUniqueId());
                 hasCalculated.put(player.getUniqueId(), true);
@@ -249,6 +281,7 @@ public class CalculatorListener implements Listener {
                     String dialoguePath = skipped
                         ? "rooms.calculator_room.from_tlb_skip"
                         : "rooms.calculator_room.from_tlb_after_quiz";
+                    log.info("[Calc] " + player.getName() + " post-quiz dialogue: " + dialoguePath);
                     dialogueManager.speakInstant(player, dialoguePath, tracker.getVars(player));
                 }
             } else {
@@ -323,6 +356,7 @@ public class CalculatorListener implements Listener {
         player.getInventory().addItem(book);
 
         String phase = tracker.getPhase(player);
+        log.info("[Calc] " + player.getName() + " HOPPER | phase=" + phase + " | input=" + input);
         startCalculation(player, input, phase);
     }
 
@@ -337,17 +371,24 @@ public class CalculatorListener implements Listener {
             calculating.remove(player.getUniqueId());
             try {
                 long value   = parseInput(input);
-                showResult(input, value);
+                boolean pageIdx = "calculator_from_lazy_loading".equals(phase);
+                log.info("[Calc] " + player.getName() + " result | phase=" + phase
+                    + " | input=" + input + " | value=" + value
+                    + (pageIdx ? " (pageIndex)" : " (vpn=" + (value >> pageOffsetBits)
+                        + " offset=" + (value & ((1L << pageOffsetBits) - 1)) + ")"));
+                showResult(input, value, pageIdx);
                 // Only update VPN and offset, NOT PFN (PFN comes from TLB or page table)
                 journeyMapManager.updateMapAfterCalculator(player);
 
-                if ("calculator_from_lazy_loading".equals(phase)) {
-                    // Second visit: page index — store result, then verify
-                    String summary = buildPageIndexSummary(value);
-                    tracker.setVar(player, "pageIndex", String.valueOf(value));
+                if (pageIdx) {
+                    // Second visit: page index = offset / page_size
+                    long offset = value & ((1L << pageOffsetBits) - 1);
+                    long pageIndex = offset / (1L << pageOffsetBits);
+                    String summary = buildPageIndexSummary(pageIndex);
+                    tracker.setVar(player, "pageIndex", String.valueOf(pageIndex));
                     journeyMapManager.updateMap(player);
                     player.sendMessage(((com.oscity.OSCity) plugin).getConfigManager().getMessage("feedback.calculator_result", "{summary}", summary));
-                    askPageIndexQuestion(player, value);
+                    askPageIndexQuestion(player, pageIndex);
                 } else {
                     // First visit (calculator_from_tlb): ask hex→binary verification question
                     String summary = buildChatSummary(value);
@@ -355,6 +396,7 @@ public class CalculatorListener implements Listener {
                     askHexQuestion(player, input, value);
                 }
             } catch (NumberFormatException e) {
+                log.warning("[Calc] " + player.getName() + " parse error | phase=" + phase + " | input=" + input);
                 setCalcError(input);
                 player.sendMessage(((com.oscity.OSCity) plugin).getConfigManager().getMessage("errors.calculator.parse_error", "{input}", input));
             }
@@ -464,28 +506,34 @@ public class CalculatorListener implements Listener {
         for (int i = 1; i < calcFrames.size(); i++) clearFrame(calcFrames.get(i));
     }
 
-    /**
-     * Both visits: show full binary, then VPN (upper bits) and offset (lower bits).
-     * The instruction frames differ between visits, but the result is the same.
-     */
-    private void showResult(String input, long value) {
+    private void showResult(String input, long value, boolean isPageIndex) {
         if (calcFrames.size() < 6) return;
 
-        int totalBits = pageOffsetBits * 2; // e.g. 8-bit VA with 4-bit VPN + 4-bit offset
-        String binary = formatNibbles(value, totalBits);
-        long vpn = value >> pageOffsetBits;
-        long off = value & ((1L << pageOffsetBits) - 1);
-        String vpnBin = formatNibbles(vpn, pageOffsetBits);
-        String offBin = formatNibbles(off, pageOffsetBits);
-        String vpnHex = "0x" + Long.toHexString(vpn).toUpperCase();
-        String offHex = "0x" + Long.toHexString(off).toUpperCase();
+        if (isPageIndex) {
+            String hexVal = "0x" + Long.toHexString(value).toUpperCase();
+            setFrame(calcFrames.get(0), "== RESULT ==", "Input: " + shorten(input, 11), "", "");
+            setFrame(calcFrames.get(1), "PAGE INDEX:", String.valueOf(value), hexVal, "");
+            setFrame(calcFrames.get(2), "Added to log!", "", "", "");
+            clearFrame(calcFrames.get(3));
+            clearFrame(calcFrames.get(4));
+            clearFrame(calcFrames.get(5));
+        } else {
+            int totalBits = pageOffsetBits * 2;
+            String binary = formatNibbles(value, totalBits);
+            long vpn = value >> pageOffsetBits;
+            long off = value & ((1L << pageOffsetBits) - 1);
+            String vpnBin = formatNibbles(vpn, pageOffsetBits);
+            String offBin = formatNibbles(off, pageOffsetBits);
+            String vpnHex = "0x" + Long.toHexString(vpn).toUpperCase();
+            String offHex = "0x" + Long.toHexString(off).toUpperCase();
 
-        setFrame(calcFrames.get(0), "== RESULT ==", "VA: " + shorten(input, 11), "", "");
-        setFrame(calcFrames.get(1), "Binary:", binary, "", "");
-        setFrame(calcFrames.get(2), "VPN: " + vpnBin, "= " + vpn + "  " + vpnHex, "", "");
-        setFrame(calcFrames.get(3), "Offset: " + offBin, "= " + off + "  " + offHex, "", "");
-        setFrame(calcFrames.get(4), "Added to log!", "", "", "");
-        clearFrame(calcFrames.get(5));
+            setFrame(calcFrames.get(0), "== RESULT ==", "VA: " + shorten(input, 11), "", "");
+            setFrame(calcFrames.get(1), "Binary:", binary, "", "");
+            setFrame(calcFrames.get(2), "VPN: " + vpnBin, "= " + vpn + "  " + vpnHex, "", "");
+            setFrame(calcFrames.get(3), "Offset: " + offBin, "= " + off + "  " + offHex, "", "");
+            setFrame(calcFrames.get(4), "Added to log!", "", "", "");
+            clearFrame(calcFrames.get(5));
+        }
     }
 
     // ── Frame helper — supports both wall signs and item frames ───────────────

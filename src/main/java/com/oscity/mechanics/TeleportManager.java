@@ -1,5 +1,6 @@
 package com.oscity.mechanics;
 
+import com.oscity.session.JourneyTracker;
 import com.oscity.world.LocationRegistry;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -9,6 +10,7 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerInteractEvent;
@@ -21,24 +23,28 @@ public class TeleportManager implements Listener {
 
     private final JavaPlugin plugin;
     private final LocationRegistry locationRegistry;
+    private final JourneyTracker journeyTracker;
     private final boolean debugClicks; //TO BE DELETED: set to true to see what you click, until you're done with locations
-    
+
     // Map: button location → button data
     private final Map<Location, TeleportButton> buttons = new HashMap<>();
-    
+
     private static class TeleportButton {
+        String key;
         String destination;
         String message;
-        
-        TeleportButton(String destination, String message) {
+
+        TeleportButton(String key, String destination, String message) {
+            this.key = key;
             this.destination = destination;
             this.message = message;
         }
     }
 
-    public TeleportManager(JavaPlugin plugin, LocationRegistry locationRegistry, boolean debugClicks) {
+    public TeleportManager(JavaPlugin plugin, LocationRegistry locationRegistry, JourneyTracker journeyTracker, boolean debugClicks) {
         this.plugin = plugin;
         this.locationRegistry = locationRegistry;
+        this.journeyTracker = journeyTracker;
         this.debugClicks = debugClicks;
         loadButtons();
     }
@@ -87,7 +93,7 @@ public class TeleportManager implements Listener {
             String message = btn.getString("message", "&aTeleported!");
             
             // Store button data
-            buttons.put(buttonLoc, new TeleportButton(destination, message));
+            buttons.put(buttonLoc, new TeleportButton(key, destination, message));
         }
         
         plugin.getLogger().info("Loaded " + buttons.size() + " teleport buttons from config.yml");
@@ -132,7 +138,17 @@ public class TeleportManager implements Listener {
         for (Map.Entry<Location, TeleportButton> entry : buttons.entrySet()) {
             if (sameBlock(clicked, entry.getKey())) {
                 TeleportButton button = entry.getValue();
-                
+                Player player = e.getPlayer();
+
+                // Phase gate: block going to Calculator if already completed
+                if ("tlbToCalculator".equals(button.key)) {
+                    String phase = journeyTracker.getPhase(player);
+                    if (!"tlb_spawn".equals(phase)) {
+                        player.sendMessage("§cYou've already visited the Calculator Room. Make a hit or miss decision.");
+                        return;
+                    }
+                }
+
                 // Get destination location
                 Location destination = locationRegistry.get(button.destination);
                 if (destination == null) {

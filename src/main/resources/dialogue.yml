@@ -184,14 +184,15 @@ rooms:
       - "The teleport button to RAM is now active. Press it to go to RAM and confirm the frame."
 
     page_fault_subtype_prompt:
+      - "Correct! This is a page fault."
+      - "The page is not currently in RAM, but it exists on disk."
       - "Before you proceed, you must determine which type of page fault this is."
       - "Look at your PTE again. Which type of page fault is this?"
       - "If you are unsure, I can explain it to you."
 
-    proceed_to_corridor:
-      - "You may now proceed to the Page Fault Corridor. I will meet you there."
-
     proceed_to_disk:
+      - "Correct! This page was swapped out to disk."
+      - "It needs to be retrieved from swap space."
       - "Fortunately RAM has a free frame this time—the PFN has been added to your map."
       - "The page you are trying to access is swapped out to disk."
       - "You must retrieve it from a special area called 'Swap Space'."
@@ -201,7 +202,7 @@ rooms:
     at_enter:
       - "You stand in the Page Fault Corridor—the intersection of memory management outcomes."
       - "You've determined that a page fault has occurred."
-      - "Before you stand three doors. Choose the one you selected in the Permission Chamber."
+      - "Before you stand two doors. Choose the one you selected in the Permission Chamber."
 
   lazy_allocation_room:
     at_enter:
@@ -277,6 +278,8 @@ rooms:
       - "Find the file name that appears on your map in the FILE TABLE."
       - "Go to the corresponding disk block (A, B, C, etc.) and retrieve the page you need."
       - "PAGE_INDEX tells you which one."
+      - "Once you have the page, bring it to RAM for the process to access it."
+      - "Press the button to teleport to RAM."
 
     swap_retrieval_prompt:
       - "Go to the SWAP SPACE section."
@@ -315,7 +318,7 @@ rooms:
       - "Let's try to find you an empty frame to write on your page."
       - "OH NO! The RAM is full, we need to evict one of the frames, but we can't do that randomly!"
       - "Head to the swap district and I will inform you on what to do."
-      - "Press 'CONTINUE' to proceed."
+      - "Press 'Go to Swap District' to proceed."
 
     after_cow_pure:
       - "You've just created a private copy in frame {pfn}."
@@ -462,6 +465,9 @@ hints:
   lazy_loading_room:
     clues:
       - "Formulas and values are on the signs in the room—they have already been added to your map."
+    after_calculator:
+      - "You have calculated the page index. Now you need to fetch that page from disk."
+      - "Press the button in this room to travel to the Disk Room and retrieve the file."
 
   disk_room:
     lazy_loading:
@@ -499,9 +505,6 @@ hints:
 feedback:
   allow_access_correct:
     - "Correct! The kernel allows this memory access to proceed."
-  page_fault_correct:
-    - "Correct! This is a page fault."
-    - "The page is not currently in RAM, but it exists on disk."
   segfault_correct:
     - "Correct! This is a segmentation fault."
     - "The process is trying to access memory outside its allowed boundaries."
@@ -512,12 +515,11 @@ feedback:
   lazy_allocation_correct:
     - "Correct! This is lazy allocation."
     - "The page is anonymous and needs to be created fresh."
+    - "You may now proceed to the Page Fault Corridor. I will meet you there."
   lazy_loading_correct:
     - "Correct! This is lazy loading."
     - "The page is file-backed and needs to be loaded from disk."
-  swapped_out_correct:
-    - "Correct! This page was swapped out to disk."
-    - "It needs to be retrieved from swap space."
+    - "You may now proceed to the Page Fault Corridor. I will meet you there."
 
 # ─── Concept explanations (player asks 'explain a concept') ────────────────
 explanations:
