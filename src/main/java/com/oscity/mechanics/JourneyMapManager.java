@@ -116,17 +116,17 @@ public class JourneyMapManager {
         lines.add(safe(vars.getOrDefault("process", "")));
         lines.add("");
 
-        // Instruction: split into operation and file+address
-        // Format: "load treasure_map.bin 0x8E" → "Instruction: load" + "treasure_map.bin 0x8E"
+        // Instruction: split into operation, file, address
+        // Format: "load treasure_map.bin 0x8E" → "Instruction: load" + "0x8E treasure_map.bin"
         String instruction = vars.getOrDefault("instruction", "?");
         if (!"?".equals(instruction) && instruction != null && !instruction.isEmpty()) {
-            // Split on first space to separate operation from file+address
-            int firstSpace = instruction.indexOf(' ');
-            if (firstSpace > 0) {
-                String operation = instruction.substring(0, firstSpace);
-                String fileAndAddr = instruction.substring(firstSpace + 1);
-                lines.add("Instruction: " + safe(operation));
-                lines.add(safe(fileAndAddr));
+            String[] parts = instruction.split(" ", 3);
+            if (parts.length == 3) {
+                lines.add("Instruction: " + safe(parts[0]));
+                lines.add(safe(parts[2]) + " " + safe(parts[1]));
+            } else if (parts.length == 2) {
+                lines.add("Instruction: " + safe(parts[0]));
+                lines.add(safe(parts[1]));
             } else {
                 lines.add("Instruction: " + safe(instruction));
             }
@@ -184,17 +184,17 @@ public class JourneyMapManager {
         lines.add(safe(vars.getOrDefault("process", "")));
         lines.add("");
 
-        // Instruction: split into operation and file+address
-        // Format: "load treasure_map.bin 0x8E" → "Instruction: load" + "treasure_map.bin 0x8E"
+        // Instruction: split into operation, file, address
+        // Format: "load treasure_map.bin 0x8E" → "Instruction: load" + "0x8E treasure_map.bin"
         String instruction = vars.getOrDefault("instruction", "?");
         if (!"?".equals(instruction) && instruction != null && !instruction.isEmpty()) {
-            // Split on first space to separate operation from file+address
-            int firstSpace = instruction.indexOf(' ');
-            if (firstSpace > 0) {
-                String operation = instruction.substring(0, firstSpace);
-                String fileAndAddr = instruction.substring(firstSpace + 1);
-                lines.add("Instruction: " + safe(operation));
-                lines.add(safe(fileAndAddr));
+            String[] parts = instruction.split(" ", 3);
+            if (parts.length == 3) {
+                lines.add("Instruction: " + safe(parts[0]));
+                lines.add(safe(parts[2]) + " " + safe(parts[1]));
+            } else if (parts.length == 2) {
+                lines.add("Instruction: " + safe(parts[0]));
+                lines.add(safe(parts[1]));
             } else {
                 lines.add("Instruction: " + safe(instruction));
             }

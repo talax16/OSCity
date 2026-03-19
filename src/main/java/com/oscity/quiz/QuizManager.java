@@ -187,6 +187,20 @@ public class QuizManager implements Listener {
         awaitingConfirm.remove(uuid);
     }
 
+    /**
+     * Called when the player leaves the Assessment Room mid-quiz.
+     * Drops the active session and resets any partial quiz results so the
+     * quiz starts fresh on the next visit.
+     */
+    public void abandonQuiz(Player player) {
+        UUID uuid = player.getUniqueId();
+        if (activeSessions.containsKey(uuid)) {
+            activeSessions.remove(uuid);
+            awaitingConfirm.remove(uuid);
+            journeyTracker.resetQuiz(player);
+        }
+    }
+
     // ── Chat listener ─────────────────────────────────────────────────────────
 
     @EventHandler(priority = EventPriority.HIGHEST)

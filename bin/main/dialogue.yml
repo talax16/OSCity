@@ -7,12 +7,13 @@ rooms:
     initial_spawn:
       - "Greetings, traveler. I am the Kernel Guardian, architect of this digital realm."
       - "You have been chosen to replace me in maintaining the delicate balance of OSCity."
-      - "This is Terminal Plaza—the gateway between worlds."
-      - "To your left: the Departure Gate—step inside and your journey through OSCity begins."
-      - "To your right: the Assessment Room—a short quiz that helps me point you to the right journey."
-      - "I recommend starting with the quiz. It will tell you exactly where to begin."
-      - "As you learn, you will earn achievements and build a streak—answer correctly to keep it going."
+      - "To your left: the Departure Gate, step inside and your journey through OSCity begins."
+      - "To your right: the Assessment Room, a short quiz that helps me point you to the right journey."
+      - "If you have some previous knowledge, I recommend starting with the quiz. It will tell you exactly where to begin."
+      - "If you don't then you can head to the Departure Gate."
+      - "If you have FOMO, you can still do it to test your knowledge after finishing your journeys."
       - "Right-click on me at any time to see what I can help you with."
+      - "IMPORTANT: Unfortunately since I am quite old, you need to jump or move around when you go to a new room so I can follow you. Otherwise, I might get left behind and won't be able to guide you through the next steps."
 
     path_select: # Is this working?
       - "Welcome back, traveler. The paths of OSCity await your command."
@@ -21,7 +22,9 @@ rooms:
     journey_selected:
       - "Excellent. Your journey is {journey}."
       - "Open the chest and you will find a map with your instruction."
-      - "Take the map—it is your guide through the journey."
+      - "Take the map, it is your guide through the journey."
+      - "One last thing: there are achievements hidden throughout OSCity. Earn them by completing journeys, answering correctly, and exploring concepts."
+      - "You can check your progress and what each one requires by right-clicking me at any point during your journey."
       - "When you're ready, press the button to proceed to OSCity."
       - "Do not forget the map!"
 
@@ -32,6 +35,7 @@ rooms:
       - "Take the map—it is your guide through the journey."
       - "When you're ready, press the button to proceed to OSCity."
       - "Do not forget the map!"
+
     journey_ordered:
       - "Your next journey in the sequence is: {journey}."
 
@@ -43,11 +47,13 @@ rooms:
       - "But the choice is yours. You may revisit any journey as many times as you wish."
     no_quiz_warning:
       - "I see you haven't taken the Assessment Quiz yet."
-      - "It's in the Assessment Room to your right."
-      - "Without it, I cannot tailor a journey recommendation for you."
-      - "But you may still proceed — I will guide you through your other options."
+      - "If you have some previous knowledge, I recommend taking it, it's in the Assessment Room to your right."
+      - "The quiz will tell you exactly what are your weak points."
+      - "If you're a beginner, I have tailored 'All journeys in order' to take you from the basics to advanced scenarios."
     ready:
       - "Your map is in the chest — take it with you."
+      - "One last thing — there are achievements hidden throughout OSCity. Earn them by completing journeys, answering correctly, and exploring concepts."
+      - "You can check your progress and what each one requires by right-clicking me at any point during your journey."
       - "When you are ready, press the button to enter OSCity."
       - "Good luck, {player}."
 
@@ -55,13 +61,95 @@ rooms:
     arrival:
       - "Congratulations, {player}! You have completed {journey}."
       - "You navigated virtual memory successfully—from address translation to physical access."
+      - "RECOMMENDED: Press the SUMMARY button to review what happened in this journey."
       - "There are other journeys to explore. Each one reveals something new."
       - "When you are ready, press the button to return to the starting terminal."
+
+    summary_lucky:
+      - "Journey Summary: TLB hit"
+      - "You converted your hex virtual address to binary and split it into VPN and OFFSET."
+      - "In the TLB Tower, you matched your VPN to a chest tag, that's a cache hit."
+      - "The chest held the PFN so no page table walk was needed."
+      - "You confirmed it's a TLB hit and teleported to the RAM."
+      - "In the RAM, you confirmed that your process in mapped to the PFN you got from the TLB chest."
+      - "This is the fastest path through virtual memory, most accesses (95-99%) take this route."
+
+    summary_tlb_miss_allow:
+      - "Journey Summary: TLB Miss — Allow Access"
+      - "You converted your hex virtual address to binary and split it into VPN and OFFSET."
+      - "In the TLB Tower, none of the chest tags matched your VPN; that's a TLB miss."
+      - "You entered the Page Table Library and used your DIR bits to climb to the right floor."
+      - "You used your TABLE bits to find the right chest and opened it to read the PTE."
+      - "The PTE had PRESENT=1 with valid permissions, this means that the page is in RAM and accessible to your process."
+      - "So you selected ALLOW ACCESS in the Permission Chamber."
+      - "You teleported to RAM and confirmed your process is mapped to the PFN from the PTE."
+      - "The TLB is now updated, future accesses to this page will be fast."
+
+    summary_swapped_out:
+      - "Journey Summary: Page Fault - Swapped Out"
+      - "You converted your hex virtual address to binary and split it into VPN and OFFSET."
+      - "In the TLB Tower, none of the chest tags matched your VPN, that is a TLB miss."
+      - "You entered the Page Table Library, used your DIR bits to climb to the right floor, and your TABLE bits to find the right chest."
+      - "You opened the chest and read the PTE: PRESENT=0 and IN_SWAP=1, the page was not in RAM and had been swapped out to disk."
+      - "At the time it was evicted, the dirty bit was set to 1, meaning the page had been modified and the OS had to save it to swap space rather than simply discarding it."
+      - "You went to the Disk Room and retrieved the page from swap space."
+      - "Back in RAM, a free frame was available, so you placed the page there."
+      - "The OS updated the PTE: PRESENT=1 with the new PFN set."
+      - "You pressed RETRY INSTRUCTION and the memory access succeeded."
+
+    summary_lazy_loading:
+      - "Journey Summary: Page Fault - Lazy Loading"
+      - "You converted your hex virtual address to binary and split it into VPN and OFFSET."
+      - "In the TLB Tower, none of the chest tags matched your VPN, that is a TLB miss."
+      - "You entered the Page Table Library, used your DIR bits to climb to the right floor, and your TABLE bits to find the right chest."
+      - "You opened the chest and read the PTE: PRESENT=0 and FILE_BACKED=1, the page is file-backed meaning it was either never loaded into RAM, or was previously evicted without modification (DIRTY=0)."
+      - "You calculated the PAGE_INDEX using the formula PAGE_INDEX = (OFFSET / PAGE_SIZE) to find which part of the file to load."
+      - "You went to the Disk Room and retrieved the file-backed page from disk."
+      - "Back in RAM, there was no free frame, so you ran the Clock Algorithm to find a victim."
+      - "You walked the circle, flipping USE BITs off until you found one already off, then evicted that frame to disk."
+      - "You placed the retrieved page into the freed frame, and the OS updated the PTE: PRESENT=1 with the new PFN set."
+      - "You pressed RETRY INSTRUCTION and the memory access succeeded."
+
+    summary_lazy_allocation:
+      - "Journey Summary: Page Fault - Lazy Allocation"
+      - "You converted your hex virtual address to binary and split it into VPN and OFFSET."
+      - "In the TLB Tower, none of the chest tags matched your VPN, that is a TLB miss."
+      - "You entered the Page Table Library, used your DIR bits to climb to the right floor, and your TABLE bits to find the right chest."
+      - "You opened the chest and read the PTE: PRESENT=0 and ANON=1, the page is anonymous meaning the OS promised this memory to the process but deferred the actual allocation until now."
+      - "The OS mapped the process to the zero frame, a read-only pre-zeroed page, and updated the PTE: PRESENT=1, pointing to the zero frame."
+      - "The process then tried to write, but the page was read-only, so RAM was checked for a free frame."
+      - "RAM was full, so you ran the Clock Algorithm to find a victim frame, walking the circle and flipping USE BITs off until finding one already off, then evicting it."
+      - "The OS allocated the freed frame, zeroed it, and mapped it to your process."
+      - "You wrote in the book to represent the process writing to the new page."
+      - "The OS updated the PTE: PRESENT=1, PFN set, and WRITE=1."
+      - "You pressed RETRY INSTRUCTION and the memory access succeeded."
+
+    summary_pure_cow:
+      - "Journey Summary: Protection Fault - Copy-on-Write"
+      - "You converted your hex virtual address to binary and split it into VPN and OFFSET."
+      - "In the TLB Tower, none of the chest tags matched your VPN, that is a TLB miss."
+      - "You entered the Page Table Library, used your DIR bits to climb to the right floor, and your TABLE bits to find the right chest."
+      - "You opened the chest and read the PTE: PRESENT=1 but WRITE=0, the page is in RAM but marked read-only because it is shared between processes."
+      - "The process attempted a write, so you selected PROTECTION FAULT in the Permission Chamber."
+      - "In RAM, the OS allocated a new private frame and copied the original page contents into it."
+      - "You took the book from the new frame, wrote what the process wanted, and placed it back."
+      - "The OS updated the PTE and TLB to point to the new frame with WRITE=1."
+      - "You pressed RETRY INSTRUCTION and the write succeeded."
+
+    summary_permission_violation:
+      - "Journey Summary: Segmentation Fault"
+      - "You converted your hex virtual address to binary and split it into VPN and OFFSET."
+      - "In the TLB Tower, none of the chest tags matched your VPN, that is a TLB miss."
+      - "You entered the Page Table Library, used your DIR bits to climb to the right floor, and your TABLE bits to find the right chest."
+      - "You opened the chest and read the PTE: PRESENT=1 but USER=0, the page exists in RAM but belongs to kernel-only memory and is not accessible to user processes."
+      - "You selected SEGMENTATION FAULT in the Permission Chamber."
+      - "The process was terminated immediately. There is no retry and no recovery."
+      - "This is the only journey that ends without a successful memory access."
 
   tlb_room:
     at_spawn:
       - "Welcome to the TLB Tower—the Translation Lookaside Buffer Chamber."
-      - "This room is the CPU's fastest memory cache. Before you stands a magnificent tower—the Multi-Level Page Table Library. We will get to it later, don't worry."
+      - "This room is the CPU's fastest memory cache. Before you stands a magnificent tower—the Two-Level Page Table Library. We will get to it later, don't worry."
       - "Over these chests you can find a Virtual Page Number (VPN) tag."
       - "These will help you find the matching Physical Frame Number (PFN) tag, if you are 'Lucky'."
       - "Right now all you have is a Virtual Address (VA) in Hexadecimal, but the tags are in binary. What can you do to 'calculate' it?"
@@ -86,19 +174,18 @@ rooms:
 
     after_miss_quiz_non_lucky:
       - "Excellent! This is a case of a TLB miss—the mapping was not cached."
-      - "Now you can enter the Multi-Level Page Table, but for the door to open, you must answer this question:"
+      - "Now you can enter the Two-Level Page Table, but for the door to open, you must answer this question:"
 
     after_miss_correct:
-      - "Correct! The page table door is now open."
+      - "Correct! The page table door button is now enabled."
       - "Before you enter, let me brief you on what lies ahead."
-      - "You are about to walk through the multi-level page table."
-      - "The Page Table Base Register (PTBR) points to this process's page directory."
-      - "Every process has its own PTBR, so every process has its own page table."
+      - "You are about to walk through the two-level page table."
       - "Instead of one giant table with millions of entries, we have a hierarchy:"
       - "  - One Page Directory at the Ground Floor"
-      - "  - Three Page Table levels above it"
+      - "  - Three Page Tables on the floors above"
+      - "Every process has its own page directory and the Page Table Base Register (PTBR) tells us where to find it."
       - "This way, unused memory regions do not waste space."
-      - "Proceed to the Page Table Library to find your page's frame number."
+      - "Now you may proceed."
 
     after_miss_quiz_lucky:
       - "No, in this Lucky case, the VPN IS displayed on one of the chests in this room."
@@ -131,13 +218,13 @@ rooms:
 
   page_table_library:
     entrance:
-      - "You are about to walk through the multi-level page table."
+      - "You are about to walk through the two-level page table."
       - "But wait—how will we know which page table is ours?"
       - "The Page Table Base Register (PTBR) points to this process's page directory."
       - "The PTBR contains the address of where YOUR page table starts."
       - "It's like a bookmark that says: 'This process's memory mappings begin here.'"
       - "Every process has its own PTBR, so every process has its own page table."
-      - "You are now at the entrance to the Multi-Level Page Table Library."
+      - "You are now at the entrance to the Two-Level Page Table Library."
       - "Remember: The TLB is the CPU's fast cache. It doesn't always have the answer."
       - "When the TLB missed, we must find the answer the hard way—the Page Table."
       - "The Page Table is like a massive filing system. It knows the mapping of every virtual page to its physical frame."
@@ -149,7 +236,7 @@ rooms:
       - "Enter when you're ready."
 
     page_directory:
-      - "Welcome to the Ground Floor of the Multi-Level Page Table Library."
+      - "Welcome to the Ground Floor of the Two-Level Page Table Library."
       - "This is the Page Directory."
       - "Your VPN is split here: the first 2 bits select the floor (DIR), the last 2 select the entry (TABLE)."
       - "Match your DIR bits to one of the floors and climb."
@@ -192,10 +279,9 @@ rooms:
 
     proceed_to_disk:
       - "Correct! This page was swapped out to disk."
-      - "It needs to be retrieved from swap space."
-      - "Fortunately RAM has a free frame this time—the PFN has been added to your map."
-      - "The page you are trying to access is swapped out to disk."
-      - "You must retrieve it from a special area called 'Swap Space'."
+      - "Its dirty bit was 1 (it had been modified), so the OS saved it to swap space rather than discarding it."
+      - "It needs to be retrieved from a special area called 'Swap Space'."
+      - "Fortunately RAM has a free frame this time, the PFN has been added to your map."
       - "Press the button to go to the Disk Room. I will meet you there."
 
   page_fault_corridor:
@@ -215,21 +301,21 @@ rooms:
     allocate_correct:
       - "Correct! The OS allocates the zero frame (frame {pfn}) for your process."
       - "OS maps your process to the shared zero-filled frame, marked read-only."
-      - "But now the process wants to WRITE — the instruction changes to write!"
-      - "This is a read-only page. What should happen?"
+      - "Oh no, the journey isn't over yet. The process now wants to write! (check the instruction in your map)"
+      - "This is a read-only page which causes permission violation. What should happen?"
 
     allocate_incorrect:
       - "No! This page never existed on disk."
       - "This is LAZY ALLOCATION — we're creating it fresh, not loading it."
       - "Try again."
 
-    second_visit:
+    second_visit: # remove this because this is only triggers if they exit and re-enter the room mid-way through
       - "The process wants to write on this page."
       - "Check your map — the instruction has changed."
       - "But look at your PTE. Something about this page is not quite normal."
       - "The kernel has three choices. Which is correct?"
 
-    second_visit_correct:
+    second_visit_correct: # this as well
       - "Now press the button to teleport to the COW room."
 
     second_visit_incorrect:
@@ -328,8 +414,14 @@ rooms:
       - "You can now write what the process wants to this page."
       - "Place the book back in the chest when done."
 
-    retry_instruction:
+    retry_instruction_cow:
       - "The memory state has been updated."
+      - "Press 'RETRY INSTRUCTION' to proceed."
+
+    retry_instruction_page_fault:
+      - "The OS has updated the PTE: PRESENT is now 1 and the PFN is set."
+      - "The page is now in RAM and accessible to the process."
+      - "The faulting instruction will be restarted, this time it will succeed."
       - "Press 'RETRY INSTRUCTION' to proceed."
 
     instruction_succeeded:
@@ -343,7 +435,7 @@ rooms:
 
     after_swap_for_lazy_alloc:
       - "OS allocates frame {pfn} for your process."
-      - "OS copies zero page contents to the new private frame."
+      - "OS copies zero page contents (the zeros) to the new private frame."
       - "Open chest {pfn} and find a book filled with zeros."
       - "Write 'hello' in it as the process requested."
       - "Place the book back in the chest when done."
@@ -360,16 +452,19 @@ rooms:
     at_spawn:
       - "Welcome to the Swap District."
       - "The RAM is full. One frame must be evicted to make room."
-      - "But the kernel does not evict randomly."
+      - "But the kernel does not evict randomly, it uses the second chance algorithm."
       - "Each frame around this circle holds a clue about how recently it was used."
-      - "Walk the circle and figure out which one should go."
+      - "Walk the circle staring from 0x01 to 0x06 and figure out which one should be evicted."
+      - "If you are not familiar with the second chance algorithm press 'I'm lost.'"
 
     victim_found:
       - "USE BIT is already OFF."
-      - "This is the victim. Pull the lever to evict it to disk."
+      - "This is the victim. Press the button again to evict it to disk."
 
     after_eviction:
       - "Frame {pfn} has been swapped out to disk."
+      - "Its dirty bit was 1: the page had been written to, so the OS saved it to swap space rather than discarding it."
+      - "If the dirty bit were 0, the OS could have simply discarded it, since no changes were made."
       - "RAM now has a free frame."
       - "Return to RAM and place your new page there."
       - "Press the button in the middle to teleport back to RAM."
@@ -378,10 +473,10 @@ rooms:
 hints:
   terminal:
     before_entering:
-      - "Look around you. There are two houses. Each house represents a different mode."
-      - "The House of Learning (left) provides more guidance."
-      - "The House of Adventure (right) offers no safety net."
-      - "Which will you choose?"
+      - "Look around you. There are two rooms."
+      - "The Departure Gate (left) is where you start your journey."
+      - "The the Assessment Room (right) has a short quiz that helps me point you to the right journey."
+      - "I recommend starting with the quiz."
 
   tlb_room:
     before_calculator:
@@ -411,7 +506,9 @@ hints:
       - "Press the button to go back to the TLB room and I will help you there."
 
     from_lazy_loading:
-      - "TODO"
+      - "Your goal here is to calculate the PAGE_INDEX—which page of the file to load."
+      - "Use the formula on the sign: PAGE_INDEX = floor(ADDRESS / PAGE_SIZE)."
+      - "The values are already on your map. Write the address in the book, drop it in the cone, and the answer will be added to your map."
 
   page_table_library:
     page_directory:
@@ -427,12 +524,13 @@ hints:
   permission_chamber:
     decision:
       - "Think of it like a decision tree:"
-      - "  - Is PRESENT = 1? If no, it's a PAGE FAULT."
-      - "  - If yes, are you accessing kernel memory? (USER=0, KERNEL=1)?"
+      - "  - Are you accessing kernel memory? (USER=0, KERNEL=1)?"
       - "  - If yes, it's a SEGMENTATION FAULT."
-      - "  - If no, do READ/WRITE bits allow access (READ=1 or WRITE=1)?"
+      - "  - If no, is PRESENT = 1 (is it in RAM)? If no, it's a PAGE FAULT."
       - "  - If yes, it's ALLOW ACCESS."
+      - "  - If no, do READ/WRITE bits allow access (READ=1 or WRITE=1)?"
       - "  - If no, it's a PROTECTION FAULT."
+      - "Hint: Check what the instruction is trying to do (read/write/load) and compare it to the permissions in the PTE."
 
     page_fault_type:
       - "LAZY ALLOCATION has (ANON=1)"
@@ -535,7 +633,7 @@ explanations:
     hex_to_bin: "TLB works in binary. VAs come in hex (human-readable). Must convert for TLB matching."
 
   page_table:
-    why_multi_level: "Space efficiency—only allocate for used regions. Saves massive memory."
+    why_two_level: "Space efficiency—only allocate for used regions. Saves massive memory."
     ptbr: "CPU register pointing to page directory. A process-specific bookmark."
     isolation: "Each process has different virtual address spaces. Different mappings. Memory isolation and security."
     vpn_split: "DIR (first 2 bits) = which floor. TABLE (last 2 bits) = which chest."
@@ -543,18 +641,25 @@ explanations:
     pte: "Metadata about ONE page. PRESENT, READ, WRITE, PFN, etc. Contains all page information."
 
   permission_chamber:
-    allow_access: "The kernel allows the memory access to proceed."
-    page_fault: "The kernel cannot fulfill the memory access right now and must intervene. The page either doesn't exist in memory yet, or was evicted and needs to be brought back."
-    segfault: "The memory access violates the boundaries of what this process is allowed to access."
-    protection_fault: "The process is trying to access the page, but something about the access is not allowed—either permission bits deny it, or the page is marked with special protection."
-    lazy_allocation: "The page is anonymous and needs to be created fresh."
-    lazy_loading: "The page is file-backed and needs to be loaded from disk."
-    swapped_out: "The page was evicted to disk and needs to be retrieved."
+    allow_access: "Allow access: The page is in the RAM and its permission bits allow the kernel to proceed with the memory access."
+    page_fault: "Page fault: The kernel cannot fulfill the memory access right now and must intervene. The page either doesn't exist in memory yet, or was evicted and needs to be brought back."
+    segfault: "Segmentation fault: The memory access violates the boundaries of what this process is allowed to access."
+    protection_fault: "Protection fault: The process is trying to access the page, but something about the access is not allowed—either permission bits deny it, or the page is marked with special protection."
+    lazy_allocation: "Lazy allocation: The page is anonymous and needs to be created fresh."
+    lazy_loading: "Lazy loading: The page is file-backed and needs to be loaded from disk."
+    swapped_out: "Swapped out: The page was evicted to disk and needs to be retrieved."
+    write_1_0: "Write = 1: The process has permission to write to this page. \nWrite = 0: The process cannot write to this page."
+    read_1_0: "Read = 1: The process has permission to read from this page. \nRead = 0: The process cannot read from this page."
+    read_only_page: "Read-only page: A page with Read = 1 and Write = 0. \nThe process can read the data but any write attempt will trigger a fault."
+    user_1: "User = 1: The page can be accessed when the CPU is in user mode. \nUser = 0: The page cannot be accessed in user mode so attempting to access will trigger a fault."  
+    kernel_1: "Kernel = 1: The page can be accessed when the CPU is in kernel mode.\nKernel = 0: The page cannot be accessed in kernel mode. Attempting to access will trigger a fault."
+    currect_mode: "The CPU operates in either user mode or kernel mode. \nBut I haven't fully tursted you yet, so you will only operate in user mode."
+    permission_bits: "Permission bits: Flags in the page table entry that control how a page can be accessed. Common permission bits include READ, WRITE, USER, and KERNEL."
 
   memory:
     lazy_allocation_what: "Strategy where kernel doesn't allocate memory until needed. Page is anonymous and created fresh. Saves space because only used memory is allocated."
     lazy_allocation_why: "Massive waste if allocated upfront (4GB allocated, 10MB used). Limits concurrent processes. Lazy allocation is essential."
-    zero_page_readonly: "Optimisation for sharing. Multiple processes share zero page. Only copy on write (COW)."
+    zero_page_readonly: "The zero page is read-only because it's shared by multiple processes. If a process needs to write, copy-on-write (COW) will allocate a private copy first."
     lazy_loading_what: "Strategy where kernel defers loading file pages until needed. Only the accessed page is loaded from disk. Saves startup time and memory."
     page_index: "Think of a book with chapters. PAGE_INDEX = which chapter do you need? The kernel reads only the chapter you need, not the entire book."
     cow_what: "Copy-on-Write: multiple processes share a read-only page. When one writes, the kernel allocates a new frame, copies the data, maps the new frame, and marks it writable."
@@ -563,6 +668,10 @@ explanations:
     ram_what: "Random Access Memory. Fast primary memory. Nanosecond access. Limited capacity. Volatile. Divided into frames (each = one page size)."
     pfn_why: "1- Identification and retrieval: kernel uses PFN to find pages immediately. 2- Mapping: PTE stores PFN for VPN→PFN translation. 3- Management: tracking free/allocated frames."
     clock_algo: "Frames in a circle. Each has a USE BIT (red torch). ON when you pass it = turn it OFF (second chance). OFF when you pass it = that's the victim!"
+    zero_frame: "Zero frame: A special shared frame between processes filled entirely with zeros. The OS uses it as a placeholder for newly allocated pages that haven't been written to yet, saving memory by not allocating a real frame until necessary."
+    private_frame: "Private frame: A frame that belongs exclusively to one process. The OS allocates a private frame whenever a process needs its own copy of data, for example, when a process wants to write to a read-only page."
+    dirty_bit: "Dirty bit: Set to 1 when a page has been written to. When evicting a dirty page, the OS must write it to the swap space in disk first. \nClean pages (dirty = 0) can be discarded immediately since the disk already has the latest copy."
+    use_bit: "Use bit: Set to 1 by hardware whenever a page is accessed. The page replacement algorithm checks this bit to determine which pages are actively being used. \nPages with use bit = 0 haven't been accessed recently and are candidates for eviction."
 
 # ─── Guardian meta-responses (instant, no freeze) ────────────────────────────
 guardian:

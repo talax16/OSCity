@@ -89,11 +89,11 @@ public class SwapClockManager {
                 if (i == victimFrame) {
                     // Victim frame: torch OFF, sign shows VICTIM
                     setTorchLit(i, false);
-                    updateFrameSign(i, pfnHex, "VICTIM!", "Pull the", "lever!");
+                    updateFrameSign(i, pfnHex, "VICTIM!", "Press the", "button!");
                 } else {
                     // Other frames: torch ON (were recently accessed)
                     setTorchLit(i, true);
-                    updateFrameSign(i, pfnHex, "USE BIT: ON", "", "");
+                    updateFrameSign(i, pfnHex, "USE_BIT=1 (ON)", "", "");
                 }
             }
             state.roundTwoStarted = true;
@@ -107,7 +107,7 @@ public class SwapClockManager {
             // Set each frame sign: PFN label + "USE BIT: ON"
             for (int i = 1; i <= 6; i++) {
                 String pfnHex = "0x" + Integer.toHexString(i).toUpperCase();
-                updateFrameSign(i, pfnHex, "USE BIT: ON", "", "");
+                updateFrameSign(i, pfnHex, "USE_BIT=1 (ON)", "", "");
             }
         }
     }
@@ -150,12 +150,12 @@ public class SwapClockManager {
                 // Round 2: frame was recently used → not the victim
                 // Turn off torch to show player checked this frame
                 setTorchLit(frameNum, false);
-                updateFrameSign(frameNum, pfnHex, "USE BIT: OFF", "(checked)", "");
+                updateFrameSign(frameNum, pfnHex, "USE_BIT=0 (OFF)", "(checked)", "");
                 player.sendMessage(plugin.getConfigManager().getMessage("clock.recently_accessed", "{pfn}", pfnHex));
             } else {
                 // Round 1: flip USE BIT OFF (give second chance)
                 setTorchLit(frameNum, false);
-                updateFrameSign(frameNum, pfnHex, "USE BIT: OFF", "(2nd chance)", "");
+                updateFrameSign(frameNum, pfnHex, "USE_BIT=0 (OFF)", "(2nd chance)", "");
                 player.sendMessage(plugin.getConfigManager().getMessage("clock.use_bit_flipped", "{pfn}", pfnHex));
                 state.roundOnePressed.add(frameNum);
 
@@ -172,7 +172,7 @@ public class SwapClockManager {
                                 plugin.getLogger().info("[SwapClock] Re-lighting torch " + i);
                                 setTorchLit(i, true);
                                 String h = "0x" + Integer.toHexString(i).toUpperCase();
-                                updateFrameSign(i, h, "USE BIT: ON", "", "");
+                                updateFrameSign(i, h, "USE_BIT=1 (ON)", "", "");
                             } else {
                                 plugin.getLogger().info("[SwapClock] Keeping torch " + i + " OFF (victim)");
                             }
@@ -210,9 +210,6 @@ public class SwapClockManager {
         return true;
     }
 
-    // ── Lever pull removed ────────────────────────────────────────────────────
-    // Lever mechanic replaced with button press on victim frame.
-    // handleLeverPull() is no longer used.
 
     // ── Torch helpers ─────────────────────────────────────────────────────────
 

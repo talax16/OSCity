@@ -26,7 +26,7 @@ public class SessionStats {
     // Streaks
     public int currentCorrectStreak = 0;
     public int bestCorrectStreak = 0;
-    public int perfectJourneyStreak = 0;  // Journeys completed with 0 errors
+    public int perfectRun = 0;  // Journeys completed with 0 errors (cumulative, never resets)
     
     // Swap clock tracking
     public int swapClocksCompleted = 0;
@@ -60,11 +60,9 @@ public class SessionStats {
             completedSwappedOut = true;
         }
         
-        // Update perfect journey streak
+        // Update perfect journey count (cumulative, never resets)
         if (currentJourneyWrongAnswers == 0) {
-            perfectJourneyStreak++;
-        } else {
-            perfectJourneyStreak = 0;
+            perfectRun++;
         }
     }
     
@@ -102,7 +100,7 @@ public class SessionStats {
         sb.append("§f Different: §e" + completedJourneys.size() + "/7\n");
         sb.append("§f Correct Streak: §e" + currentCorrectStreak + "\n");
         sb.append("§f Best Streak: §6" + bestCorrectStreak + "\n");
-        sb.append("§f Perfect Journey Streak: §a" + perfectJourneyStreak + "\n");
+        sb.append("§f Perfect Journey Streak: §a" + perfectRun + "\n");
         sb.append("§e━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
         sb.append("§6§l  Achievement Progress\n");
         sb.append("§f Explorer: §e" + completedJourneys.size() + "/3 journeys\n");
@@ -124,7 +122,7 @@ public class SessionStats {
         // Streaks
         sb.append("§f On Fire: §e" + currentCorrectStreak + "/5 streak\n");
         sb.append("§f Unstoppable: §e" + currentCorrectStreak + "/10 streak\n");
-        sb.append("§f Perfect Run: §e" + perfectJourneyStreak + "/3 journeys\n");
+        sb.append("§f Perfect Run: §e" + perfectRun + "/3 journeys\n");
         sb.append("§f Curious Mind: §e" + explanationsRequested + "/5 explanations\n");
         sb.append("§f Kernel Scholar: §e" + explanationsRequested + "/10 explanations\n");
         sb.append("§6§m════════════════════════════════════════");

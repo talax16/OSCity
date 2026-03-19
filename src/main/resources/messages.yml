@@ -63,6 +63,7 @@ errors:
   disk:
     retrieve_swap_slot:     "&c[Disk Room] You must retrieve the page from swap slot 0 first!"
     retrieve_treasure_map:  "&c[Disk Room] You must retrieve the correct page from chest C (treasure_map.bin page 0)!"
+    need_correct_book:      "&c[Disk Room] Make sure you have the correct book with you!"
   swap:
     complete_algorithm:     "&cComplete the swap algorithm first! Find the victim frame and pull the lever."
   page_table:
@@ -80,7 +81,7 @@ errors:
     answer_quiz_first:      "&c[Calculator] Answer the quiz question first before continuing."
     empty_page:             "&c[Calculator] First page is empty. Write a number."
   guardian:
-    type_1_to_4:            "&cPlease type 1, 2, 3, or 4."
+    type_1_to_5:            "&cPlease type 1, 2, 3, 4, or 5."
     type_from_list:         "&cPlease type a number from the list."
     type_range:             "&cPlease type a number between 1 and {max}."
   quiz:
@@ -127,9 +128,9 @@ ui:
   guidance:
     title:               "&6&l      GUIDANCE PREFERENCE"
     journey_label:       "&7Journey: &f{journey}"
-    option_g:            "&eG&7) &aWith Kernel Guardian &7— hints & explanations"
-    option_g_note:       "    &8\u26a0 The Guardian will pause your movement while speaking."
-    option_a:            "&eA&7) &7Alone &8— no hints, full freedom"
+    option_g:            "&eG&7) &aWith Kernel Guardian &7— hints & explanations at every step"
+    option_g_note:       "    &8\u26a0 The Guardian will interrupt and guide you throughout."
+    option_a:            "&eA&7) &7Alone &8— fewer interruptions than guided mode, no hints"
     prompt:              "&7Type &eG&7, &eA&7, or &eB &7to go back:"
 
   quiz:
@@ -157,10 +158,12 @@ ui:
     option2_lost_desc:   " — Get a hint"
     option3:             "3. Explain a concept"
     option3_desc:        " — Learn terminology"
-    option4_enable:      "4. Enable full guidance"
-    option4_enable_desc: " — Get hints for the rest of this journey"
-    option4_disable:     "4. Disable guidance"
-    option4_disable_desc: " — Explore the rest of this journey alone"
+    option4:             "4. Check achievements"
+    option4_desc:        " — View your progress and what each achievement requires"
+    option5_enable:      "5. Enable full guidance"
+    option5_enable_desc: " — Get hints for the rest of this journey"
+    option5_disable:     "5. Disable guidance"
+    option5_disable_desc: " — Explore the rest of this journey alone"
 
   concepts:
     title:               "Concepts I can explain here:"

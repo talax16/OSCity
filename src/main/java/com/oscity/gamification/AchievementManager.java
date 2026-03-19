@@ -41,7 +41,7 @@ public class AchievementManager {
             + " | total=" + stats.completedJourneys.size()
             + " | wrongAnswers=" + stats.currentJourneyWrongAnswers
             + " | hints=" + stats.currentJourneyHints
-            + " | perfectStreak=" + stats.perfectJourneyStreak
+            + " | perfectStreak=" + stats.perfectRun
             + " | correctStreak=" + stats.currentCorrectStreak);
         
         // Understanding achievements
@@ -73,7 +73,7 @@ public class AchievementManager {
         }
         
         // Perfect Run: 3 perfect journeys in a row
-        checkUnlock(player, "perfect_run", stats.perfectJourneyStreak >= 3);
+        checkUnlock(player, "perfect_run", stats.perfectRun >= 3);
         
         // Show progress summary
         showProgress(player);

@@ -190,8 +190,11 @@ public class RoomChangeListener implements Listener {
 
     private void onRoomEntered(Player player, String roomTitle) {
         // Cancel any pending confirmations when leaving those rooms.
-        // Path selection only cancels when entering a room other than Departure Gate.
+        // If player leaves Assessment Room mid-quiz, reset all partial quiz data.
         quizManager.cancelQuizConfirmation(player);
+        if (!"Assessment Room".equals(roomTitle)) {
+            quizManager.abandonQuiz(player);
+        }
         if (!"Departure Gate".equals(roomTitle)) {
             choiceButtonHandler.cancelTerminalPathSelection(player);
         }
@@ -326,6 +329,10 @@ public class RoomChangeListener implements Listener {
             case "terminal_spawn":
                 journeyTracker.setPhase(player, "tlb_spawn");
                 choiceButtonHandler.resetHitDecisionSign();
+                choiceButtonHandler.closeDoor("toPageFaultCorridor");
+                choiceButtonHandler.closeDoor("toLazyLoading");
+                choiceButtonHandler.closeDoor("toLazyAllocation");
+                calculatorListener.clearHopper();
                 speakIfLearner(player, "rooms.tlb_room.at_spawn", vars);
                 tlbRoomManager.populate(player);
                 break;

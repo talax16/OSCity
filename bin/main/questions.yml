@@ -29,7 +29,7 @@ calculator_room:
       B: "{optB}"
       C: "{optC}"
       D: "Other"
-    correct: "A"
+    correct: "B"
     wrong: "That's incorrect. Do the calculation again."
   page_index:
     question: "What page index does your virtual address correspond to?"
@@ -38,7 +38,7 @@ calculator_room:
       B: "{optB}"
       C: "{optC}"
       D: "Other"
-    correct: "A"
+    correct: "C"
     wrong: "That's incorrect. Do the calculation again."
 
 # ── Assessment Quiz ───────────────────────────────────────────────────────────

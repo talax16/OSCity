@@ -16,11 +16,14 @@ import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.block.Chest;
 import org.bukkit.block.Sign;
 import org.bukkit.block.sign.Side;
 import org.bukkit.block.data.Openable;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -86,7 +89,6 @@ public class ChoiceButtonHandler implements Listener {
     private final Set<UUID> pteChamberDialogueSent = new HashSet<>();
     // Tracks players who have already received the "after book retrieved" dialogue in disk room
     private final Set<UUID> diskBookDialogueSent = new HashSet<>();
-    private final Set<UUID> diskTeleportPending  = new HashSet<>();
 
     // ── Inner state classes ───────────────────────────────────────────────────
 
@@ -283,6 +285,11 @@ public class ChoiceButtonHandler implements Listener {
 
         if ("endToStart".equals(buttonKey)) {
             handleEndToStart(player);
+            return;
+        }
+
+        if ("summariseJourney".equals(buttonKey)) {
+            handleSummariseJourney(player);
             return;
         }
 
@@ -524,7 +531,7 @@ public class ChoiceButtonHandler implements Listener {
                                             "{values}", "PRESENT=1, PFN=" + pfn + ", IN_SWAP=0"));
                                         player.sendMessage(plugin.getConfigManager().getMessage("system.tlb_updated",
                                             "{vpn}", vpn, "{pfn}", pfn));
-                                        speakIfLearner(player, "rooms.ram_room.retry_instruction", tracker.getVars(player));
+                                        dialogue.speak(player, "rooms.ram_room.retry_instruction_page_fault", tracker.getVars(player));
                                     }, 40L);
                                 } else if ("swap_lazy_loading".equals(phase)) {
                                     // LAZY_LOADING: update PTE — pfn already set from TLB room setup
@@ -541,7 +548,7 @@ public class ChoiceButtonHandler implements Listener {
                                             "{values}", "PRESENT=1, PFN=" + pfn));
                                         player.sendMessage(plugin.getConfigManager().getMessage("system.tlb_updated",
                                             "{vpn}", vpn, "{pfn}", pfn));
-                                        speakIfLearner(player, "rooms.ram_room.retry_instruction", tracker.getVars(player));
+                                        dialogue.speak(player, "rooms.ram_room.retry_instruction_page_fault", tracker.getVars(player));
                                     }, 40L);
                                 } else {
                                     player.sendMessage(plugin.getConfigManager().getMessage("feedback.ram_page_placed"));
@@ -556,7 +563,7 @@ public class ChoiceButtonHandler implements Listener {
                                         String vpn = tracker.getVar(player, "vpn");
                                         player.sendMessage(plugin.getConfigManager().getMessage("system.tlb_updated",
                                             "{vpn}", vpn, "{pfn}", pfn));
-                                        speakIfLearner(player, "rooms.ram_room.retry_instruction", tracker.getVars(player));
+                                        dialogue.speak(player, "rooms.ram_room.retry_instruction_cow", tracker.getVars(player));
                                     }, 40L);
                                 } else if (playerJourney == Journey.LAZY_ALLOCATION) {
                                     // LAZY_ALLOCATION: update PFN + PTE now, then send system messages + retry_instruction
@@ -571,7 +578,7 @@ public class ChoiceButtonHandler implements Listener {
                                     tracker.setVar(player, "pteUser", "1");
                                     tracker.setVar(player, "pteKernel", "0");
                                     tracker.setVar(player, "pteFileBacked", "0");
-                                    tracker.setVar(player, "pteAnon", "1");
+                                    tracker.setVar(player, "pteAnon", "0");
                                     tracker.setVar(player, "pteInSwap", "0");
                                     pageTableManager.updatePteMap(player);
                                     org.bukkit.Bukkit.getScheduler().runTaskLater(plugin, () -> {
@@ -581,7 +588,7 @@ public class ChoiceButtonHandler implements Listener {
                                             "{values}", "PRESENT=1, PFN=" + pfn + ", WRITE=1"));
                                         player.sendMessage(plugin.getConfigManager().getMessage("system.tlb_updated",
                                             "{vpn}", vpn, "{pfn}", pfn));
-                                        speakIfLearner(player, "rooms.ram_room.retry_instruction", tracker.getVars(player));
+                                        dialogue.speak(player, "rooms.ram_room.retry_instruction_page_fault", tracker.getVars(player));
                                     }, 40L);
                                 } else {
                                     player.sendMessage(plugin.getConfigManager().getMessage("feedback.ram_book_placed"));
@@ -1383,7 +1390,6 @@ public class ChoiceButtonHandler implements Listener {
      * Only allows teleport if the player has taken the correct book.
      */
     private void handleDiskToRamButton(Player player, String phase, Journey journey) {
-        if (diskTeleportPending.contains(player.getUniqueId())) return;
         if ("disk_swap_retrieval".equals(phase)) {
             // SWAPPED_OUT journey: Check for swap slot 0 book
             boolean hasSwapBook = false;
@@ -1393,30 +1399,15 @@ public class ChoiceButtonHandler implements Listener {
                     org.bukkit.inventory.meta.BookMeta bookMeta = (org.bukkit.inventory.meta.BookMeta) item.getItemMeta();
                     String displayName = bookMeta.getDisplayName();
                     String title = bookMeta.getTitle();
-                    plugin.getLogger().info("[DiskToRam] Found book - displayName: " + displayName + ", title: " + title);
-
-                    // Check both display name and title
-                    boolean isSwapSlot0 = false;
-                    if (displayName != null && (displayName.contains("Swap Slot 0") || displayName.contains("SwapSlot0"))) {
-                        isSwapSlot0 = true;
-                    } else if (title != null && (title.contains("Swap Slot 0") || title.contains("SwapSlot0"))) {
-                        isSwapSlot0 = true;
-                    }
-
-                    if (isSwapSlot0) {
+                    if ((displayName != null && (displayName.contains("Swap Slot 0") || displayName.contains("SwapSlot0")))
+                            || (title != null && (title.contains("Swap Slot 0") || title.contains("SwapSlot0")))) {
                         hasSwapBook = true;
-                        plugin.getLogger().info("[DiskToRam] Valid swap book found!");
                         break;
                     }
                 }
             }
-            plugin.getLogger().info("[DiskToRam] hasSwapBook=" + hasSwapBook + " phase=" + phase);
             if (hasSwapBook) {
-                diskTeleportPending.add(player.getUniqueId());
-                Bukkit.getScheduler().runTaskLater(plugin, () -> {
-                    diskTeleportPending.remove(player.getUniqueId());
-                    teleportPlayer(player, "ramRoom");
-                }, 80L);
+                teleportPlayer(player, "ramRoom");
             } else {
                 player.sendMessage(plugin.getConfigManager().getMessage("errors.disk.retrieve_swap_slot"));
             }
@@ -1429,36 +1420,20 @@ public class ChoiceButtonHandler implements Listener {
                     org.bukkit.inventory.meta.BookMeta bookMeta = (org.bukkit.inventory.meta.BookMeta) item.getItemMeta();
                     String displayName = bookMeta.getDisplayName();
                     String title = bookMeta.getTitle();
-                    plugin.getLogger().info("[DiskToRam] Found book - displayName: " + displayName + ", title: " + title);
-
-                    // Check for treasure_map.bin page 0
-                    boolean isCorrectBook = false;
-                    if (displayName != null && displayName.contains("treasure_map.bin page 0")) {
-                        isCorrectBook = true;
-                    } else if (title != null && title.contains("treasure_map.bin page 0")) {
-                        isCorrectBook = true;
-                    }
-
-                    if (isCorrectBook) {
+                    if ((displayName != null && displayName.contains("treasure_map.bin page 0"))
+                            || (title != null && title.contains("treasure_map.bin page 0"))) {
                         hasCorrectBook = true;
-                        plugin.getLogger().info("[DiskToRam] Correct treasure_map.bin book found!");
                         break;
                     }
                 }
             }
-            plugin.getLogger().info("[DiskToRam] hasCorrectBook=" + hasCorrectBook + " phase=" + phase);
             if (hasCorrectBook) {
-                diskTeleportPending.add(player.getUniqueId());
-                Bukkit.getScheduler().runTaskLater(plugin, () -> {
-                    diskTeleportPending.remove(player.getUniqueId());
-                    teleportPlayer(player, "ramRoom");
-                }, 80L);
+                teleportPlayer(player, "ramRoom");
             } else {
                 player.sendMessage(plugin.getConfigManager().getMessage("errors.disk.retrieve_treasure_map"));
             }
         } else {
-            // For other journeys, just teleport
-            teleportPlayer(player, "ramRoom");
+            player.sendMessage(plugin.getConfigManager().getMessage("errors.disk.need_correct_book"));
         }
     }
 
@@ -1684,7 +1659,6 @@ public class ChoiceButtonHandler implements Listener {
         boolean isRandom = randomJourneyChoice.remove(player.getUniqueId());
         pteChamberDialogueSent.remove(player.getUniqueId());
         diskBookDialogueSent.remove(player.getUniqueId());
-        diskTeleportPending.remove(player.getUniqueId());
 
         tracker.setMode(player, guided ? PlayerMode.LEARNER : PlayerMode.ADVENTURER);
         tracker.setJourney(player, journey);
@@ -1696,7 +1670,45 @@ public class ChoiceButtonHandler implements Listener {
             : "rooms.terminal.journey_selected";
         dialogue.speak(player, confirmDialogue, vars);
 
+        player.getInventory().clear();
         journeyMapManager.giveInitialMap(player, "learnerChest");
+        refillCalculatorChest();
+    }
+
+    private void refillCalculatorChest() {
+        ConfigurationSection sec = plugin.getConfig().getConfigurationSection("chests.calculatorChest");
+        if (sec == null) { plugin.getLogger().warning("[Calculator] No config at chests.calculatorChest"); return; }
+        String worldName = sec.getString("world", "");
+        World world = Bukkit.getWorld(worldName);
+        if (world == null) { plugin.getLogger().warning("[Calculator] World '" + worldName + "' not found"); return; }
+        int x = sec.getInt("x"), y = sec.getInt("y"), z = sec.getInt("z");
+        Block block = new Location(world, x, y, z).getBlock();
+        if (!(block.getState() instanceof Chest chest)) {
+            plugin.getLogger().warning("[Calculator] No chest at chests.calculatorChest " + x + "," + y + "," + z + " (found: " + block.getType() + ")");
+            return;
+        }
+        Inventory inv = chest.getInventory();
+        inv.clear();
+        for (int i = 0; i < inv.getSize(); i++) {
+            inv.setItem(i, new ItemStack(Material.WRITABLE_BOOK));
+        }
+        plugin.getLogger().info("[Calculator] Filled calculator chest with " + inv.getSize() + " writable books");
+    }
+
+    // ── End Terminal: Summarise Journey ──────────────────────────────────────
+
+    private void handleSummariseJourney(Player player) {
+        Journey journey = tracker.getJourney(player);
+        if (journey == null) {
+            player.sendMessage(plugin.getConfigManager().getMessage("errors.no_active_journey"));
+            return;
+        }
+        String key = "rooms.end_terminal.summary_" + journey.name().toLowerCase();
+        if (dialogue.hasPath(key)) {
+            dialogue.speak(player, key, tracker.getVars(player));
+        } else {
+            player.sendMessage(plugin.getConfigManager().getMessage("feedback.nothing_to_add"));
+        }
     }
 
     // ── End Terminal: Restart Journey ─────────────────────────────────────────
@@ -1882,7 +1894,7 @@ public class ChoiceButtonHandler implements Listener {
         switch (key) {
             case "btn1": return "Lazy Allocation";
             case "btn2": return "Lazy Loading";
-            case "btn3": return "Swapping";
+            case "btn3": return "Swapped out";
             // btn4 disappears in round 2 — return null to ignore press
             default:     return null;
         }
@@ -1975,7 +1987,7 @@ public class ChoiceButtonHandler implements Listener {
                 tracker.setPhase(player, "page_fault_type");
                 updateSign("perChamber.sign1", "Lazy Allocation", "", "", "");
                 updateSign("perChamber.sign2", "Lazy Loading", "", "", "");
-                updateSign("perChamber.sign3", "Swapping", "", "", "");
+                updateSign("perChamber.sign3", "Swapped out", "", "", "");
                 updateSign("perChamber.sign4", "", "", "", "");
                 updateSign("perChamber.sign5", "Which type of", "page fault?", "", "");
                 dialogue.speak(player, "rooms.permission_chamber.page_fault_subtype_prompt", vars);
@@ -2137,7 +2149,7 @@ public class ChoiceButtonHandler implements Listener {
                 tracker.setVar(player, "pteWrite", "1");
                 tracker.setVar(player, "pteReadOnly", "0");
                 player.sendMessage(plugin.getConfigManager().getMessage("system.pte_updated",
-                    "{values}", "PRESENT=1, PFN=" + tracker.getVar(player, "pfn") + ", COW=0, WRITE=1"));
+                    "{values}", "PRESENT=1, PFN=" + tracker.getVar(player, "pfn") + ", WRITE=1"));
             }
             // For LAZY_ALLOCATION: Don't update PTE variables here - they will be updated after swap
 
@@ -2335,6 +2347,8 @@ public class ChoiceButtonHandler implements Listener {
                 top.setBlockData(topOpenable);
             }
             plugin.getLogger().info("[DoorOpen] Opened door: " + doorKey);
+            // Auto-close after 10 seconds
+            Bukkit.getScheduler().runTaskLater(plugin, () -> closeDoor(doorKey), 200L);
         } else {
             plugin.getLogger().warning("[DoorOpen] Block at doors." + doorKey + " is not a door (" + bottom.getType() + ")");
         }

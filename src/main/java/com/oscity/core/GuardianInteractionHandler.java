@@ -73,12 +73,14 @@ public class GuardianInteractionHandler implements Listener {
         }
         player.sendMessage(Component.text(config.getMessage("ui.guardian_menu.option3"), NamedTextColor.LIGHT_PURPLE)
             .append(Component.text(config.getMessage("ui.guardian_menu.option3_desc"), NamedTextColor.GRAY)));
+        player.sendMessage(Component.text(config.getMessage("ui.guardian_menu.option4"), NamedTextColor.YELLOW)
+            .append(Component.text(config.getMessage("ui.guardian_menu.option4_desc"), NamedTextColor.GRAY)));
         if (isAdventurer) {
-            player.sendMessage(Component.text(config.getMessage("ui.guardian_menu.option4_enable"), NamedTextColor.AQUA)
-                .append(Component.text(config.getMessage("ui.guardian_menu.option4_enable_desc"), NamedTextColor.GRAY)));
+            player.sendMessage(Component.text(config.getMessage("ui.guardian_menu.option5_enable"), NamedTextColor.AQUA)
+                .append(Component.text(config.getMessage("ui.guardian_menu.option5_enable_desc"), NamedTextColor.GRAY)));
         } else {
-            player.sendMessage(Component.text(config.getMessage("ui.guardian_menu.option4_disable"), NamedTextColor.GRAY)
-                .append(Component.text(config.getMessage("ui.guardian_menu.option4_disable_desc"), NamedTextColor.GRAY)));
+            player.sendMessage(Component.text(config.getMessage("ui.guardian_menu.option5_disable"), NamedTextColor.RED)
+                .append(Component.text(config.getMessage("ui.guardian_menu.option5_disable_desc"), NamedTextColor.GRAY)));
         }
         player.sendMessage(Component.text(""));
         player.sendMessage(Component.text(config.getMessage("ui.guardian_menu.prompt"), NamedTextColor.DARK_GRAY, TextDecoration.ITALIC));
@@ -96,7 +98,7 @@ public class GuardianInteractionHandler implements Listener {
         new String[]{"TLB Location",                     "tlb.location"},                         // 2
         new String[]{"Virtual Page Number (VPN)",        "address.vpn"},                          // 3
         new String[]{"Page Offset",                      "address.offset"},                       // 4
-        new String[]{"Why Multi-Level Page Tables?",     "page_table.why_multi_level"},           // 5
+        new String[]{"Why Two-Level Page Tables?",     "page_table.why_two_level"},           // 5
         new String[]{"Page Table Entry (PTE)",           "page_table.pte"},                       // 6
         new String[]{"Page Fault",                       "permission_chamber.page_fault"},        // 7
         new String[]{"Segmentation Fault",               "permission_chamber.segfault"},          // 8
@@ -121,7 +123,18 @@ public class GuardianInteractionHandler implements Listener {
         new String[]{"Zero Page Optimisation",           "memory.zero_page_readonly"},            // 27
         new String[]{"Page Index",                       "memory.page_index"},                    // 28
         new String[]{"Swap vs File-Backed Pages",        "memory.swap_vs_file"},                  // 29
-        new String[]{"Why PFN Matters",                  "memory.pfn_why"}                        // 30
+        new String[]{"Why PFN Matters",                  "memory.pfn_why"},                       // 30
+        new String[]{"Zero Frame",                        "memory.zero_frame"},                    // 31
+        new String[]{"Private Frame",                     "memory.private_frame"},                 // 32
+        new String[]{"Write Bit (WRITE)",                     "permission_chamber.write_1_0"},         // 33
+        new String[]{"Read Bit (READ)",                      "permission_chamber.read_1_0"},          // 34
+        new String[]{"Read-Only Page",                    "permission_chamber.read_only_page"},    // 35
+        new String[]{"User Bit (USER)",                      "permission_chamber.user_1"},            // 36
+        new String[]{"Kernel Bit (KERNEL)",                    "permission_chamber.kernel_1"},          // 37
+        new String[]{"Current CPU Mode",                  "permission_chamber.currect_mode"},      // 38
+        new String[]{"Dirty Bit",                         "memory.dirty_bit"},                     // 39
+        new String[]{"Use Bit",                           "memory.use_bit"},                       // 40
+        new String[]{"Permission Bits",                   "permission_chamber.permission_bits"}    // 41
     );
 
     // ── Pending menu state ────────────────────────────────────────────────────
@@ -166,6 +179,9 @@ public class GuardianInteractionHandler implements Listener {
                 showConceptList(player);
                 break;
             case "4":
+                ((com.oscity.OSCity) plugin).getAchievementManager().showProgress(player);
+                break;
+            case "5":
                 if (isAdventurer) {
                     journeyTracker.setMode(player, PlayerMode.LEARNER);
                     dialogueManager.speakInstant(player, "guardian.meta.guidance_enabled", null);
@@ -175,7 +191,7 @@ public class GuardianInteractionHandler implements Listener {
                 }
                 break;
             default:
-                player.sendMessage(Component.text(config.getMessage("errors.guardian.type_1_to_4"), NamedTextColor.RED));
+                player.sendMessage(Component.text(config.getMessage("errors.guardian.type_1_to_5"), NamedTextColor.RED));
         }
     }
 
@@ -222,23 +238,23 @@ public class GuardianInteractionHandler implements Listener {
                 return Arrays.asList(3, 4, 5, 6, 16, 17, 18, 19);
             case "permission_decision":
             case "page_fault_type":
-                return Arrays.asList(6, 7, 8, 20, 21, 22, 23, 24);
+                return Arrays.asList(6, 7, 8, 20, 21, 22, 23, 24, 33, 34, 35, 36, 37, 38, 41);
             case "page_fault_corridor":
                 return Arrays.asList(7, 9, 10, 11);
             case "lazy_alloc_decision":
             case "lazy_alloc_cow":
-                return Arrays.asList(7, 9, 25, 26);
+                return Arrays.asList(7, 9, 25, 26, 31, 32);
             case "cow_decision":
-                return Arrays.asList(9, 27);
+                return Arrays.asList(9, 27, 31, 32);
             case "lazy_loading_entered":
                 return Arrays.asList(10, 28);
             case "disk_lazy_loading":
-                return Arrays.asList(10, 11, 28, 29);
+                return Arrays.asList(10, 11, 28, 29, 39);
             case "disk_swap_retrieval":
-                return Arrays.asList(10, 11, 29);
+                return Arrays.asList(10, 11, 29, 39);
             default:
-                if (phase.startsWith("ram_")) return Arrays.asList(9, 10, 12, 27, 30);
-                if (phase.startsWith("swap_")) return Arrays.asList(11, 13);
+                if (phase.startsWith("ram_")) return Arrays.asList(9, 10, 12, 27, 30, 31, 32);
+                if (phase.startsWith("swap_")) return Arrays.asList(11, 13, 39, 40);
                 return Arrays.asList();
         }
     }

@@ -1,4 +1,4 @@
-debugClicks: true #to be deleted at the end of testing, set to true to get messages about what you clicked and where
+debugClicks: false #to be deleted at the end of testing, set to true to get messages about what you clicked and where
 roomDisplay:
   enabled: true
   intervalTicks: 10   # 10 ticks = 0.5s
@@ -302,6 +302,13 @@ choiceButtons:
     y: 86
     z: 319
 
+
+  # End terminal buttons
+  summariseJourney: # button to summarise the completed journey
+    world: "OSCityWorld"
+    x: 161
+    y: 87
+    z: 306
 
 tpButtons:
   gameStart: # button to start the game, teleports to TLB room

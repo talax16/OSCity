@@ -81,6 +81,7 @@ public class CalculatorListener implements Listener {
     /** Players who pressed skip (vs used the hopper) — determines post-quiz dialogue. */
     private final Map<UUID, Boolean> wasSkipped = new HashMap<>();
 
+
     /** Cached MapView per frame location so we reuse the same map ID across updates. */
     private final Map<Location, MapView> frameMapViews = new HashMap<>();
 
@@ -150,6 +151,15 @@ public class CalculatorListener implements Listener {
         wasSkipped.remove(player.getUniqueId());
     }
 
+    /** Called at journey start to remove any book left over from a previous run. */
+    public void clearHopper() {
+        if (hopperLocation == null) return;
+        Block block = hopperLocation.getBlock();
+        if (block.getState() instanceof org.bukkit.block.Hopper hopper) {
+            hopper.getInventory().clear();
+        }
+    }
+
     /**
      * Check if player has completed the calculator calculation.
      */
@@ -210,28 +220,30 @@ public class CalculatorListener implements Listener {
 
     private void askHexQuestion(Player player, String inputHex, long value) {
         int totalBits = pageOffsetBits * 2;
-        // Distractor B: nibbles swapped (tests VPN/offset order knowledge)
+        // Distractor A: nibbles swapped (tests VPN/offset order knowledge)
+        // Fall back to top-bit-flipped if both nibbles are identical (e.g. 0xFF, 0x00)
         long swapped = ((value & 0xF) << 4) | ((value >> 4) & 0xF);
+        long distractorA = (swapped != value) ? swapped : (value ^ (1L << (totalBits - 1)));
 
         tracker.setVar(player, "hex", inputHex);
-        tracker.setVar(player, "optA", formatNibbles(value, totalBits));
-        tracker.setVar(player, "optB", formatNibbles(swapped, totalBits));
+        tracker.setVar(player, "optA", formatNibbles(distractorA, totalBits));
+        tracker.setVar(player, "optB", formatNibbles(value, totalBits));       // correct
         tracker.setVar(player, "optC", formatNibbles(value ^ 1L, totalBits)); // last bit flipped
 
         log.info("[Calc] " + player.getName() + " asking hex_to_binary | hex=" + inputHex
-            + " | optA=" + formatNibbles(value, totalBits)
-            + " | optB=" + formatNibbles(swapped, totalBits)
+            + " | correct=B | optA=" + formatNibbles(distractorA, totalBits)
+            + " | optB=" + formatNibbles(value, totalBits)
             + " | optC=" + formatNibbles(value ^ 1L, totalBits));
         askCalcQuestion(player, "calculator_room.hex_to_binary");
     }
 
     private void askPageIndexQuestion(Player player, long value) {
-        tracker.setVar(player, "optA", String.valueOf(value));
-        tracker.setVar(player, "optB", String.valueOf(value + 1));
-        tracker.setVar(player, "optC", String.valueOf(value + 2));
+        tracker.setVar(player, "optA", String.valueOf(value + 1));
+        tracker.setVar(player, "optB", String.valueOf(value + 2));
+        tracker.setVar(player, "optC", String.valueOf(value));               // correct
 
-        log.info("[Calc] " + player.getName() + " asking page_index | correct=" + value
-            + " | optA=" + value + " | optB=" + (value + 1) + " | optC=" + (value + 2));
+        log.info("[Calc] " + player.getName() + " asking page_index | correct=C"
+            + " | optA=" + (value + 1) + " | optB=" + (value + 2) + " | optC=" + value);
         askCalcQuestion(player, "calculator_room.page_index");
     }
 

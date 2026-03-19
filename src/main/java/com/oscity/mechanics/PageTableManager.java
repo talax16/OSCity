@@ -240,8 +240,8 @@ public class PageTableManager {
                 
                 sb.append("PRESENT: 1\n");
                 sb.append("READ: 1\n");
-                sb.append("WRITE: ").append(writeCow != null ? writeCow : "0").append("\n");
-                sb.append("READ_ONLY: ").append(readOnlyCow != null ? readOnlyCow : "1").append("\n");
+                sb.append("WRITE: ").append((writeCow == null || "?".equals(writeCow)) ? "0" : writeCow).append("\n");
+                sb.append("READ_ONLY: ").append((readOnlyCow == null || "?".equals(readOnlyCow)) ? "1" : readOnlyCow).append("\n");
                 sb.append("USER: 1\n");
                 sb.append("KERNEL: 0\n");
                 sb.append("ACCESSED: 1\n");
@@ -289,7 +289,7 @@ public class PageTableManager {
                 sb.append("USER: ").append(pteUser != null ? pteUser : "1").append("\n");
                 if (pteKernel != null) sb.append("KERNEL: ").append(pteKernel).append("\n");
                 if (pteFileBacked != null) sb.append("FILE_BACKED: ").append(pteFileBacked).append("\n");
-                if (pteAnon != null) sb.append("ANON: ").append(pteAnon).append("\n");
+                if ("1".equals(pteAnon)) sb.append("ANON: 1\n");
                 sb.append("PFN: ").append(pfnLazy != null ? pfnLazy : "N/A").append("\n");
                 sb.append("IN_SWAP: ").append(pteInSwap != null ? pteInSwap : "0").append("\n");
                 break;
@@ -337,7 +337,7 @@ public class PageTableManager {
                 sb.append("USER: ").append(pteUser != null ? pteUser : "1").append("\n");
                 if (pteKernel != null) sb.append("KERNEL: ").append(pteKernel).append("\n");
                 if (pteFileBacked != null) sb.append("FILE_BACKED: ").append(pteFileBacked).append("\n");
-                if (pteAnon != null) sb.append("ANON: ").append(pteAnon).append("\n");
+                if ("1".equals(pteAnon)) sb.append("ANON: 1\n");
                 sb.append("PFN: ").append(newPfn).append("\n");  // Use provided PFN
                 sb.append("IN_SWAP: ").append(pteInSwap != null ? pteInSwap : "0").append("\n");
                 break;
