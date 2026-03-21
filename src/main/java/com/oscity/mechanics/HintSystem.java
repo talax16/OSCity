@@ -95,14 +95,22 @@ public class HintSystem {
                 calcHintCounter.put(player.getUniqueId(), (count + 1) % 3);
                 return "hints.calculator_room.from_tlb_hint" + (count + 1);
             }
+            case "calculator_from_tlb_done":
+                return "hints.calculator_room.from_tlb_after";
             case "calculator_from_lazy_loading":
                 return "hints.calculator_room.from_lazy_loading";
+            case "calculator_from_lazy_loading_done":
+                return "hints.calculator_room.from_tlb_after";
 
+            case "tlb_miss_correct":
+                return "hints.tlb_room.before_enter_page_table";
             case "library_entrance":
             case "page_directory":
                 return "hints.page_table_library.page_directory";
             case "correct_floor":
                 return "hints.page_table_library.correct_floor";
+            case "acquired_pte":
+                return "hints.page_table_library.acquired_pte";
             case "wrong_floor":
                 return "hints.page_table_library.wrong_floor";
 
@@ -118,9 +126,13 @@ public class HintSystem {
                 return "hints.lazy_allocation_room.first_visit";
             case "lazy_alloc_cow":
                 return "hints.lazy_allocation_room.second_visit";
+            case "lazy_alloc_before_tp":
+                return "hints.lazy_allocation_room.go_to_cow";
 
             case "cow_decision":
                 return "hints.cow_room.lost";
+            case "cow_decision_after":
+                return "hints.cow_room.go_to_ram";
 
             case "lazy_loading_entered":
                 return "hints.lazy_loading_room.clues";
@@ -129,12 +141,42 @@ public class HintSystem {
 
             case "disk_lazy_loading":
                 return "hints.disk_room.lazy_loading";
+            case "disk_lazy_loading_after_book":
+                return "hints.disk_room.lazy_loading_after_book";
             case "disk_swap_retrieval":
                 return "hints.disk_room.swap_out";
+            case "disk_swap_retrieval_after_book":
+                return "hints.disk_room.lazy_loading_after_book";
+
+            case "ram_tlb_hit_access":
+            case "ram_tlb_miss_access":
+                return "hints.ram_room.general";
+            case "ram_disk_swap":
+            case "ram_after_swap_lazy_loading":
+                return "hints.ram_room.place_book";
+            case "ram_book_placed_swapped":
+            case "ram_book_placed_pure_cow":
+            case "ram_book_placed_lazy_loading":
+            case "ram_book_placed_lazy_allocation":
+                return "hints.ram_room.retry_instruction";
+            case "ram_after_cow":
+            case "ram_after_swap_lazy_alloc":
+                return "hints.ram_room.write";
+            case "ram_disk_lazy_loading":
+            case "ram_after_cow_alloc":
+                return "hints.ram_room.swap";
+            case "ram_before_finish":
+            case "ram_finish":
+                return "hints.ram_room.finish";
+
+            case "swap_entered":
+                return "hints.swap_district.lost";
+            case "swap_victim_found":
+                return "hints.swap_district.victim_found";
+            case "swap_after_eviction":
+                return "hints.swap_district.victim_evicted";
 
             default:
-                if (phase.startsWith("ram_")) return "hints.ram_room.general";
-                if (phase.startsWith("swap_")) return "hints.swap_district.lost";
                 return null;
         }
     }

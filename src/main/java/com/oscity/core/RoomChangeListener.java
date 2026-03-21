@@ -278,7 +278,7 @@ public class RoomChangeListener implements Listener {
                 break;
 
             case "Lazy Loading Room":
-                if ("calculator_from_lazy_loading".equals(phase)) {
+                if ("calculator_from_lazy_loading".equals(phase) || "calculator_from_lazy_loading_done".equals(phase)) {
                     // Returning from Calculator Room — page index already calculated
                     journeyTracker.setPhase(player, "lazy_loading_returned");
                     choiceButtonHandler.setLoadingSign("Go to Disk", "", "", "");
@@ -358,13 +358,24 @@ public class RoomChangeListener implements Listener {
             case "calculator_from_tlb":
                 speakIfLearner(player, "rooms.calculator_room.from_tlb_spawn", vars);
                 break;
+            case "calculator_from_tlb_done":
+                // Quiz already done — no auto-dialogue on re-entry
+                break;
             case "lazy_loading_entered":
                 newPhase = "calculator_from_lazy_loading";
                 journeyTracker.setPhase(player, newPhase);
                 speakIfLearner(player, "rooms.calculator_room.from_lazy_loading_spawn", vars);
                 break;
+            case "calculator_from_lazy_loading":
+                speakIfLearner(player, "rooms.calculator_room.from_lazy_loading_spawn", vars);
+                break;
+            case "calculator_from_lazy_loading_done":
+                // Quiz already done — no auto-dialogue on re-entry
+                break;
         }
-        if (newPhase != null || "calculator_from_tlb".equals(phase)) {
+        if (newPhase != null
+                || "calculator_from_tlb".equals(phase) || "calculator_from_tlb_done".equals(phase)
+                || "calculator_from_lazy_loading".equals(phase) || "calculator_from_lazy_loading_done".equals(phase)) {
             final String p = (newPhase != null) ? newPhase : phase;
             Bukkit.getScheduler().runTaskLater(plugin,
                 () -> calculatorListener.onCalculatorRoomEntered(player, p), 15L);
@@ -386,8 +397,11 @@ public class RoomChangeListener implements Listener {
         }
 
         if (!expectedFloor.equals("?") && floorNum.equals(expectedFloor)) {
-            journeyTracker.setPhase(player, "correct_floor");
-            speakIfLearner(player, "rooms.page_table_library.correct_floor", vars);
+            if (!"acquired_pte".equals(phase)) {
+                journeyTracker.setPhase(player, "correct_floor");
+                speakIfLearner(player, "rooms.page_table_library.correct_floor", vars);
+            }
+            // acquired_pte: already has PTE — no auto-dialogue on re-entry
         } else if (!expectedFloor.equals("?")) {
             journeyTracker.setPhase(player, "wrong_floor");
             Bukkit.getScheduler().runTaskLater(plugin, () -> {
@@ -396,8 +410,10 @@ public class RoomChangeListener implements Listener {
                 }
             }, 200L);
         } else {
-            journeyTracker.setPhase(player, "correct_floor");
-            speakIfLearner(player, "rooms.page_table_library.correct_floor", vars);
+            if (!"acquired_pte".equals(phase)) {
+                journeyTracker.setPhase(player, "correct_floor");
+                speakIfLearner(player, "rooms.page_table_library.correct_floor", vars);
+            }
         }
     }
 
@@ -410,6 +426,9 @@ public class RoomChangeListener implements Listener {
             // Player re-entered room after allocating but before making the COW decision
             speakIfLearner(player, "rooms.lazy_allocation_room.second_visit", vars);
             choiceButtonHandler.setLazyAllocCowSigns();
+        } else if ("lazy_alloc_before_tp".equals(phase)) {
+            // Player re-entered after pressing COW — restore "Go to COW room" sign silently
+            choiceButtonHandler.setLazyAllocBeforeTpSign();
         }
     }
 
@@ -433,13 +452,6 @@ public class RoomChangeListener implements Listener {
 
     private void handleRAMEntry(Player player, String phase, Map<String, String> vars) {
         plugin.getLogger().info("[RAM] handleRAMEntry | phase=" + phase + " | journey=" + journeyTracker.getJourney(player));
-        // Don't speak at_spawn dialogue for phases that have their own full dialogue
-        if (!"swap_after_eviction".equals(phase) && !"swap_lazy_alloc".equals(phase)
-                && !"ram_after_cow".equals(phase) && !"ram_allow_access".equals(phase)
-                && !"disk_swap_retrieval".equals(phase) && !"disk_lazy_loading".equals(phase)) {
-            speakIfLearner(player, "rooms.ram_room.at_spawn", vars);
-        }
-
         // Update frame signs based on journey and phase
         ramRoomManager.updateFrameSigns(player);
 
@@ -451,40 +463,56 @@ public class RoomChangeListener implements Listener {
         }
 
         switch (phase) {
-            case "ram_allow_access":
+            case "ram_tlb_hit_access":
                 choiceButtonHandler.setRamMixSign("CONFIRM", "PROCESS", "MAPPED", "");
-                Bukkit.getScheduler().runTaskLater(plugin, () -> {
-                    String ramFramePath = (currentJourney == Journey.TLB_MISS_ALLOW)
-                        ? "rooms.ram_room.found_frame_from_pt"
-                        : "rooms.ram_room.found_frame";
-                    speakIfLearner(player, ramFramePath, journeyTracker.getVars(player));
-                }, 40L);
+                speakIfLearner(player, "rooms.ram_room.found_frame", vars);
+                break;
+            case "ram_tlb_miss_access":
+                choiceButtonHandler.setRamMixSign("CONFIRM", "PROCESS", "MAPPED", "");
+                speakIfLearner(player, "rooms.ram_room.found_frame_from_pt", vars);
                 break;
             case "ram_after_cow":
-                Journey cowJourney = journeyTracker.getJourney(player);
-                if (cowJourney == Journey.LAZY_ALLOCATION) {
-                    choiceButtonHandler.setRamMixSign("CONTINUE", "", "", "");
-                } else {
-                    choiceButtonHandler.setRamMixSign("RETRY", "INSTRUCTION", "", "");
-                }
-                Bukkit.getScheduler().runTaskLater(plugin, () -> {
-                    if (cowJourney == Journey.PURE_COW) {
-                        speakIfLearner(player, "rooms.ram_room.after_cow_pure", journeyTracker.getVars(player));
-                    } else if (cowJourney == Journey.LAZY_ALLOCATION) {
-                        speakIfLearner(player, "rooms.ram_room.ram_full_need_swap", journeyTracker.getVars(player));
-                    }
-                }, 40L);
-                break;
-            case "disk_lazy_loading":
-                choiceButtonHandler.setRamMixSign("Go to Swap", "District", "", "");
-                Bukkit.getScheduler().runTaskLater(plugin, () ->
-                    speakIfLearner(player, "rooms.ram_room.ram_full_need_swap", journeyTracker.getVars(player)), 40L);
-                break;
-            case "disk_swap_retrieval":
-                journeyTracker.setVar(player, "pfn", "0x2");
+                // Pure COW only
                 choiceButtonHandler.setRamMixSign("RETRY", "INSTRUCTION", "", "");
-                Bukkit.getScheduler().runTaskLater(plugin, () ->
-                    speakIfLearner(player, "rooms.ram_room.from_disk_swap_out", journeyTracker.getVars(player)), 40L);
+                speakIfLearner(player, "rooms.ram_room.after_cow_pure", vars);
+                break;
+            case "ram_after_cow_alloc":
+                // LAZY_ALLOCATION first RAM visit: RAM full, needs swap
+                choiceButtonHandler.setRamMixSign("CONTINUE", "", "", "");
+                speakIfLearner(player, "rooms.ram_room.ram_full_need_swap", vars);
+                break;
+            case "ram_disk_lazy_loading":
+                choiceButtonHandler.setRamMixSign("Go to Swap", "District", "", "");
+                speakIfLearner(player, "rooms.ram_room.ram_full_need_swap", vars);
+                break;
+            case "ram_disk_swap":
+                journeyTracker.setVar(player, "pfn", "0x2");
+                choiceButtonHandler.setRamMixSign("PUT BOOK", "IN FRAME", "", "");
+                speakIfLearner(player, "rooms.ram_room.from_disk_swap_out", vars);
+                break;
+            case "ram_book_placed_swapped":
+                choiceButtonHandler.setRamMixSign("RETRY", "INSTRUCTION", "", "");
+                speakIfLearner(player, "rooms.ram_room.retry_instruction_page_fault", vars);
+                break;
+            case "ram_book_placed_pure_cow":
+                choiceButtonHandler.setRamMixSign("RETRY", "INSTRUCTION", "", "");
+                speakIfLearner(player, "rooms.ram_room.retry_instruction_cow", vars);
+                break;
+            case "ram_after_swap_lazy_loading":
+                choiceButtonHandler.setRamMixSign("PUT BOOK", "IN FRAME", "", "");
+                speakIfLearner(player, "rooms.ram_room.after_swap_for_lazy_loading", vars);
+                break;
+            case "ram_book_placed_lazy_loading":
+                choiceButtonHandler.setRamMixSign("RETRY", "INSTRUCTION", "", "");
+                speakIfLearner(player, "rooms.ram_room.retry_instruction_page_fault", vars);
+                break;
+            case "ram_after_swap_lazy_alloc":
+                choiceButtonHandler.setRamMixSign("RETRY", "INSTRUCTION", "", "");
+                speakIfLearner(player, "rooms.ram_room.after_swap_for_lazy_alloc", vars);
+                break;
+            case "ram_book_placed_lazy_allocation":
+                choiceButtonHandler.setRamMixSign("RETRY", "INSTRUCTION", "", "");
+                speakIfLearner(player, "rooms.ram_room.retry_instruction_page_fault", vars);
                 break;
             case "swap_entered":
                 Journey swapJ = journeyTracker.getJourney(player);
@@ -493,26 +521,21 @@ public class RoomChangeListener implements Listener {
                 if (swapPhase != null) {
                     journeyTracker.setPhase(player, swapPhase);
                     choiceButtonHandler.setRamMixSign("RETRY", "INSTRUCTION", "", "");
-                    Bukkit.getScheduler().runTaskLater(plugin, () ->
-                        speakIfLearner(player, swapDialogue, journeyTracker.getVars(player)), 40L);
+                    speakIfLearner(player, swapDialogue, vars);
                 }
                 break;
             case "swap_after_eviction":
                 Journey swapJourney = journeyTracker.getJourney(player);
                 if (swapJourney == Journey.LAZY_LOADING) {
-                    journeyTracker.setPhase(player, "swap_lazy_loading");
-                    choiceButtonHandler.setRamMixSign("RETRY", "INSTRUCTION", "", "");
-                    Bukkit.getScheduler().runTaskLater(plugin, () ->
-                        speakIfLearner(player, "rooms.ram_room.after_swap_for_lazy_loading",
-                            journeyTracker.getVars(player)), 40L);
+                    journeyTracker.setPhase(player, "ram_after_swap_lazy_loading");
+                    choiceButtonHandler.setRamMixSign("PUT BOOK", "IN FRAME", "", "");
+                    speakIfLearner(player, "rooms.ram_room.after_swap_for_lazy_loading", journeyTracker.getVars(player));
                 } else if (swapJourney == Journey.LAZY_ALLOCATION) {
                     ramRoomManager.placeBookInFrameChest(player, 7);
-                    journeyTracker.setPhase(player, "swap_lazy_alloc");
+                    journeyTracker.setPhase(player, "ram_after_swap_lazy_alloc");
                     ramRoomManager.updateZeroFrameSignOnly(player);
                     choiceButtonHandler.setRamMixSign("RETRY", "INSTRUCTION", "", "");
-                    Bukkit.getScheduler().runTaskLater(plugin, () ->
-                        speakIfLearner(player, "rooms.ram_room.after_swap_for_lazy_alloc",
-                            journeyTracker.getVars(player)), 40L);
+                    speakIfLearner(player, "rooms.ram_room.after_swap_for_lazy_alloc", journeyTracker.getVars(player));
                 } else {
                     choiceButtonHandler.setRamMixSign("PUT BOOK", "IN CHEST", "", "");
                 }

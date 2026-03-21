@@ -2,6 +2,7 @@ package com.oscity.core;
 
 import com.oscity.config.ConfigManager;
 import com.oscity.content.DialogueManager;
+import com.oscity.journey.Journey;
 import com.oscity.mode.PlayerMode;
 import com.oscity.session.JourneyTracker;
 import com.oscity.mechanics.HintSystem;
@@ -134,7 +135,9 @@ public class GuardianInteractionHandler implements Listener {
         new String[]{"Current CPU Mode",                  "permission_chamber.currect_mode"},      // 38
         new String[]{"Dirty Bit",                         "memory.dirty_bit"},                     // 39
         new String[]{"Use Bit",                           "memory.use_bit"},                       // 40
-        new String[]{"Permission Bits",                   "permission_chamber.permission_bits"}    // 41
+        new String[]{"Permission Bits",                   "permission_chamber.permission_bits"},   // 41
+        new String[]{"Why Lights Reset in Swap",          "memory.swap_lights"},                   // 42
+        new String[]{"Why Zeros in New Copy",             "memory.zeros_in_copy"}                  // 43
     );
 
     // ── Pending menu state ────────────────────────────────────────────────────
@@ -142,6 +145,12 @@ public class GuardianInteractionHandler implements Listener {
     private final Map<UUID, Boolean> pendingMenu = new HashMap<>();
     /** Stores the filtered concept indices shown to each player awaiting a concept choice. */
     private final Map<UUID, List<Integer>> pendingConceptIndices = new HashMap<>();
+
+    /** Clears any stale guardian menu state for the player (e.g. when they press a game button). */
+    public void clearPendingState(UUID uuid) {
+        pendingMenu.remove(uuid);
+        pendingConceptIndices.remove(uuid);
+    }
 
     @EventHandler
     public void onMenuChat(io.papermc.paper.event.player.AsyncChatEvent event) {
@@ -229,12 +238,16 @@ public class GuardianInteractionHandler implements Listener {
             case "tlb_after_calculator":
                 return Arrays.asList(0, 1, 2, 3, 4, 14, 30);
             case "calculator_from_tlb":
+            case "calculator_from_tlb_done":
                 return Arrays.asList(3, 4, 15);
             case "calculator_from_lazy_loading":
+            case "calculator_from_lazy_loading_done":
                 return Arrays.asList(3, 4, 28);
+            case "tlb_miss_correct":
             case "library_entrance":
             case "page_directory":
             case "correct_floor":
+            case "acquired_pte":
                 return Arrays.asList(3, 4, 5, 6, 16, 17, 18, 19);
             case "permission_decision":
             case "page_fault_type":
@@ -243,17 +256,45 @@ public class GuardianInteractionHandler implements Listener {
                 return Arrays.asList(7, 9, 10, 11);
             case "lazy_alloc_decision":
             case "lazy_alloc_cow":
+            case "lazy_alloc_before_tp":
                 return Arrays.asList(7, 9, 25, 26, 31, 32);
             case "cow_decision":
+            case "cow_decision_after":
                 return Arrays.asList(9, 27, 31, 32);
             case "lazy_loading_entered":
+            case "lazy_loading_returned":
                 return Arrays.asList(10, 28);
             case "disk_lazy_loading":
+            case "disk_lazy_loading_after_book":
                 return Arrays.asList(10, 11, 28, 29, 39);
             case "disk_swap_retrieval":
+            case "disk_swap_retrieval_after_book":
                 return Arrays.asList(10, 11, 29, 39);
+            // RAM phases — journey-specific concept lists
+            case "ram_tlb_hit_access":
+            case "ram_tlb_miss_access":
+            case "ram_before_finish":
+            case "ram_finish":
+                return Arrays.asList(12, 30, 31, 32);
+            case "ram_disk_swap":
+            case "ram_book_placed_swapped":
+                return Arrays.asList(11, 12, 29, 30, 31, 32);
+            case "ram_after_cow":
+            case "ram_book_placed_pure_cow":
+                return Arrays.asList(9, 12, 27, 30, 31, 32, 43);
+            case "ram_disk_lazy_loading":
+            case "ram_after_swap_lazy_loading":
+            case "ram_book_placed_lazy_loading":
+                return Arrays.asList(10, 12, 28, 29, 30, 31, 32, 39, 40);
+            case "ram_after_cow_alloc":
+            case "ram_after_swap_lazy_alloc":
+            case "ram_book_placed_lazy_allocation":
+                return Arrays.asList(9, 11, 12, 25, 26, 27, 30, 31, 32, 39, 40, 43);
+            case "swap_entered":
+            case "swap_victim_found":
+            case "swap_after_eviction":
+                return Arrays.asList(11, 13, 39, 40, 42);
             default:
-                if (phase.startsWith("ram_")) return Arrays.asList(9, 10, 12, 27, 30, 31, 32);
                 if (phase.startsWith("swap_")) return Arrays.asList(11, 13, 39, 40);
                 return Arrays.asList();
         }
@@ -265,7 +306,7 @@ public class GuardianInteractionHandler implements Listener {
 
     private void replayCurrentDialogue(Player player) {
         String phase = journeyTracker.getPhase(player);
-        String dialoguePath = phaseToEntryDialogue(phase);
+        String dialoguePath = phaseToEntryDialogue(phase, player);
         if (dialoguePath != null && dialogueManager.hasPath(dialoguePath)) {
             boolean noFreeze = NO_FREEZE_DIALOGUE_PREFIXES.stream().anyMatch(dialoguePath::startsWith);
             if (noFreeze) {
@@ -278,25 +319,61 @@ public class GuardianInteractionHandler implements Listener {
         }
     }
 
-    private String phaseToEntryDialogue(String phase) {
+    private String phaseToEntryDialogue(String phase, Player player) {
         switch (phase) {
             case "terminal_spawn":        return "rooms.terminal.initial_spawn";
             case "tlb_spawn":             return "rooms.tlb_room.at_spawn";
             case "tlb_after_calculator":  return "rooms.tlb_room.after_calculator";
-            case "calculator_from_tlb":   return "rooms.calculator_room.from_tlb_spawn";
+            case "calculator_from_tlb":
+            case "calculator_from_tlb_done":          return "rooms.calculator_room.from_tlb_spawn";
+            case "calculator_from_lazy_loading":
+            case "calculator_from_lazy_loading_done": return "rooms.calculator_room.from_lazy_loading_spawn";
             case "library_entrance":      return "rooms.page_table_library.entrance";
+            case "tlb_miss_correct":      return "rooms.tlb_room.after_miss_correct";
             case "page_directory":        return "rooms.page_table_library.page_directory";
+            case "correct_floor":
+            case "acquired_pte":          return "rooms.page_table_library.correct_floor";
             case "permission_decision":   return "rooms.permission_chamber.at_spawn";
             case "page_fault_type":       return "rooms.permission_chamber.page_fault_subtype_prompt";
             case "page_fault_corridor":   return "rooms.page_fault_corridor.at_enter";
-            case "lazy_alloc_decision":   return "rooms.lazy_allocation_room.at_enter";
-            case "lazy_alloc_cow":        return "rooms.lazy_allocation_room.second_visit";
+            case "lazy_alloc_decision":
+            case "lazy_alloc_cow":
+            case "lazy_alloc_before_tp":  return "rooms.lazy_allocation_room.at_enter";
             case "cow_decision":          return "rooms.cow_room.at_spawn";
-            case "lazy_loading_entered":  return "rooms.lazy_loading_room.at_enter";
+            case "cow_decision_after":    return "rooms.cow_room.allocate_copy_correct";
+            case "lazy_loading_entered":
+            case "lazy_loading_returned":  return "rooms.lazy_loading_room.at_enter";
             case "disk_lazy_loading":
-            case "disk_swap_retrieval":   return "rooms.disk_room.at_spawn";
+            case "disk_lazy_loading_after_book":  return "rooms.disk_room.lazy_loading_prompt";
+            case "disk_swap_retrieval":            return "rooms.disk_room.swap_retrieval_prompt";
+            case "disk_swap_retrieval_after_book": return "rooms.disk_room.after_book_retrieved";
+            // RAM phases — journey-specific replay dialogues
+            case "ram_tlb_hit_access":    return "rooms.ram_room.found_frame";
+            case "ram_tlb_miss_access":   return "rooms.ram_room.found_frame_from_pt";
+            case "ram_disk_swap":         return "rooms.ram_room.from_disk_swap_out";
+            case "ram_book_placed_swapped": return "rooms.ram_room.retry_instruction_page_fault";
+            case "ram_after_cow":         return "rooms.ram_room.after_cow_pure";
+            case "ram_book_placed_pure_cow": return "rooms.ram_room.retry_instruction_cow";
+            case "ram_disk_lazy_loading":
+            case "ram_after_cow_alloc":   return "rooms.ram_room.ram_full_need_swap";
+            case "ram_after_swap_lazy_loading": return "rooms.ram_room.after_swap_for_lazy_loading";
+            case "ram_book_placed_lazy_loading": return "rooms.ram_room.retry_instruction_page_fault";
+            case "ram_after_swap_lazy_alloc": return "rooms.ram_room.after_swap_for_lazy_alloc";
+            case "ram_book_placed_lazy_allocation": return "rooms.ram_room.retry_instruction_page_fault";
+            case "ram_before_finish":
+                // Lucky and TLB Miss No Fault: show after_confirm, others show instruction_succeeded
+                Journey journey = journeyTracker.getJourney(player);
+                if (journey == Journey.LUCKY || journey == Journey.TLB_MISS_ALLOW) {
+                    return "rooms.ram_room.after_confirm";
+                }
+                return "rooms.ram_room.instruction_succeeded";
+            case "swap_entered":
+                return "rooms.swap_district.at_spawn";
+            case "swap_victim_found":
+                return "rooms.swap_district.victim_found";
+            case "swap_after_eviction":
+                return "rooms.swap_district.after_eviction";
             default:
-                if (phase.startsWith("ram_")) return "rooms.ram_room.at_spawn";
                 if (phase.startsWith("swap_")) return "rooms.swap_district.at_spawn";
                 return null;
         }

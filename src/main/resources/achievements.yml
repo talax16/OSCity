@@ -52,7 +52,7 @@ unstoppable:
 
 perfect_run:
   display: "Perfect Run"
-  description: "Complete 1 journeys without errors"
+  description: "Complete 3 journeys without errors"
 
 # ─── Curiosity Achievements ───────────────────────────────────────────────────
 curious_mind:

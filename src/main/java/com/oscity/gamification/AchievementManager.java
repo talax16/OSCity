@@ -136,9 +136,9 @@ public class AchievementManager {
             log.info("[Achievement] already unlocked: " + achievementName + " | player=" + player.getName());
         }
     }
-    
+
     /** Show progress report */
     public void showProgress(Player player) {
-        player.sendMessage(sessionManager.getStats().getProgressReport());
+        player.sendMessage(sessionManager.getStats().getProgressReport(configManager.getAchievements()));
     }
 }

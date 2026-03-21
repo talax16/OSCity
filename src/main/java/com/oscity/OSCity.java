@@ -170,6 +170,7 @@ public class OSCity extends JavaPlugin {
             dialogueManager, hintSystem, journeyTracker
         );
         getServer().getPluginManager().registerEvents(guardianHandler, this);
+        choiceButtonHandler.setGuardianHandler(guardianHandler);
 
         roomChangeListener = new RoomChangeListener(
             this, kernelGuardian, roomRegistry, locationRegistry,

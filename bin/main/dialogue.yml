@@ -272,8 +272,8 @@ rooms:
 
     page_fault_subtype_prompt:
       - "Correct! This is a page fault."
-      - "The page is not currently in RAM, but it exists on disk."
-      - "Before you proceed, you must determine which type of page fault this is."
+      - "The page is not currently in RAM."
+      - "Nou must determine which type of page fault this is."
       - "Look at your PTE again. Which type of page fault is this?"
       - "If you are unsure, I can explain it to you."
 
@@ -377,12 +377,6 @@ rooms:
       - "Press the button to teleport to RAM."
 
   ram_room:
-    at_spawn:
-      - "Welcome to RAM—the high-speed memory where active data lives."
-      - "Each frame is labeled with its PFN (Physical Frame Number)."
-      - "Some frames are allocated to processes. Others are free."
-      - "Some frames contain special data like the ZERO FRAME."
-
     found_frame:
       - "Welcome to RAM—the high-speed memory where active data lives."
       - "Each frame is labeled with its PFN (Physical Frame Number)."
@@ -404,7 +398,7 @@ rooms:
       - "Let's try to find you an empty frame to write on your page."
       - "OH NO! The RAM is full, we need to evict one of the frames, but we can't do that randomly!"
       - "Head to the swap district and I will inform you on what to do."
-      - "Press 'Go to Swap District' to proceed."
+      - "Press 'Continue' to proceed."
 
     after_cow_pure:
       - "You've just created a private copy in frame {pfn}."
@@ -414,7 +408,7 @@ rooms:
       - "You can now write what the process wants to this page."
       - "Place the book back in the chest when done."
 
-    retry_instruction_cow:
+    retry_instruction_cow: 
       - "The memory state has been updated."
       - "Press 'RETRY INSTRUCTION' to proceed."
 
@@ -430,8 +424,7 @@ rooms:
 
     after_swap_for_lazy_loading:
       - "Frame {pfn} is now free."
-      - "Load the page you retrieved from disk into this frame."
-      - "Place the book in the free chest."
+      - "Load the page you retrieved from disk into this frame's chest."
 
     after_swap_for_lazy_alloc:
       - "OS allocates frame {pfn} for your process."
@@ -440,11 +433,10 @@ rooms:
       - "Write 'hello' in it as the process requested."
       - "Place the book back in the chest when done."
 
-
     from_disk_swap_out:
-      - "Welcome to RAM—the high-speed memory where active data lives."
+      - "Welcome to RAM, the high-speed memory where active data lives."
       - "Each frame is labeled with its PFN (Physical Frame Number)."
-      - "You have retrieved the page from swap. Now load it into memory."
+      - "You have retrieved the page from the disk. Now load it into memory."
       - "Place the book in any free RAM chest to load the page into a frame."
 
 
@@ -454,8 +446,8 @@ rooms:
       - "The RAM is full. One frame must be evicted to make room."
       - "But the kernel does not evict randomly, it uses the second chance algorithm."
       - "Each frame around this circle holds a clue about how recently it was used."
-      - "Walk the circle staring from 0x01 to 0x06 and figure out which one should be evicted."
-      - "If you are not familiar with the second chance algorithm press 'I'm lost.'"
+      - "Walk the circle staring from 0x01 (the pink house) to 0x06 and figure out which one should be evicted."
+      - "If you are not familiar with the second chance algorithm, ask me for a hint."
 
     victim_found:
       - "USE BIT is already OFF."
@@ -476,7 +468,7 @@ hints:
       - "Look around you. There are two rooms."
       - "The Departure Gate (left) is where you start your journey."
       - "The the Assessment Room (right) has a short quiz that helps me point you to the right journey."
-      - "I recommend starting with the quiz."
+      - "I recommend starting with the quiz if you aren't a beginner."
 
   tlb_room:
     before_calculator:
@@ -491,6 +483,10 @@ hints:
       - "Your VPN is the first 4 bits of your binary address."
       - "If your VPN does not appear on any sign (tag) over the chests, the TLB has no entry for it, that is a miss."
 
+    before_enter_page_table:
+      "Press the button next to the door of the giant book tower to get to your next step."
+
+
   calculator_room:
     from_tlb_hint1:
       - "Your binary address is split into two parts: VPN (first 4 bits) and OFFSET (last 4 bits)."
@@ -502,13 +498,13 @@ hints:
     from_tlb_hint3:
       - "You can press the button to skip, but it's recommended you do the calculations yourself."
 
-    from_tlb_after:
-      - "Press the button to go back to the TLB room and I will help you there."
+    from_tlb_after: # tlb and lazy loading
+      - "Press the button to go back and I will help you there."
 
     from_lazy_loading:
       - "Your goal here is to calculate the PAGE_INDEX—which page of the file to load."
       - "Use the formula on the sign: PAGE_INDEX = floor(ADDRESS / PAGE_SIZE)."
-      - "The values are already on your map. Write the address in the book, drop it in the cone, and the answer will be added to your map."
+      - "The values are already on your map. Write the address in the book, drop it in the hopper, and the answer will be added to your map."
 
   page_table_library:
     page_directory:
@@ -520,6 +516,9 @@ hints:
 
     wrong_floor:
       - "Check your TABLE bits again—they are the last 2 bits of your VPN."
+    
+    acquired_pte:
+      - "Press the button to make your decision in the Permission Chamber."
 
   permission_chamber:
     decision:
@@ -544,7 +543,8 @@ hints:
   lazy_allocation_room:
     first_visit:
       - "The page never existed before—it's being created fresh."
-      - "Therefore, you need to ALLOCATE a new frame and ZERO it."
+      - "Therefore, you need to ALLOCATE a new frame.
+      - "The OS will map the process to the shared Zero Frame as a placeholder."
       - "Swapping from disk doesn't make sense for a page that never existed."
 
     second_visit:
@@ -552,13 +552,19 @@ hints:
       - "Even though this frame is now yours, the kernel marked it read-only as an optimisation."
       - "When you try to write, the read-only flag triggers a special kernel mechanism."
       - "Think about what the kernel needs to do before the write can proceed."
+    
+    go_to_cow:
+      - "Press the button to COW and I will meet you there."
 
   cow_room:
     lost:
       - "You wanted to write to a shared, read-only page."
       - "The kernel has two choices:"
-      - "  1. Give you a private copy (COW)"
-      - "  2. Deny the write and terminate—too harsh."
+      - "  1. Give you a private copy to be able to write on it (COW)."
+      - "  2. Deny the write and terminate (too harsh...)."
+    
+    go_to_ram:
+      - "Press the button to the RAM and I will meet you there."
 
   lazy_loading_room:
     clues:
@@ -573,6 +579,9 @@ hints:
       - "FILE name → Look up in FILE TABLE → Get starting disk block (A, B, C, etc.)"
       - "ADDRESS → Already calculated PAGE_INDEX (from earlier)"
 
+    lazy_loading_after_book: # and swapped out
+      - "Press the button to teleport to the RAM."
+
     swap_out:
       - "Your PTE contains: IN_SWAP=1, SWAP_SLOT={slot}"
       - "Go directly to the SWAP SPACE section."
@@ -583,21 +592,40 @@ hints:
     general:
       - "Look at the frame numbers (PFN) on the walls."
       - "Find frame {pfn}."
-      - "Read the label on that frame—it will tell you what process owns it."
+      - "Read the label on that frame, it will tell you what process owns it."
 
     write:
       - "Check your map for what the process wants to write."
       - "Open the chest and take out the book."
       - "Write what the process requested."
       - "Make sure to PUT THE BOOK BACK before pressing buttons."
+    
+    swap:
+      - "Press the button to go to the Swap District."
+    
+    place_book:
+      - "Place the retrieved page you got from the disk into the free frame."
+    
+    retry_instruction:
+      - "Press retry instruction to update the memory state."
+    
+    finish:
+      - "You have completed your task! Press Finish to go to the End Terminal."
 
   swap_district:
     lost:
       - "The kernel uses the CLOCK algorithm to find a victim:"
-      - "  1. Walk around the circle like clock hands."
-      - "  2. Each frame (house) has a USE BIT symbolised as a red torch."
-      - "  3. If USE BIT is ON: flip it OFF and move on."
-      - "  4. If USE BIT is OFF: this is your victim!"
+      - "  1. Start from the pink house."
+      - "  2. Follow the arrows to walk around the circle like clock hands."
+      - "  3. Each frame (house) has a USE BIT symbolised as a red torch."
+      - "  4. If USE BIT is ON: flip it OFF (by pressing the button next to it) and move on."
+      - "  5. If USE BIT is OFF: this is your victim!"
+    
+    victim_found:
+      - "You have found the victim! Press on the same button again to evict it."
+    
+    victim_evicted:
+      - "The frame has been successfully evicted! Press the button in the middle of the platform to continue."
 
 # ─── Feedback for correct answers ────────────────────────────────────────────
 feedback:
@@ -666,12 +694,14 @@ explanations:
     swap_what: "Disk storage used as overflow for RAM. Kernel moves less-used pages from RAM to disk to free up space for active pages."
     swap_vs_file: "File storage is permanent and user-managed. Swap space is temporary and kernel-managed—organised by slot number."
     ram_what: "Random Access Memory. Fast primary memory. Nanosecond access. Limited capacity. Volatile. Divided into frames (each = one page size)."
-    pfn_why: "1- Identification and retrieval: kernel uses PFN to find pages immediately. 2- Mapping: PTE stores PFN for VPN→PFN translation. 3- Management: tracking free/allocated frames."
+    pfn_why: "1- Identification and retrieval: kernel uses PFN to find pages immediately. \n2- Mapping: PTE stores PFN for VPN→PFN translation. \n3- Management: tracking free/allocated frames."
     clock_algo: "Frames in a circle. Each has a USE BIT (red torch). ON when you pass it = turn it OFF (second chance). OFF when you pass it = that's the victim!"
     zero_frame: "Zero frame: A special shared frame between processes filled entirely with zeros. The OS uses it as a placeholder for newly allocated pages that haven't been written to yet, saving memory by not allocating a real frame until necessary."
     private_frame: "Private frame: A frame that belongs exclusively to one process. The OS allocates a private frame whenever a process needs its own copy of data, for example, when a process wants to write to a read-only page."
     dirty_bit: "Dirty bit: Set to 1 when a page has been written to. When evicting a dirty page, the OS must write it to the swap space in disk first. \nClean pages (dirty = 0) can be discarded immediately since the disk already has the latest copy."
     use_bit: "Use bit: Set to 1 by hardware whenever a page is accessed. The page replacement algorithm checks this bit to determine which pages are actively being used. \nPages with use bit = 0 haven't been accessed recently and are candidates for eviction."
+    swap_lights: "The lights turn on after the second round because of context switching. When the OS switches between processes, each process accesses its pages, setting their use bits back to 1."
+    zeros_in_copy: "Why are there zeros in the new copy? Because copy-on-write (COW) copies the contents of the original page. Since you were mapped to the zero frame, the OS copied those zeros into your new private frame."
 
 # ─── Guardian meta-responses (instant, no freeze) ────────────────────────────
 guardian:

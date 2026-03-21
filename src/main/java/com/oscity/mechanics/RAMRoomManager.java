@@ -147,7 +147,7 @@ public class RAMRoomManager {
     private FrameState[] getSwappedOutStates(String phase) {
         FrameState[] states = new FrameState[9];
         
-        if ("disk_swap_retrieval".equals(phase) || "swap_entered".equals(phase)) {
+        if ("ram_disk_swap".equals(phase) || "ram_book_placed_swapped".equals(phase) || "swap_entered".equals(phase)) {
             // Before loading from swap
             states[0] = new FrameState("0x0", "Process 3", "data");
             states[1] = new FrameState("0x1", "Process 0", "data");
@@ -196,7 +196,7 @@ public class RAMRoomManager {
     private FrameState[] getLazyLoadingStates(String phase) {
         FrameState[] states = new FrameState[9];
         
-        if ("lazy_loading_entered".equals(phase) || "calculator_from_lazy_loading".equals(phase)) {
+        if ("ram_disk_lazy_loading".equals(phase)) {
             // Before swap - RAM full
             states[0] = new FrameState("0x0", "Process 3", "data");
             states[1] = new FrameState("0x1", "Process 0", "data");
@@ -207,7 +207,7 @@ public class RAMRoomManager {
             states[6] = new FrameState("0x6", "Process 8", "data");
             states[7] = new FrameState("0x7", "Process 9", "data");
             states[8] = new FrameState("0x9", "ZERO FRAME", "(shared by Process 2, 7)");
-        } else if ("swap_entered".equals(phase) || "swap_after_eviction".equals(phase)) {
+        } else if ("ram_after_swap_lazy_loading".equals(phase) || "swap_after_eviction".equals(phase)) {
             // After eviction, before load
             states[0] = new FrameState("0x0", "Process 3", "data");
             states[1] = new FrameState("0x1", "Process 0", "data");
@@ -237,8 +237,8 @@ public class RAMRoomManager {
     private FrameState[] getLazyAllocationStates(String phase) {
         FrameState[] states = new FrameState[9];
         
-        if ("lazy_alloc_decision".equals(phase)) {
-            // Phase 1 - Before allocation
+        if ("ram_after_cow_alloc".equals(phase)) {
+            // First RAM visit - full RAM, before swap
             states[0] = new FrameState("0x0", "Process 3", "data");
             states[1] = new FrameState("0x1", "Process 0", "data");
             states[2] = new FrameState("0x2", "Process 3", "data");
@@ -248,9 +248,8 @@ public class RAMRoomManager {
             states[6] = new FrameState("0x6", "Process 8", "data");
             states[7] = new FrameState("0x7", "Process 9", "data");
             states[8] = new FrameState("0x9", "ZERO FRAME", "(shared by Process 2, 4)");
-        } else if ("swap_entered".equals(phase) || "swap_after_eviction".equals(phase)) {
-            // Phase 2 - After eviction, before COW load
-            // Frame 0x6 is now FREE (evicted Process 8), Process 7 has triggered COW - not sharing
+        } else if ("ram_after_swap_lazy_alloc".equals(phase)) {
+            // After swap, frame 0x6 evicted — Process 7 about to get private frame
             states[0] = new FrameState("0x0", "Process 3", "data");
             states[1] = new FrameState("0x1", "Process 0", "data");
             states[2] = new FrameState("0x2", "Process 3", "data");
@@ -258,30 +257,6 @@ public class RAMRoomManager {
             states[4] = new FrameState("0x4", "Process 5", "data");
             states[5] = new FrameState("0x5", "Process 6", "data");
             states[6] = new FrameState("0x6", "FREE", "");
-            states[7] = new FrameState("0x7", "Process 9", "data");
-            states[8] = new FrameState("0x9", "ZERO FRAME", "(shared by Process 2, 4)");
-        } else if ("swap_lazy_alloc".equals(phase)) {
-            // Phase 2 - After swap, Process 7 about to get private frame 0x6
-            // Zero frame: Process 7 has triggered COW, no longer sharing
-            states[0] = new FrameState("0x0", "Process 3", "data");
-            states[1] = new FrameState("0x1", "Process 0", "data");
-            states[2] = new FrameState("0x2", "Process 3", "data");
-            states[3] = new FrameState("0x3", "Process 1", "data");
-            states[4] = new FrameState("0x4", "Process 5", "data");
-            states[5] = new FrameState("0x5", "Process 6", "data");
-            states[6] = new FrameState("0x6", "FREE", "");
-            states[7] = new FrameState("0x7", "Process 9", "data");
-            states[8] = new FrameState("0x9", "ZERO FRAME", "(shared by Process 2, 4)");
-        } else if ("ram_after_cow".equals(phase)) {
-            // Phase 2 - After COW decision, before swap
-            // Process 7 has triggered COW (READ_ONLY=1) - no longer considered sharing
-            states[0] = new FrameState("0x0", "Process 3", "data");
-            states[1] = new FrameState("0x1", "Process 0", "data");
-            states[2] = new FrameState("0x2", "Process 3", "data");
-            states[3] = new FrameState("0x3", "Process 1", "data");
-            states[4] = new FrameState("0x4", "Process 5", "data");
-            states[5] = new FrameState("0x5", "Process 6", "data");
-            states[6] = new FrameState("0x6", "Process 8", "data");
             states[7] = new FrameState("0x7", "Process 9", "data");
             states[8] = new FrameState("0x9", "ZERO FRAME", "(shared by Process 2, 4)");
         } else {

@@ -16,7 +16,7 @@ public class JourneyManager {
 
     /** Next phase after the player confirms a frame in the RAM Room (allow_access). */
     public static String nextPhaseAfterRamConfirm(Journey j) {
-        return "ram_finish";
+        return "ram_before_finish";
     }
 
     /** RAM mix-sign text [l1, l2, l3, l4] after allow_access confirm. */
@@ -65,8 +65,8 @@ public class JourneyManager {
 
     /** Phase to set when returning to RAM from the Swap District, or null. */
     public static String phaseAfterSwapInRam(Journey j) {
-        if (j == Journey.LAZY_LOADING)    return "swap_lazy_loading";
-        if (j == Journey.LAZY_ALLOCATION) return "swap_lazy_alloc";
+        if (j == Journey.LAZY_LOADING)    return "ram_after_swap_lazy_loading";
+        if (j == Journey.LAZY_ALLOCATION) return "ram_after_swap_lazy_alloc";
         return null;
     }
 

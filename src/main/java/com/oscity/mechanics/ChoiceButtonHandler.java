@@ -3,6 +3,7 @@ package com.oscity.mechanics;
 import com.oscity.OSCity;
 import com.oscity.content.DialogueManager;
 import com.oscity.content.QuestionBank;
+import com.oscity.core.GuardianInteractionHandler;
 import com.oscity.gamification.ProgressTracker;
 import com.oscity.mode.PlayerMode;
 import com.oscity.persistence.SQLiteStudyDatabase;
@@ -58,7 +59,6 @@ import java.util.UUID;
  *   "lazy_alloc_decision" → allocateLazy / swapLazy
  *   "lazy_alloc_cow"      → cowLazyAlloc / btnLazyAlloc / nothing
  *   "cow_decision"        → allocateCow / terminate
- *   "going_to_cow"        → btnLazyAlloc (TP to COW)
  */
 public class ChoiceButtonHandler implements Listener {
 
@@ -72,6 +72,11 @@ public class ChoiceButtonHandler implements Listener {
     private final SwapClockManager swapClockManager;
     private final JourneyMapManager journeyMapManager;
     private final PageTableManager pageTableManager;
+    private GuardianInteractionHandler guardianHandler;
+
+    public void setGuardianHandler(GuardianInteractionHandler handler) {
+        this.guardianHandler = handler;
+    }
 
     // Map: button location → config key name
     private final Map<Location, String> buttons = new HashMap<>();
@@ -235,6 +240,7 @@ public class ChoiceButtonHandler implements Listener {
         event.setCancelled(true);
 
         Player player = event.getPlayer();
+        if (guardianHandler != null) guardianHandler.clearPendingState(player.getUniqueId());
         String phase = tracker.getPhase(player);
         Journey journey = tracker.getJourney(player);
         Map<String, String> vars = tracker.getVars(player);
@@ -274,6 +280,7 @@ public class ChoiceButtonHandler implements Listener {
                 dialogue.speakInstant(player, "guardian.meta.chose_alone", null);
                 return;
             }
+            if ("calculator_from_tlb_done".equals(phase) || "calculator_from_lazy_loading_done".equals(phase)) return;
             calculatorListener.skipCalculation(player);
             return;
         }
@@ -312,7 +319,7 @@ public class ChoiceButtonHandler implements Listener {
         if ("hit".equals(buttonKey)) {
             if ("tlb_hit_quiz_done".equals(tracker.getPhase(player))) {
                 // Quiz already answered — proceed to RAM
-                tracker.setPhase(player, "ram_allow_access");
+                tracker.setPhase(player, "ram_tlb_hit_access");
                 teleportPlayer(player, "ramRoom");
             } else {
                 handleTLBDecision(player, true);
@@ -366,16 +373,15 @@ public class ChoiceButtonHandler implements Listener {
             case "lazy_alloc_cow":
                 handleLazyAllocCow(player, buttonKey, journey, vars);
                 break;
-            case "cow_decision":
-                handleCowDecision(player, buttonKey, journey, vars);
-                break;
-            case "going_to_cow":
-                // After confirming cowLazyAlloc in Lazy Alloc Room, btnLazyAlloc → TP to COW
+            case "lazy_alloc_before_tp":
                 if ("btnLazyAlloc".equals(buttonKey)) {
                     teleportPlayer(player, "cowRoom");
                 }
                 break;
-            case "page_directory":
+            case "cow_decision":
+                handleCowDecision(player, buttonKey, journey, vars);
+                break;
+            case "tlb_miss_correct":
                 // Page table door button - only works after answering TLB miss quiz
                 if ("toPageTable".equals(buttonKey)) {
                     // Check journey-specific prerequisites
@@ -453,7 +459,7 @@ public class ChoiceButtonHandler implements Listener {
                         // Check for WRITTEN_BOOK (from disk room swap slot 0 or treasure_map for LAZY_LOADING)
                         else if (item.getType() == org.bukkit.Material.WRITTEN_BOOK
                                 && item.hasItemMeta()
-                                && ("disk_swap_retrieval".equals(phase) || "swap_after_eviction".equals(phase) || "swap_lazy_loading".equals(phase))) {
+                                && ("ram_disk_swap".equals(phase) || "swap_after_eviction".equals(phase) || "ram_after_swap_lazy_loading".equals(phase))) {
                             org.bukkit.inventory.meta.BookMeta bookMeta = (org.bukkit.inventory.meta.BookMeta) item.getItemMeta();
                             String displayName = bookMeta.getDisplayName();
                             String title = bookMeta.getTitle();
@@ -482,7 +488,7 @@ public class ChoiceButtonHandler implements Listener {
                         // or COW page for LAZY_ALLOCATION journey after swap)
                         else if ((item.getType() == org.bukkit.Material.WRITTEN_BOOK || item.getType() == org.bukkit.Material.WRITABLE_BOOK)
                                 && item.hasItemMeta()
-                                && ("ram_after_cow".equals(phase) || "swap_after_eviction".equals(phase) || "swap_lazy_alloc".equals(phase))) {
+                                && ("ram_after_cow".equals(phase) || "swap_after_eviction".equals(phase) || "ram_after_swap_lazy_alloc".equals(phase))) {
                             org.bukkit.inventory.meta.BookMeta bookMeta = (org.bukkit.inventory.meta.BookMeta) item.getItemMeta();
                             String displayName = bookMeta.getDisplayName();
                             String title = bookMeta.getTitle();
@@ -511,19 +517,21 @@ public class ChoiceButtonHandler implements Listener {
 
                         if (validBook) {
                             plugin.getLogger().info("[RAMChest] ENTERING validBook block, phase=" + phase);
-                            // Track which book was placed
-                            if ("disk_swap_retrieval".equals(phase) || "swap_after_eviction".equals(phase) || "swap_lazy_loading".equals(phase)) {
+                            // Track which book was placed and transition to the "book placed" phase
+                            if ("ram_disk_swap".equals(phase) || "swap_after_eviction".equals(phase) || "ram_after_swap_lazy_loading".equals(phase)) {
                                 plugin.getLogger().info("[RAMChest] MATCHED swap phase: " + phase);
                                 tracker.setVar(player, "swapBookPlaced", "true");
                                 plugin.getLogger().info("[RAMChest] Set swapBookPlaced=true, value now: " + tracker.getVar(player, "swapBookPlaced"));
-                                if ("disk_swap_retrieval".equals(phase)) {
-                                    // SWAPPED_OUT: update PTE now and speak retry_instruction
+                                if ("ram_disk_swap".equals(phase)) {
+                                    // SWAPPED_OUT: update PTE now, transition phase, speak retry_instruction
                                     tracker.setVar(player, "ptePresent", "1");
                                     tracker.setVar(player, "pteRead", "1");
                                     tracker.setVar(player, "pteWrite", "1");
                                     tracker.setVar(player, "pteReadOnly", "0");
                                     tracker.setVar(player, "pteInSwap", "0");
                                     pageTableManager.updatePteMap(player);
+                                    tracker.setPhase(player, "ram_book_placed_swapped");
+                                    updateSign("ramRoom.mixSign", "RETRY", "INSTRUCTION", "", "");
                                     Bukkit.getScheduler().runTaskLater(plugin, () -> {
                                         String pfn = tracker.getVar(player, "pfn");
                                         String vpn = tracker.getVar(player, "vpn");
@@ -533,14 +541,16 @@ public class ChoiceButtonHandler implements Listener {
                                             "{vpn}", vpn, "{pfn}", pfn));
                                         dialogue.speak(player, "rooms.ram_room.retry_instruction_page_fault", tracker.getVars(player));
                                     }, 40L);
-                                } else if ("swap_lazy_loading".equals(phase)) {
-                                    // LAZY_LOADING: update PTE — pfn already set from TLB room setup
+                                } else if ("ram_after_swap_lazy_loading".equals(phase)) {
+                                    // LAZY_LOADING: update PTE — pfn already set from TLB room setup, transition phase
                                     tracker.setVar(player, "ptePresent", "1");
                                     tracker.setVar(player, "pteRead", "1");
                                     tracker.setVar(player, "pteWrite", "1");
                                     tracker.setVar(player, "pteReadOnly", "0");
                                     tracker.setVar(player, "pteInSwap", "0");
                                     pageTableManager.updatePteMap(player);
+                                    tracker.setPhase(player, "ram_book_placed_lazy_loading");
+                                    updateSign("ramRoom.mixSign", "RETRY", "INSTRUCTION", "", "");
                                     Bukkit.getScheduler().runTaskLater(plugin, () -> {
                                         String pfn = tracker.getVar(player, "pfn");
                                         String vpn = tracker.getVar(player, "vpn");
@@ -553,11 +563,11 @@ public class ChoiceButtonHandler implements Listener {
                                 } else {
                                     player.sendMessage(plugin.getConfigManager().getMessage("feedback.ram_page_placed"));
                                 }
-                            } else if ("ram_after_cow".equals(phase) || "swap_lazy_alloc".equals(phase)) {
-                                tracker.setVar(player, "cowBookPlaced", "true");
+                            } else if ("ram_after_cow".equals(phase) || "ram_after_swap_lazy_alloc".equals(phase)) {
                                 Journey playerJourney = tracker.getJourney(player);
                                 if (playerJourney == Journey.PURE_COW) {
-                                    // PURE_COW: TLB update system message + retry_instruction
+                                    // PURE_COW: transition phase, TLB update + retry_instruction
+                                    tracker.setPhase(player, "ram_book_placed_pure_cow");
                                     org.bukkit.Bukkit.getScheduler().runTaskLater(plugin, () -> {
                                         String pfn = tracker.getVar(player, "pfn");
                                         String vpn = tracker.getVar(player, "vpn");
@@ -566,7 +576,7 @@ public class ChoiceButtonHandler implements Listener {
                                         dialogue.speak(player, "rooms.ram_room.retry_instruction_cow", tracker.getVars(player));
                                     }, 40L);
                                 } else if (playerJourney == Journey.LAZY_ALLOCATION) {
-                                    // LAZY_ALLOCATION: update PFN + PTE now, then send system messages + retry_instruction
+                                    // LAZY_ALLOCATION: update PFN + PTE, transition phase, retry_instruction
                                     String pfnCow = tracker.getVar(player, "pfnCow");
                                     if (!"?".equals(pfnCow)) {
                                         tracker.setVar(player, "pfn", pfnCow);
@@ -581,6 +591,7 @@ public class ChoiceButtonHandler implements Listener {
                                     tracker.setVar(player, "pteAnon", "0");
                                     tracker.setVar(player, "pteInSwap", "0");
                                     pageTableManager.updatePteMap(player);
+                                    tracker.setPhase(player, "ram_book_placed_lazy_allocation");
                                     org.bukkit.Bukkit.getScheduler().runTaskLater(plugin, () -> {
                                         String pfn = tracker.getVar(player, "pfn");
                                         String vpn = tracker.getVar(player, "vpn");
@@ -660,6 +671,7 @@ public class ChoiceButtonHandler implements Listener {
                 if (displayName != null && displayName.contains("PTE Map")
                         && displayName.contains("Chest" + correctChestIndex)) {
                     pteChamberDialogueSent.add(uuid);
+                    tracker.setPhase(player, "acquired_pte");
                     speakIfLearner(player, "rooms.page_table_library.tp_permission_chamber", tracker.getVars(player));
                     break;
                 }
@@ -701,7 +713,10 @@ public class ChoiceButtonHandler implements Listener {
             }
             if (correct) {
                 diskBookDialogueSent.add(uuid);
-                if (!"disk_lazy_loading".equals(phase)) {
+                if ("disk_lazy_loading".equals(phase)) {
+                    tracker.setPhase(player, "disk_lazy_loading_after_book");
+                } else {
+                    tracker.setPhase(player, "disk_swap_retrieval_after_book");
                     speakIfLearner(player, "rooms.disk_room.after_book_retrieved", tracker.getVars(player));
                 }
                 break;
@@ -1119,7 +1134,8 @@ public class ChoiceButtonHandler implements Listener {
      */
     private void handleRamMixButton(Player player, String phase, Journey journey) {
         switch (phase) {
-            case "ram_allow_access":
+            case "ram_tlb_hit_access":
+            case "ram_tlb_miss_access":
                 String nextPhase = JourneyManager.nextPhaseAfterRamConfirm(journey);
                 String[] sign = JourneyManager.ramSignAfterConfirm(journey);
                 tracker.setPhase(player, nextPhase);
@@ -1130,69 +1146,65 @@ public class ChoiceButtonHandler implements Listener {
                 break;
 
             case "ram_after_cow":
-                if (JourneyManager.needsSwapAfterCow(journey)) {
-                    // CONTINUE → TP to Swap District (Lazy Allocation path)
-                    teleportPlayer(player, "swapDistrict");
-                } else {
-                    // Pure COW: Check if player has placed the book back
-                    String cowBookPlaced = tracker.getVar(player, "cowBookPlaced");
-                    if ("true".equals(cowBookPlaced)) {
-                        // Book placed: show success dialogue then set FINISH
-                        tracker.setPhase(player, "ram_finish");
-                        updateSign("ramRoom.mixSign", "FINISH", "", "", "");
-                        Bukkit.getScheduler().runTaskLater(plugin, () ->
-                            dialogue.speak(player, "rooms.ram_room.instruction_succeeded", tracker.getVars(player)), 5L);
-                    } else {
-                        // Check if player has the Process 5 book (private copy) in inventory
-                        boolean hasProcess5Book = false;
-                        for (org.bukkit.inventory.ItemStack item : player.getInventory().getContents()) {
-                            if (item != null && (item.getType() == org.bukkit.Material.WRITTEN_BOOK || item.getType() == org.bukkit.Material.WRITABLE_BOOK)
-                                    && item.hasItemMeta()) {
-                                // For Pure COW, any writable/written book in inventory is the Process 5 book
-                                hasProcess5Book = true;
-                                break;
-                            }
-                        }
-                        if (hasProcess5Book) {
-                            player.sendMessage(plugin.getConfigManager().getMessage("errors.ram.write_hello_and_place"));
-                        } else {
-                            player.sendMessage(plugin.getConfigManager().getMessage("errors.ram.take_book_write_place"));
-                        }
+                // Pure COW only: book must be placed first (phase would have changed to ram_book_placed_pure_cow)
+                boolean hasProcess5Book = false;
+                for (org.bukkit.inventory.ItemStack item : player.getInventory().getContents()) {
+                    if (item != null && (item.getType() == org.bukkit.Material.WRITTEN_BOOK || item.getType() == org.bukkit.Material.WRITABLE_BOOK)
+                            && item.hasItemMeta()) {
+                        hasProcess5Book = true;
+                        break;
                     }
+                }
+                if (hasProcess5Book) {
+                    player.sendMessage(plugin.getConfigManager().getMessage("errors.ram.write_hello_and_place"));
+                } else {
+                    player.sendMessage(plugin.getConfigManager().getMessage("errors.ram.take_book_write_place"));
                 }
                 break;
 
-            case "disk_swap_retrieval":
-                // SWAPPED_OUT: PTE already updated on book placement; retry = success → FINISH
-                String bookPlacedDisk = tracker.getVar(player, "swapBookPlaced");
-                if ("true".equals(bookPlacedDisk)) {
-                    tracker.setPhase(player, "ram_finish");
-                    updateSign("ramRoom.mixSign", "FINISH", "", "", "");
-                    Bukkit.getScheduler().runTaskLater(plugin, () ->
-                        dialogue.speak(player, "rooms.ram_room.instruction_succeeded", tracker.getVars(player)), 5L);
-                } else {
-                    // Check if player has the swap book in inventory and needs to place it
-                    boolean hasSwapBook = false;
-                    for (org.bukkit.inventory.ItemStack item : player.getInventory().getContents()) {
-                        if (item != null && item.getType() == org.bukkit.Material.WRITTEN_BOOK
-                                && item.hasItemMeta()) {
-                            String displayName = item.getItemMeta().getDisplayName();
-                            if (displayName != null && displayName.contains("Swap Slot 0")) {
-                                hasSwapBook = true;
-                                break;
-                            }
+            case "ram_book_placed_pure_cow":
+                // Pure COW: book was placed correctly → success
+                tracker.setPhase(player, "ram_before_finish");
+                updateSign("ramRoom.mixSign", "FINISH", "", "", "");
+                Bukkit.getScheduler().runTaskLater(plugin, () ->
+                    dialogue.speak(player, "rooms.ram_room.instruction_succeeded", tracker.getVars(player)), 5L);
+                break;
+
+            case "ram_disk_swap":
+                // SWAPPED_OUT: book not yet placed → show error
+                boolean hasSwapBook = false;
+                for (org.bukkit.inventory.ItemStack item : player.getInventory().getContents()) {
+                    if (item != null && item.getType() == org.bukkit.Material.WRITTEN_BOOK
+                            && item.hasItemMeta()) {
+                        String displayName = item.getItemMeta().getDisplayName();
+                        if (displayName != null && displayName.contains("Swap Slot 0")) {
+                            hasSwapBook = true;
+                            break;
                         }
                     }
-                    if (hasSwapBook) {
-                        player.sendMessage(plugin.getConfigManager().getMessage("errors.ram.place_swap_book"));
-                    } else {
-                        player.sendMessage(plugin.getConfigManager().getMessage("errors.ram.retrieve_swap_page"));
-                    }
+                }
+                if (hasSwapBook) {
+                    player.sendMessage(plugin.getConfigManager().getMessage("errors.ram.place_swap_book"));
+                } else {
+                    player.sendMessage(plugin.getConfigManager().getMessage("errors.ram.retrieve_swap_page"));
                 }
                 break;
 
-            case "disk_lazy_loading":
+            case "ram_book_placed_swapped":
+                // SWAPPED_OUT: book placed → success
+                tracker.setPhase(player, "ram_before_finish");
+                updateSign("ramRoom.mixSign", "FINISH", "", "", "");
+                Bukkit.getScheduler().runTaskLater(plugin, () ->
+                    dialogue.speak(player, "rooms.ram_room.instruction_succeeded", tracker.getVars(player)), 5L);
+                break;
+
+            case "ram_disk_lazy_loading":
                 // LAZY_LOADING from disk: CONTINUE → TP to Swap District
+                teleportPlayer(player, "swapDistrict");
+                break;
+
+            case "ram_after_cow_alloc":
+                // LAZY_ALLOCATION first RAM visit: RAM full → TP to Swap District
                 teleportPlayer(player, "swapDistrict");
                 break;
 
@@ -1217,7 +1229,7 @@ public class ChoiceButtonHandler implements Listener {
                     // Update journey map
                     journeyMapManager.updateMap(player);
 
-                    tracker.setPhase(player, "ram_finish");
+                    tracker.setPhase(player, "ram_before_finish");
                     updateSign("ramRoom.mixSign", "FINISH", "", "", "");
                 } else if (mixJourney == Journey.LAZY_ALLOCATION) {
                     // LAZY_ALLOCATION: Book not placed or content wrong
@@ -1241,7 +1253,7 @@ public class ChoiceButtonHandler implements Listener {
                     // Update PTE map
                     pageTableManager.updatePteMap(player);
                     
-                    tracker.setPhase(player, "ram_finish");
+                    tracker.setPhase(player, "ram_before_finish");
                     updateSign("ramRoom.mixSign", "FINISH", "", "", "");
                 } else {
                     plugin.getLogger().info("[RamMix] swap_after_eviction: bookPlaced=false, showing warning");
@@ -1249,52 +1261,38 @@ public class ChoiceButtonHandler implements Listener {
                 }
                 break;
 
-            case "swap_lazy_alloc":
-                // LAZY_ALLOCATION: PTE already updated on book placement; RETRY validates then FINISH
-                Journey lazyMixJourney = tracker.getJourney(player);
-                plugin.getLogger().info("[RamMix] swap_lazy_alloc: Checking book in chest for " + lazyMixJourney);
-
-                if (lazyMixJourney == Journey.LAZY_ALLOCATION) {
-                    if (!isBookInChest7(player)) {
-                        plugin.getLogger().info("[RamMix] swap_lazy_alloc: Book not in chest 0x6");
-                        player.sendMessage(plugin.getConfigManager().getMessage("errors.ram.put_book_back"));
-                        return;
-                    }
-                    String bookContent = getBookContentFromChest7(player);
-                    plugin.getLogger().info("[RamMix] swap_lazy_alloc: Book content = '" + bookContent + "'");
-                    if (!"hello".equalsIgnoreCase(bookContent)) {
-                        plugin.getLogger().info("[RamMix] swap_lazy_alloc: Book content incorrect");
-                        player.sendMessage(plugin.getConfigManager().getMessage("errors.ram.write_correct_content"));
-                        return;
-                    }
-                    tracker.setPhase(player, "ram_finish");
-                    updateSign("ramRoom.mixSign", "FINISH", "", "", "");
-                    Bukkit.getScheduler().runTaskLater(plugin, () ->
-                        dialogue.speak(player, "rooms.ram_room.instruction_succeeded", tracker.getVars(player)), 5L);
-                } else {
-                    plugin.getLogger().info("[RamMix] swap_lazy_alloc: Wrong journey");
-                    player.sendMessage(plugin.getConfigManager().getMessage("errors.ram.put_book_back"));
-                }
+            case "ram_after_swap_lazy_alloc":
+                // LAZY_ALLOCATION after swap: book must be placed first (phase changes to ram_book_placed_lazy_allocation on placement)
+                plugin.getLogger().info("[RamMix] ram_after_swap_lazy_alloc: book not yet placed");
+                player.sendMessage(plugin.getConfigManager().getMessage("errors.ram.put_book_back"));
                 break;
 
-            case "swap_lazy_loading":
-                // LAZY_LOADING: PTE already updated on book placement; retry = success → FINISH
-                String lazyBookPlaced = tracker.getVar(player, "swapBookPlaced");
-                plugin.getLogger().info("[RamMix] swap_lazy_loading: swapBookPlaced=" + lazyBookPlaced);
-                if ("true".equals(lazyBookPlaced)) {
-                    tracker.setPhase(player, "ram_finish");
-                    updateSign("ramRoom.mixSign", "FINISH", "", "", "");
-                    Bukkit.getScheduler().runTaskLater(plugin, () ->
-                        dialogue.speak(player, "rooms.ram_room.instruction_succeeded", tracker.getVars(player)), 5L);
-                } else {
-                    plugin.getLogger().info("[RamMix] swap_lazy_loading: book not placed, showing warning");
-                    player.sendMessage(plugin.getConfigManager().getMessage("errors.ram.place_disk_file"));
-                }
+            case "ram_book_placed_lazy_allocation":
+                // LAZY_ALLOCATION: book was placed correctly → success
+                tracker.setPhase(player, "ram_before_finish");
+                updateSign("ramRoom.mixSign", "FINISH", "", "", "");
+                Bukkit.getScheduler().runTaskLater(plugin, () ->
+                    dialogue.speak(player, "rooms.ram_room.instruction_succeeded", tracker.getVars(player)), 5L);
                 break;
 
-            case "ram_finish":
-                // FINISH → mark journey complete and TP to End Terminal
-                plugin.getLogger().info("[RamMix] ram_finish: journey=" + journey + " progress=" + (progress != null));
+            case "ram_after_swap_lazy_loading":
+                // LAZY_LOADING after swap: book must be placed first (phase changes to ram_book_placed_lazy_loading on placement)
+                plugin.getLogger().info("[RamMix] ram_after_swap_lazy_loading: book not yet placed");
+                player.sendMessage(plugin.getConfigManager().getMessage("errors.ram.place_disk_file"));
+                break;
+
+            case "ram_book_placed_lazy_loading":
+                // LAZY_LOADING: book was placed correctly → success
+                tracker.setPhase(player, "ram_before_finish");
+                updateSign("ramRoom.mixSign", "FINISH", "", "", "");
+                Bukkit.getScheduler().runTaskLater(plugin, () ->
+                    dialogue.speak(player, "rooms.ram_room.instruction_succeeded", tracker.getVars(player)), 5L);
+                break;
+
+            case "ram_before_finish":
+                // FINISH pressed → set ram_finish, mark journey complete, and TP to End Terminal
+                tracker.setPhase(player, "ram_finish");
+                plugin.getLogger().info("[RamMix] ram_before_finish: journey=" + journey + " progress=" + (progress != null));
                 if (journey != null && !progress.isComplete(player, journey)) {
                     progress.markComplete(player, journey);
                     plugin.getLogger().info("[RamMix] Marked journey complete: " + journey);
@@ -1319,47 +1317,38 @@ public class ChoiceButtonHandler implements Listener {
      */
     private void handlePermExitButton(Player player, String phase, Journey journey) {
         switch (phase) {
-            case "ram_allow_access":
-                // TLB Miss - No Fault correctly chose Allow Access → TP to RAM
-                teleportPlayer(player, "ramRoom");
-                break;
-
-            case "disk_swap_retrieval":
-                // Swapped-Out Page correctly chose Page Fault → TP to Disk
-                teleportPlayer(player, "diskRoom");
-                break;
-
-            case "cow_decision":
-                // Pure COW correctly chose Protection Fault → TP to COW Room
-                if (journey == Journey.PURE_COW) {
+            case "permission_decision": {
+                String decision = tracker.getVar(player, "permDecision");
+                if ("allow_access".equals(decision)) {
+                    tracker.setPhase(player, "ram_tlb_miss_access");
+                    teleportPlayer(player, "ramRoom");
+                } else if ("segfault".equals(decision)) {
+                    progress.markComplete(player, Journey.PERMISSION_VIOLATION);
+                    tracker.setPhase(player, "segfault_end");
+                    updateSign("perChamber.sign6", "Finish", "", "", "");
+                } else if ("protection_fault".equals(decision)) {
                     teleportPlayer(player, "cowRoom");
+                } else {
+                    player.sendMessage(plugin.getConfigManager().getMessage("errors.permission.make_choice_first"));
+                }
+                break;
+            }
+            case "page_fault_type":
+                if ("swapped_out".equals(tracker.getVar(player, "pageFaultSubtype"))) {
+                    tracker.setPhase(player, "disk_swap_retrieval");
+                    teleportPlayer(player, "diskRoom");
+                } else {
+                    player.sendMessage(plugin.getConfigManager().getMessage("errors.permission.make_choice_first"));
                 }
                 break;
 
             case "segfault_end":
-                // Permission Violation: "Terminate process and finish" → show Finish sign
-                tracker.setPhase(player, "segfault_finish");
-                updateSign("perChamber.sign6", "Finish", "", "", "");
-                break;
-
-            case "segfault_finish":
                 // Finish pressed → fire achievements then TP to End Terminal
                 plugin.getAchievementManager().onJourneyComplete(player, Journey.PERMISSION_VIOLATION.name());
                 teleportPlayer(player, "endTerminal");
                 break;
 
-            case "lazy_alloc_decision":
-                // Lazy Allocation: go to Page Fault Corridor (door button handles this)
-                player.sendMessage(plugin.getConfigManager().getMessage("errors.permission.use_door_lazy_alloc"));
-                break;
-
-            case "lazy_loading_entered":
-                // Lazy Loading: go to Page Fault Corridor (door button handles this)
-                player.sendMessage(plugin.getConfigManager().getMessage("errors.permission.use_door_lazy_loading"));
-                break;
-
             default:
-                // Wrong phase/journey for this button
                 player.sendMessage(plugin.getConfigManager().getMessage("errors.permission.make_choice_first"));
                 break;
         }
@@ -1368,7 +1357,9 @@ public class ChoiceButtonHandler implements Listener {
     // ── COW Room → RAM TP button ──────────────────────────────────────────────
 
     private void handleCowToRamButton(Player player, String phase) {
-        if ("ram_after_cow".equals(phase)) {
+        if ("cow_decision_after".equals(phase)) {
+            Journey j = tracker.getJourney(player);
+            tracker.setPhase(player, j == Journey.LAZY_ALLOCATION ? "ram_after_cow_alloc" : "ram_after_cow");
             teleportPlayer(player, "ramRoom");
         }
     }
@@ -1391,7 +1382,9 @@ public class ChoiceButtonHandler implements Listener {
      */
     private void handleDiskToRamButton(Player player, String phase, Journey journey) {
         if ("disk_swap_retrieval".equals(phase)) {
-            // SWAPPED_OUT journey: Check for swap slot 0 book
+            player.sendMessage(plugin.getConfigManager().getMessage("errors.disk.retrieve_swap_slot"));
+        } else if ("disk_swap_retrieval_after_book".equals(phase)) {
+            // SWAPPED_OUT: verify book still in inventory then teleport
             boolean hasSwapBook = false;
             for (org.bukkit.inventory.ItemStack item : player.getInventory().getContents()) {
                 if (item != null && item.getType() == org.bukkit.Material.WRITTEN_BOOK
@@ -1407,12 +1400,13 @@ public class ChoiceButtonHandler implements Listener {
                 }
             }
             if (hasSwapBook) {
+                tracker.setPhase(player, "ram_disk_swap");
                 teleportPlayer(player, "ramRoom");
             } else {
                 player.sendMessage(plugin.getConfigManager().getMessage("errors.disk.retrieve_swap_slot"));
             }
-        } else if ("disk_lazy_loading".equals(phase)) {
-            // LAZY_LOADING journey: Check for treasure_map.bin page 0 book
+        } else if ("disk_lazy_loading_after_book".equals(phase)) {
+            // LAZY_LOADING journey: verify player still has the book then teleport
             boolean hasCorrectBook = false;
             for (org.bukkit.inventory.ItemStack item : player.getInventory().getContents()) {
                 if (item != null && item.getType() == org.bukkit.Material.WRITTEN_BOOK
@@ -1428,10 +1422,13 @@ public class ChoiceButtonHandler implements Listener {
                 }
             }
             if (hasCorrectBook) {
+                tracker.setPhase(player, "ram_disk_lazy_loading");
                 teleportPlayer(player, "ramRoom");
             } else {
                 player.sendMessage(plugin.getConfigManager().getMessage("errors.disk.retrieve_treasure_map"));
             }
+        } else if ("disk_lazy_loading".equals(phase)) {
+            player.sendMessage(plugin.getConfigManager().getMessage("errors.disk.retrieve_treasure_map"));
         } else {
             player.sendMessage(plugin.getConfigManager().getMessage("errors.disk.need_correct_book"));
         }
@@ -1445,9 +1442,8 @@ public class ChoiceButtonHandler implements Listener {
     private void handleDoorOpenButton(Player player, String buttonKey, Journey journey, String phase) {
         switch (buttonKey) {
             case "toPageFaultCorridor":
-                if (journey == Journey.LAZY_ALLOCATION && "lazy_alloc_decision".equals(phase)) {
-                    openDoor("toPageFaultCorridor");
-                } else if (journey == Journey.LAZY_LOADING && "lazy_loading_entered".equals(phase)) {
+                if ("page_fault_type".equals(phase)
+                        && (journey == Journey.LAZY_ALLOCATION || journey == Journey.LAZY_LOADING)) {
                     openDoor("toPageFaultCorridor");
                 } else {
                     player.sendMessage(plugin.getConfigManager().getMessage("errors.permission.wrong_door"));
@@ -1519,7 +1515,7 @@ public class ChoiceButtonHandler implements Listener {
             }
         }
 
-        if (hasCorrectPTE) {
+        if (hasCorrectPTE && "acquired_pte".equals(tracker.getPhase(player))) {
             teleportPlayer(player, "permissionChamber");
         } else {
             player.sendMessage(plugin.getConfigManager().getMessage("errors.page_table.need_pte_map", "{chest}", String.valueOf(correctChestIndex)));
@@ -1801,7 +1797,7 @@ public class ChoiceButtonHandler implements Listener {
                 tracker.setPhase(player, "tlb_miss_quiz");
                 dialogue.speak(player, "rooms.tlb_room.after_miss_quiz_non_lucky", tracker.getVars(player));
                 Bukkit.getScheduler().runTaskLater(plugin, () ->
-                    askQuestion(player, "tlb_room.miss_door", "page_directory", "rooms.tlb_room.after_miss_correct"),
+                    askQuestion(player, "tlb_room.miss_door", "tlb_miss_correct", "rooms.tlb_room.after_miss_correct"),
                     60L);
             }
         } else {
@@ -1827,31 +1823,28 @@ public class ChoiceButtonHandler implements Listener {
         String phase = tracker.getPhase(player);
         plugin.getLogger().info("[CalcContinue] Button pressed, phase=" + phase);
 
-        // Check if player has actually used the calculator
-        if (!calculatorListener.hasPlayerCalculated(player)) {
-            if (calculatorListener.hasPendingCalcVerify(player)) {
-                // Quiz is already visible in chat — silently block; no error needed.
-                // (Showing an error here causes a confusing "answer quiz first → Correct!"
-                // sequence due to async→sync timing of the chat quiz handler.)
-                return;
-            } else if ("calculator_from_lazy_loading".equals(phase)) {
-                player.sendMessage(plugin.getConfigManager().getMessage("errors.calculator.calculate_page_index"));
-            } else {
-                player.sendMessage(plugin.getConfigManager().getMessage("errors.calculator.calculate_va"));
-            }
-            plugin.getLogger().info("[CalcContinue] Player hasn't calculated yet");
-            return;
-        }
-
-        if ("calculator_from_tlb".equals(phase)) {
-            // First visit: return to TLB room to check VPN signs and make hit/miss decision
+        if ("calculator_from_tlb_done".equals(phase)) {
+            // First visit complete: return to TLB room to check VPN signs and make hit/miss decision
             plugin.getLogger().info("[CalcContinue] Teleporting to TLB room");
             tracker.setPhase(player, "tlb_after_calculator");
             teleportPlayer(player, "tlbSpawn");
-        } else if ("calculator_from_lazy_loading".equals(phase)) {
-            // Second visit (lazy loading journey): return to Lazy Loading room
+        } else if ("calculator_from_tlb".equals(phase)) {
+            // First visit not done yet
+            if (calculatorListener.hasPendingCalcVerify(player)) {
+                // Quiz is already visible in chat — silently block.
+                return;
+            }
+            player.sendMessage(plugin.getConfigManager().getMessage("errors.calculator.calculate_va"));
+            plugin.getLogger().info("[CalcContinue] Player hasn't completed visit 1 yet");
+        } else if ("calculator_from_lazy_loading_done".equals(phase)) {
+            // Second visit complete: return to Lazy Loading room
             plugin.getLogger().info("[CalcContinue] Teleporting to Lazy Loading room");
             teleportPlayer(player, "lazyLoadingRoom");
+        } else if ("calculator_from_lazy_loading".equals(phase)) {
+            // Second visit not done yet
+            if (calculatorListener.hasPendingCalcVerify(player)) return;
+            player.sendMessage(plugin.getConfigManager().getMessage("errors.calculator.calculate_page_index"));
+            plugin.getLogger().info("[CalcContinue] Player hasn't completed visit 2 yet");
         } else {
             player.sendMessage("§cComplete the calculator room first. Current phase: " + phase);
             plugin.getLogger().warning("[CalcContinue] Wrong phase: " + phase);
@@ -1979,7 +1972,7 @@ public class ChoiceButtonHandler implements Listener {
                 dialogue.speak(player, "rooms.permission_chamber.after_button_press", vars);
                 dialogue.speak(player, "feedback.allow_access_correct", vars);
                 dialogue.speak(player, "rooms.permission_chamber.allow_access_proceed", vars);
-                tracker.setPhase(player, "ram_allow_access");
+                tracker.setVar(player, "permDecision", "allow_access");
                 clearPermChoiceSigns();
                 updateSign("perChamber.sign6", "Go to RAM", "", "", "");
                 break;
@@ -1994,14 +1987,13 @@ public class ChoiceButtonHandler implements Listener {
                 break;
             case "segfault":
                 dialogue.speak(player, "feedback.segfault_correct", vars);
-                tracker.setPhase(player, "segfault_end");
-                progress.markComplete(player, Journey.PERMISSION_VIOLATION);
+                tracker.setVar(player, "permDecision", "segfault");
                 clearPermChoiceSigns();
                 updateSign("perChamber.sign6", "Terminate", "process and", "finish", "");
                 break;
             case "protection_fault":
                 dialogue.speak(player, "feedback.protection_fault_correct", vars);
-                tracker.setPhase(player, "cow_decision");
+                tracker.setVar(player, "permDecision", "protection_fault");
                 clearPermChoiceSigns();
                 updateSign("perChamber.sign6", "Go to COW", "room", "", "");
                 break;
@@ -2047,17 +2039,15 @@ public class ChoiceButtonHandler implements Listener {
         switch (expected) {
             case "lazy_allocation":
                 dialogue.speak(player, "feedback.lazy_allocation_correct", vars);
-                tracker.setPhase(player, "lazy_alloc_decision");
                 clearPermSubtypeSigns();
                 break;
             case "lazy_loading":
                 dialogue.speak(player, "feedback.lazy_loading_correct", vars);
-                tracker.setPhase(player, "lazy_loading_entered");
                 clearPermSubtypeSigns();
                 break;
             case "swapped_out":
                 dialogue.speak(player, "rooms.permission_chamber.proceed_to_disk", vars);
-                tracker.setPhase(player, "disk_swap_retrieval");
+                tracker.setVar(player, "pageFaultSubtype", "swapped_out");
                 clearPermSubtypeSigns();
                 updateSign("perChamber.sign6", "Go to Disk", "", "", "");
                 break;
@@ -2119,7 +2109,7 @@ public class ChoiceButtonHandler implements Listener {
         if ("cowLazyAlloc".equals(action)) {
             plugin.getAchievementManager().onCorrectAnswer(player);
             dialogue.speak(player, "rooms.lazy_allocation_room.second_visit_correct", vars);
-            tracker.setPhase(player, "going_to_cow");
+            tracker.setPhase(player, "lazy_alloc_before_tp");
             // Hide COW-decision signs; show "Go to COW room" (btnLazyAlloc now TPs to COW)
             updateSign("lazyAllocation.cowSign", "", "", "", "");
             updateSign("lazyAllocation.doNothingSign", "", "", "", "");
@@ -2154,7 +2144,7 @@ public class ChoiceButtonHandler implements Listener {
             // For LAZY_ALLOCATION: Don't update PTE variables here - they will be updated after swap
 
             dialogue.speak(player, "rooms.cow_room.allocate_copy_correct", vars);
-            tracker.setPhase(player, "ram_after_cow");
+            tracker.setPhase(player, "cow_decision_after");
             // Reveal the "Go to RAM" sign in the COW room
             updateSign("cow.toRam", "Go to RAM", "", "", "");
 
@@ -2233,6 +2223,11 @@ public class ChoiceButtonHandler implements Listener {
         updateSign("lazyAllocation.cowSign", "Do COW", "", "", "");
         updateSign("lazyAllocation.doNothingSign", "Do nothing", "", "", "");
         updateSign("lazyAllocation.writeSign", "Process wants", "to write. What", "do you do?", "");
+    }
+
+    /** Restore the "Go to COW room" sign after player re-enters in lazy_alloc_before_tp phase. */
+    public void setLazyAllocBeforeTpSign() {
+        updateSign("lazyAllocation.mixSign", "Go to COW room", "", "", "");
     }
 
     /** Set the Lazy Loading Room mixSign (Go to Calculator Room / Go to Disk). */

@@ -295,6 +295,9 @@ public class CalculatorListener implements Listener {
                         : "rooms.calculator_room.from_tlb_after_quiz";
                     log.info("[Calc] " + player.getName() + " post-quiz dialogue: " + dialoguePath);
                     dialogueManager.speakInstant(player, dialoguePath, tracker.getVars(player));
+                    tracker.setPhase(player, "calculator_from_tlb_done");
+                } else if ("calculator_from_lazy_loading".equals(phase)) {
+                    tracker.setPhase(player, "calculator_from_lazy_loading_done");
                 }
             } else {
                 player.sendMessage("§c" + q.wrongFeedback);
@@ -335,6 +338,8 @@ public class CalculatorListener implements Listener {
 
     private void checkHopper(Player player) {
         if (calculating.getOrDefault(player.getUniqueId(), false)) return;
+        String hopperPhase = tracker.getPhase(player);
+        if ("calculator_from_tlb_done".equals(hopperPhase) || "calculator_from_lazy_loading_done".equals(hopperPhase)) return;
 
         Block block = hopperLocation.getBlock();
         if (!(block.getState() instanceof org.bukkit.block.Hopper)) return;
@@ -467,10 +472,10 @@ public class CalculatorListener implements Listener {
 
     private void updateInstructionFrames(String phase) {
         if (instrFrames.size() < 6) return;
-        if ("calculator_from_tlb".equals(phase)) {
+        if ("calculator_from_tlb".equals(phase) || "calculator_from_tlb_done".equals(phase)) {
             // Visit 1: hex → binary guide; output shows binary split into VPN + offset
             setFrame(instrFrames.get(0), "= HOW TO USE =", " CALCULATOR ", "", "HEX->VPN+OFFSET");
-            setFrame(instrFrames.get(1), "   STEP 1:   ", "Write your hex", "VA in the book", "from chest (L)");
+            setFrame(instrFrames.get(1), "   STEP 1:   ", "Write your hex", "VA in the book", "from chest");
             setFrame(instrFrames.get(2), "   STEP 2:   ", "Place the book", "in the hopper", "");
             setFrame(instrFrames.get(3), "The result", "will be shown", "over the hopper", "");
             setFrame(instrFrames.get(4), "First 4 bits:", "= your VPN", "", "");

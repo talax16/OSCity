@@ -15,12 +15,8 @@ import org.bukkit.block.data.Lightable;
 import org.bukkit.block.sign.Side;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
-import org.bukkit.plugin.java.JavaPlugin;
-
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -45,7 +41,8 @@ public class SwapClockManager {
     private final Map<UUID, ClockState> states = new HashMap<>();
 
     private static class ClockState {
-        final Set<Integer> roundOnePressed = new HashSet<>();
+        int nextExpectedFrame = 1;
+        int pressedCount = 0;
         boolean roundTwoStarted = false;
         final int victimFrameNum; // 1-6
         int wrongPresses = 0;  // Track wrong presses for achievement
@@ -154,12 +151,18 @@ public class SwapClockManager {
                 player.sendMessage(plugin.getConfigManager().getMessage("clock.recently_accessed", "{pfn}", pfnHex));
             } else {
                 // Round 1: flip USE BIT OFF (give second chance)
+                if (frameNum != state.nextExpectedFrame) {
+                    String expectedHex = "0x" + Integer.toHexString(state.nextExpectedFrame).toUpperCase();
+                    player.sendMessage(plugin.getConfigManager().getMessage("clock.wrong_order", "{pfn}", expectedHex));
+                    return true;
+                }
                 setTorchLit(frameNum, false);
                 updateFrameSign(frameNum, pfnHex, "USE_BIT=0 (OFF)", "(2nd chance)", "");
                 player.sendMessage(plugin.getConfigManager().getMessage("clock.use_bit_flipped", "{pfn}", pfnHex));
-                state.roundOnePressed.add(frameNum);
+                state.nextExpectedFrame++;
+                state.pressedCount++;
 
-                if (state.roundOnePressed.size() == 6) {
+                if (state.pressedCount == 6) {
                     // All 6 pressed → end of round 1.
                     // Delay round 2 activation so the transition message appears before
                     // the player can interact again (prevents skipping straight to victim).
@@ -186,7 +189,7 @@ public class SwapClockManager {
             // ── USE BIT is OFF ────────────────────────────────────────────────
             if (!state.roundTwoStarted) {
                 // Round 1 — a torch is already off (player pressed it earlier)
-                if (state.roundOnePressed.contains(frameNum)) {
+                if (frameNum < state.nextExpectedFrame) {
                     player.sendMessage(plugin.getConfigManager().getMessage("clock.already_flipped", "{pfn}", pfnHex));
                 } else {
                     // Shouldn't happen (we lit all on entry), but handle gracefully
